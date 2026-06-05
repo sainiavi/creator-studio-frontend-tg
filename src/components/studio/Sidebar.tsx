@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useStudioContext } from "@/context/StudioContext";
 import {
   Home,
   Gamepad2,
@@ -24,7 +24,8 @@ const nav = [
 ] as const;
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const { sidebarCollapsed, setSidebarCollapsed } = useStudioContext();
+  const collapsed = sidebarCollapsed;
 
   return (
     <aside
@@ -80,7 +81,7 @@ export function Sidebar() {
       {/* Collapse toggle */}
       <div className={`mt-4 flex ${collapsed ? "justify-center" : "justify-end px-2"}`}>
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => setSidebarCollapsed(!collapsed)}
           className="flex size-8 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar-accent/50 text-muted-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-foreground hover:border-primary/40"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >

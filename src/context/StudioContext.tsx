@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCreatorStudio } from "@/hooks/useCreatorStudio";
 import { useWallet } from "@/hooks/useWallet";
@@ -13,6 +13,8 @@ type StudioContextValue = {
   wallet: Wallet;
   /** Select a template (switching engine if needed) and jump to the Studio route. */
   openInStudio: (templateId: string) => void;
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
 };
 
 const StudioContext = createContext<StudioContextValue | null>(null);
@@ -21,6 +23,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const studio = useCreatorStudio();
   const wallet = useWallet();
   const navigate = useNavigate();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const {
     createFromTemplate,
@@ -44,7 +47,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <StudioContext.Provider value={{ studio, wallet, openInStudio }}>
+    <StudioContext.Provider value={{ studio, wallet, openInStudio, sidebarCollapsed, setSidebarCollapsed }}>
       {children}
     </StudioContext.Provider>
   );

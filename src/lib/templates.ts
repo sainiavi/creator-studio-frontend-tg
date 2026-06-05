@@ -1,4 +1,4 @@
-export const gameTemplates = [
+const rawGameTemplates = [
   {
     id: "flappy",
     name: "Flappy Bird",
@@ -1223,3 +1223,5 @@ export const themePresets = {
   space: { label: "Space", colors: ["#8f7dff", "#35e8ff", "#ffffff"], mood: "deep orbit spectacle" },
   fantasy: { label: "Fantasy", colors: ["#ff7a3d", "#67ffb4", "#ffd166"], mood: "rune-lit adventure" }
 };
+
+export const gameTemplates = rawGameTemplates.filter(t => t.engine !== "unity" && t.engine !== "construct");

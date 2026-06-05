@@ -13,6 +13,7 @@ import {
   Trash2,
   UserPlus,
   X,
+  Trophy,
 } from "lucide-react";
 import { ThreePreview } from "@/components/studio/ThreePreview";
 import { UnityPreview } from "@/components/studio/UnityPreview";
@@ -23,6 +24,7 @@ import { localPackage } from "@/hooks/useCreatorStudio";
 import { gradientClass } from "@/lib/games-data";
 import { gradientForId, templateToGame } from "@/lib/studio-meta";
 import { useSocial } from "@/hooks/useSocial";
+import { useStudioContext } from "@/context/StudioContext";
 import type { SharePlatform } from "@/lib/api/social";
 
 export const Route = createFileRoute("/_app/play/$gameId")({
@@ -52,6 +54,179 @@ function formatCount(n: number): string {
   return String(n);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  Leaderboard Logic & Side Panel
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getGameLeaderboard(gameId: string) {
+  const players = [
+    { name: "LostFeel4027", baseScore: 30 },
+    { name: "NayWiry0973", baseScore: 30 },
+    { name: "WoolDarn9336", baseScore: 30 },
+    { name: "SiltNarc5781", baseScore: 30 },
+    { name: "MiteGob0909", baseScore: 30 },
+    { name: "CapeDim8185", baseScore: 30 },
+    { name: "MuttDebt7080", baseScore: 30 },
+    { name: "Wow!Cant4879", baseScore: 30 },
+    { name: "MoleHods3848", baseScore: 30 },
+    { name: "_NeoGlum5116", baseScore: 30 },
+    { name: "OverEel8825", baseScore: 30 },
+    { name: "RagRaps3021", baseScore: 30 },
+    { name: "D33pSic7459", baseScore: 30 },
+  ];
+  
+  return players.map((p, index) => {
+    return {
+      rank: index + 1,
+      name: p.name,
+      score: String(p.baseScore)
+    };
+  });
+}
+
+function LeaderboardButton({
+  onClick,
+}: {
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex min-w-14 flex-col items-center gap-2 text-white transition-transform active:scale-90 sm:min-w-16"
+    >
+      <span className="grid size-12 place-items-center rounded-full bg-white/10 transition sm:size-14 group-hover:bg-white/18">
+        <Trophy className="size-6 text-amber-400" />
+      </span>
+      <span className="text-[11px] font-black sm:text-xs">
+        Rank
+      </span>
+    </button>
+  );
+}
+
+function LeaderboardPanel({
+  template,
+  onClose,
+}: {
+  template: any;
+  onClose: () => void;
+}) {
+  const data = getGameLeaderboard(template.id);
+  
+  // Podium players
+  const top1 = data[0];
+  const top2 = data[1];
+  const top3 = data[2];
+  
+  // List players
+  const listPlayers = data.slice(3);
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden text-white">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-4 border-b border-white/5">
+        <div className="flex items-center gap-2.5">
+          <Trophy className="size-5 text-amber-400" />
+          <h3 className="text-lg font-black tracking-tight">Leaderboard</h3>
+        </div>
+        <button
+          onClick={onClose}
+          className="rounded-full p-1.5 text-white/40 hover:bg-white/10 hover:text-white transition"
+        >
+          <X className="size-5" />
+        </button>
+      </div>
+
+      {/* Podium */}
+      {top1 && (
+        <div className="flex items-end justify-center gap-3 py-8 border-b border-white/5 shrink-0 select-none">
+          {/* Rank 2 */}
+          {top2 && (
+            <div className="flex flex-col items-center w-20 text-center">
+              <div className="relative">
+                <div className="size-14 rounded-full border border-zinc-400/40 bg-zinc-800/80 p-0.5 overflow-hidden shadow-lg">
+                  <div className="size-full rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-500 flex items-center justify-center text-lg font-bold">
+                    🥈
+                  </div>
+                </div>
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-5 rounded-full bg-zinc-400 text-black flex items-center justify-center text-[10px] font-black border-2 border-zinc-950">
+                  2
+                </div>
+              </div>
+              <span className="text-[10px] font-black text-white/90 truncate w-full mt-3 block">{top2.name}</span>
+              <span className="text-[10px] font-black text-amber-400/80 mt-0.5 block">{top2.score}</span>
+            </div>
+          )}
+
+          {/* Rank 1 */}
+          <div className="flex flex-col items-center w-24 text-center z-10">
+            <div className="relative -top-2">
+              <div className="size-18 rounded-full border-2 border-amber-400 bg-zinc-800/80 p-0.5 overflow-hidden shadow-[0_0_20px_rgba(251,191,36,0.2)]">
+                <div className="size-full rounded-full bg-gradient-to-tr from-amber-600 to-yellow-400 flex items-center justify-center text-xl font-bold">
+                  👑
+                </div>
+              </div>
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-5.5 rounded-full bg-amber-400 text-black flex items-center justify-center text-[10px] font-black border-2 border-zinc-950">
+                1
+              </div>
+            </div>
+            <span className="text-xs font-black text-white truncate w-full mt-1 block">{top1.name}</span>
+            <span className="text-xs font-black text-amber-400 mt-0.5 block">{top1.score}</span>
+          </div>
+
+          {/* Rank 3 */}
+          {top3 && (
+            <div className="flex flex-col items-center w-20 text-center">
+              <div className="relative">
+                <div className="size-14 rounded-full border border-amber-700/40 bg-zinc-800/80 p-0.5 overflow-hidden shadow-lg">
+                  <div className="size-full rounded-full bg-gradient-to-tr from-amber-800 to-amber-600 flex items-center justify-center text-lg font-bold">
+                    🥉
+                  </div>
+                </div>
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-5 rounded-full bg-amber-700 text-black flex items-center justify-center text-[10px] font-black border-2 border-zinc-950">
+                  3
+                </div>
+              </div>
+              <span className="text-[10px] font-black text-white/90 truncate w-full mt-3 block">{top3.name}</span>
+              <span className="text-[10px] font-black text-amber-400/80 mt-0.5 block">{top3.score}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Ranks list */}
+      <div className="flex-1 overflow-y-auto space-y-2 py-4 pr-1">
+        {listPlayers.map((row) => (
+          <div 
+            key={row.rank}
+            className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/5 p-3 hover:bg-white/8 transition duration-150"
+          >
+            {/* Rank badge */}
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-white/5 border border-white/5 text-xs font-black text-white/50">
+              {row.rank}
+            </div>
+            
+            {/* Avatar block */}
+            <div className="size-8 rounded-full bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center text-xs font-bold shrink-0">
+              {row.name.charAt(0).toUpperCase()}
+            </div>
+            
+            {/* Player details */}
+            <div className="flex-1 min-w-0">
+              <span className="font-bold text-xs text-white truncate block">{row.name}</span>
+            </div>
+            
+            {/* Score */}
+            <div className="text-right shrink-0">
+              <span className="font-mono font-black text-xs text-white/95">{row.score}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PlayFeed() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
@@ -73,6 +248,15 @@ function PlayFeed() {
   const next = gameTemplates[(index + 1) % gameTemplates.length];
 
   const social = useSocial(gameId);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const { setSidebarCollapsed } = useStudioContext();
+
+  useEffect(() => {
+    setSidebarCollapsed(leaderboardOpen);
+    return () => {
+      setSidebarCollapsed(false);
+    };
+  }, [leaderboardOpen, setSidebarCollapsed]);
 
   useEffect(() => {
     const goToFeedGame = (targetId: string) => {
@@ -121,6 +305,7 @@ function PlayFeed() {
 
   const socialButtons = (
     <>
+      <LeaderboardButton onClick={() => setLeaderboardOpen(true)} />
       <ShareButton
         count={social.shareCount}
         open={social.shareMenuOpen}
@@ -150,95 +335,105 @@ function PlayFeed() {
   );
 
   return (
-    <div className="h-[100dvh] overflow-hidden bg-background lg:h-auto lg:min-h-screen">
-      <div className="mx-auto grid h-[calc(100dvh-64px)] w-full max-w-[1360px] grid-cols-1 items-start gap-0 overflow-hidden px-0 py-0 lg:h-auto lg:min-h-screen lg:grid-cols-[minmax(0,1fr)_88px] lg:items-center lg:gap-4 lg:overflow-visible lg:px-8 lg:py-4 xl:grid-cols-[minmax(0,1fr)_96px_72px]">
-        <section className="grid h-full place-items-start overflow-hidden lg:min-h-[calc(100vh-2rem)] lg:place-items-center lg:overflow-visible">
-          <div className="relative h-full w-full max-w-none overflow-hidden border-0 border-border/60 bg-black shadow-[0_30px_90px_-45px_oklch(0_0_0)] lg:h-[calc(100vh-3rem)] lg:max-h-[920px] lg:max-w-[960px] lg:rounded-[2rem] lg:border">
-            <div
-              className={`absolute inset-0 bg-gradient-to-br ${gradientClass[gradientForId(template.id)]} opacity-35`}
-            />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_8%,oklch(1_0_0_/_0.18),transparent_28%),linear-gradient(180deg,transparent_42%,oklch(0.08_0.02_280_/_0.92))]" />
-            <div className="relative z-10 flex h-full flex-col justify-start px-0 py-0 sm:px-6 sm:py-4 lg:justify-center lg:py-6">
-              <div className="mx-auto flex h-full w-full max-w-[880px] flex-col lg:block lg:h-auto">
-                <div className="mb-2 flex shrink-0 items-center justify-between gap-3 px-4 pt-3 sm:px-0 sm:pt-0 lg:mb-3">
-                  <div className="min-w-0">
-                    <p className="label-mono text-[10px] text-white/70">{game.category}</p>
-                    <h1 className="truncate font-display text-2xl font-black text-white sm:text-3xl">{template.name}</h1>
-                  </div>
-                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/12 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
-                    <Gamepad2 className="size-4" /> {engine === "unity" ? "Unity" : engine === "construct" ? "HTML5" : "Canvas"}
-                  </span>
-                </div>
-
-                <div className={`feed-game-frame min-h-0 flex-1 ${
-                  engine === "unity"
-                    ? "feed-game-frame--unity"
-                    : engine === "construct"
-                      ? "feed-game-frame--construct"
-                      : "feed-game-frame--canvas"
-                } overflow-hidden border-y border-white/15 bg-black/80 shadow-2xl sm:rounded-2xl sm:border lg:flex-none`}>
-                  {engine === "unity" ? (
-                    <UnityPreview templateId={template.id} />
-                  ) : engine === "construct" ? (
-                    <Html5Preview templateId={template.id} />
-                  ) : (
-                    <ThreePreview gamePackage={pkg} />
-                  )}
-                </div>
-
-                <div className="mt-3 flex shrink-0 items-center justify-center gap-4 px-3 sm:gap-8 sm:px-0 lg:hidden">
-                  {socialButtons}
-                </div>
-
-                <div className="mt-3 flex shrink-0 items-end justify-between gap-3 px-4 pb-3 sm:px-0 sm:pb-0 lg:mt-4 lg:gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-3">
-                      <div className="grid size-12 shrink-0 place-items-center rounded-full border border-white/25 bg-white/15 font-display text-lg font-black text-white">
-                        {profile.avatar}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-lg font-black text-white">{profile.name}</p>
-                        <p className="truncate text-sm font-semibold text-white/70">{profile.bio}</p>
-                      </div>
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-background">
+      {/* Left/Middle: Game & Navigation */}
+      <div className="flex-1 min-w-0 h-full overflow-hidden relative">
+        <div className="mx-auto grid h-[calc(100dvh-64px)] w-full max-w-[1360px] grid-cols-1 items-start gap-0 overflow-hidden px-0 py-0 lg:h-auto lg:min-h-screen lg:grid-cols-[minmax(0,1fr)_88px] lg:items-center lg:gap-4 lg:overflow-visible lg:px-8 lg:py-4 xl:grid-cols-[minmax(0,1fr)_96px_72px]">
+          <section className="grid h-full place-items-start overflow-hidden lg:min-h-[calc(100vh-2rem)] lg:place-items-center lg:overflow-visible">
+            <div className="relative h-full w-full max-w-none overflow-hidden border-0 border-border/60 bg-black shadow-[0_30px_90px_-45px_oklch(0_0_0)] lg:h-[calc(100vh-3rem)] lg:max-h-[920px] lg:max-w-[960px] lg:rounded-[2rem] lg:border">
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${gradientClass[gradientForId(template.id)]} opacity-35`}
+              />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_8%,oklch(1_0_0_/_0.18),transparent_28%),linear-gradient(180deg,transparent_42%,oklch(0.08_0.02_280_/_0.92))]" />
+              <div className="relative z-10 flex h-full flex-col justify-start px-0 py-0 sm:px-6 sm:py-4 lg:justify-center lg:py-6">
+                <div className="mx-auto flex h-full w-full max-w-[880px] flex-col lg:block lg:h-auto">
+                  <div className="mb-2 flex shrink-0 items-center justify-between gap-3 px-4 pt-3 sm:px-0 sm:pt-0 lg:mb-3">
+                    <div className="min-w-0">
+                      <p className="label-mono text-[10px] text-white/70">{game.category}</p>
+                      <h1 className="truncate font-display text-2xl font-black text-white sm:text-3xl">{template.name}</h1>
                     </div>
-                    <p className="mt-2 line-clamp-2 max-w-[520px] text-sm font-semibold text-white/80 lg:mt-3">
-                      {template.mechanic} {template.controls}
-                    </p>
+                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/12 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
+                      <Gamepad2 className="size-4" /> {engine === "unity" ? "Unity" : engine === "construct" ? "HTML5" : "Canvas"}
+                    </span>
                   </div>
-                  <button className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-black text-black transition hover:bg-white/90">
-                    <UserPlus className="size-4" /> Follow
-                  </button>
+
+                  <div className={`feed-game-frame min-h-0 flex-1 ${
+                    engine === "unity"
+                      ? "feed-game-frame--unity"
+                      : engine === "construct"
+                        ? "feed-game-frame--construct"
+                        : "feed-game-frame--canvas"
+                  } overflow-hidden border-y border-white/15 bg-black/80 shadow-2xl sm:rounded-2xl sm:border lg:flex-none`}>
+                    {engine === "unity" ? (
+                      <UnityPreview templateId={template.id} />
+                    ) : engine === "construct" ? (
+                      <Html5Preview templateId={template.id} />
+                    ) : (
+                      <ThreePreview gamePackage={pkg} />
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex shrink-0 items-center justify-center gap-4 px-3 sm:gap-8 sm:px-0 lg:hidden">
+                    {socialButtons}
+                  </div>
+
+                  <div className="mt-3 flex shrink-0 items-end justify-between gap-3 px-4 pb-3 sm:px-0 sm:pb-0 lg:mt-4 lg:gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-3">
+                        <div className="grid size-12 shrink-0 place-items-center rounded-full border border-white/25 bg-white/15 font-display text-lg font-black text-white">
+                          {profile.avatar}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-lg font-black text-white">{profile.name}</p>
+                          <p className="truncate text-sm font-semibold text-white/70">{profile.bio}</p>
+                        </div>
+                      </div>
+                      <p className="mt-2 line-clamp-2 max-w-[520px] text-sm font-semibold text-white/80 lg:mt-3">
+                        {template.mechanic} {template.controls}
+                      </p>
+                    </div>
+                    <button className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-black text-black transition hover:bg-white/90">
+                      <UserPlus className="size-4" /> Follow
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <aside className="hidden items-center justify-center gap-3 lg:flex lg:flex-col">
-          {socialButtons}
-          <div className="hidden size-12 place-items-center rounded-full border border-white/10 bg-card text-2xl lg:grid">
-            {templateEmoji[template.id] ?? game.emoji}
-          </div>
-        </aside>
+          <aside className="hidden items-center justify-center gap-3 lg:flex lg:flex-col">
+            {socialButtons}
+            <div className="hidden size-12 place-items-center rounded-full border border-white/10 bg-card text-2xl lg:grid">
+              {templateEmoji[template.id] ?? game.emoji}
+            </div>
+          </aside>
 
-        <nav className="fixed right-4 top-1/2 hidden -translate-y-1/2 flex-col gap-4 xl:flex">
-          <FeedLink to={previous.id} label="Previous" icon={<ArrowUp className="size-7" />} />
-          <FeedLink to={next.id} label="Next" icon={<ArrowDown className="size-7" />} />
-        </nav>
+          <nav className="fixed right-4 top-1/2 hidden -translate-y-1/2 flex-col gap-4 xl:flex">
+            <FeedLink to={previous.id} label="Previous" icon={<ArrowUp className="size-7" />} />
+            <FeedLink to={next.id} label="Next" icon={<ArrowDown className="size-7" />} />
+          </nav>
+        </div>
+
+        {/* Comments Panel */}
+        <CommentsPanel
+          open={social.commentsOpen}
+          onClose={() => social.setCommentsOpen(false)}
+          comments={social.comments}
+          loading={social.commentsLoading}
+          onAdd={social.handleAddComment}
+          onDelete={social.handleDeleteComment}
+          onLoadMore={social.loadMoreComments}
+          hasMore={social.hasMoreComments}
+          count={social.commentCount}
+        />
       </div>
 
-      {/* Comments Panel */}
-      <CommentsPanel
-        open={social.commentsOpen}
-        onClose={() => social.setCommentsOpen(false)}
-        comments={social.comments}
-        loading={social.commentsLoading}
-        onAdd={social.handleAddComment}
-        onDelete={social.handleDeleteComment}
-        onLoadMore={social.loadMoreComments}
-        hasMore={social.hasMoreComments}
-        count={social.commentCount}
-      />
+      {/* Right: Leaderboard Side Panel */}
+      {leaderboardOpen && (
+        <div className="fixed inset-y-0 right-0 z-50 w-full bg-zinc-950/95 border-l border-white/10 flex flex-col p-6 animate-in slide-in-from-right duration-300 sm:w-[380px] lg:relative lg:inset-auto lg:h-full lg:z-0 lg:bg-zinc-950/90 lg:w-[400px] shrink-0">
+          <LeaderboardPanel template={template} onClose={() => setLeaderboardOpen(false)} />
+        </div>
+      )}
     </div>
   );
 }
@@ -624,12 +819,12 @@ function CommentsPanel({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-in fade-in"
+        className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm animate-in fade-in"
         onClick={onClose}
       />
 
       {/* Panel */}
-      <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[70vh] flex-col rounded-t-3xl border-t border-white/15 bg-[oklch(0.12_0.02_280)] shadow-2xl animate-in slide-in-from-bottom lg:inset-x-auto lg:left-1/2 lg:w-full lg:max-w-[560px] lg:-translate-x-1/2">
+      <div className="fixed inset-x-0 bottom-0 z-[60] flex max-h-[70vh] flex-col rounded-t-3xl border-t border-white/15 bg-[oklch(0.12_0.02_280)] shadow-2xl animate-in slide-in-from-bottom lg:inset-x-auto lg:left-1/2 lg:w-full lg:max-w-[560px] lg:-translate-x-1/2">
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
           <h2 className="text-lg font-black text-white">
@@ -700,7 +895,7 @@ function CommentsPanel({
         </div>
 
         {/* Input */}
-        <div className="shrink-0 border-t border-white/10 px-4 py-3">
+        <div className="shrink-0 border-t border-white/10 px-4 pt-3 pb-6 sm:pb-3">
           <div className="flex items-center gap-2">
             <input
               ref={inputRef}

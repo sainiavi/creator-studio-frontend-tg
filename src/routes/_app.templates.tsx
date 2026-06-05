@@ -16,36 +16,13 @@ export const Route = createFileRoute("/_app/templates")({
   component: Templates,
 });
 
-const engines = [
-  { id: "threejs", label: "Three.js" },
-  { id: "unity", label: "Unity" },
-  { id: "construct", label: "HTML5" },
-] as const;
-
 function Templates() {
-  const { studio, openInStudio } = useStudioContext();
-  const list = gameTemplates.filter((t: any) => engineOf(t) === studio.engine);
+  const { openInStudio } = useStudioContext();
+  const list = gameTemplates;
 
   return (
     <div>
       <PageHeader title="Templates" subtitle="Pick a base · Remix with a prompt · Ship instantly" />
-      <div className="flex items-center gap-2 px-6 pt-6 lg:px-10">
-        <div className="inline-flex rounded-xl border border-border/60 bg-card p-1">
-          {engines.map((e) => (
-            <button
-              key={e.id}
-              onClick={() => studio.setEngine(e.id)}
-              className={`label-mono rounded-lg px-4 py-2 text-[11px] transition-colors ${
-                studio.engine === e.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {e.label}
-            </button>
-          ))}
-        </div>
-      </div>
       <div className="grid grid-cols-1 gap-5 px-6 py-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 lg:px-10">
         {list.map((t: any, i: number) => (
           <article

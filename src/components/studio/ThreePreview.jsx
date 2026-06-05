@@ -1798,10 +1798,13 @@ function makeRealisticDriving(gamePackage) {
       }
 
       roadPosition += speed * dt;
-      const currentSegmentIndex = Math.floor(roadPosition / segmentLength) % totalSegments;
+      let currentSegmentIndex = Math.floor(roadPosition / segmentLength) % totalSegments;
+      if (currentSegmentIndex < 0) currentSegmentIndex += totalSegments;
       const currentSegment = segments[currentSegmentIndex];
 
-      carX -= (currentSegment.curve * 0.05) * (speed / maxSpeed) * dt;
+      if (currentSegment) {
+        carX -= (currentSegment.curve * 0.05) * (speed / maxSpeed) * dt;
+      }
 
       traffic.forEach(t => {
         t.segmentIndex = (t.segmentIndex + (t.speed * dt / segmentLength));
@@ -2633,7 +2636,7 @@ export function ThreePreview({ gamePackage }) {
     let animationId = 0;
 
     function frame(time) {
-      const dt = Math.min(0.033, (time - lastTime) / 1000);
+      const dt = Math.max(0, Math.min(0.033, (time - lastTime) / 1000));
       lastTime = time;
       const input = inputRef.current;
       updateKeyboardInput(input);
