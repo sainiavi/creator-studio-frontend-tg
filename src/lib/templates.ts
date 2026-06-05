@@ -1224,4 +1224,4 @@ export const themePresets = {
   fantasy: { label: "Fantasy", colors: ["#ff7a3d", "#67ffb4", "#ffd166"], mood: "rune-lit adventure" }
 };
 
-export const gameTemplates = rawGameTemplates.filter(t => t.engine !== "unity" && t.engine !== "construct");
+export const gameTemplates = rawGameTemplates;
