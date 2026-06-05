@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#132018"/>
+  <path d="M0 354c120-70 224-70 512 0v158H0z" fill="#3a7d44"/>
+  <path d="M0 180c150 30 240 88 512 50" fill="none" stroke="#7a4a22" stroke-width="66"/>
+  <g fill="#59677c"><rect x="106" y="224" width="78" height="108" rx="10"/><rect x="124" y="184" width="42" height="58"/><rect x="318" y="176" width="84" height="132" rx="10"/><rect x="340" y="128" width="40" height="64"/></g>
+  <circle cx="146" cy="178" r="24" fill="#35e8ff"/><circle cx="360" cy="126" r="24" fill="#ff3df2"/>
+  <text x="256" y="84" text-anchor="middle" font-family="Arial Black,Arial" font-size="34" fill="#fff">DEFENSE</text>
+</svg>

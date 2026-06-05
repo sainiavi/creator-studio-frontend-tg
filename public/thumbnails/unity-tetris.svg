@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#111827"/>
+  <g stroke="#253044" stroke-width="2"><path d="M96 96h320M96 144h320M96 192h320M96 240h320M96 288h320M96 336h320M96 384h320M96 432h320M96 96v336M144 96v336M192 96v336M240 96v336M288 96v336M336 96v336M384 96v336M416 96v336"/></g>
+  <g><rect x="144" y="336" width="48" height="48" fill="#35e8ff"/><rect x="192" y="336" width="48" height="48" fill="#35e8ff"/><rect x="240" y="336" width="48" height="48" fill="#35e8ff"/><rect x="240" y="288" width="48" height="48" fill="#35e8ff"/><rect x="288" y="192" width="48" height="48" fill="#ff3df2"/><rect x="336" y="192" width="48" height="48" fill="#ff3df2"/><rect x="288" y="240" width="48" height="48" fill="#ff3df2"/><rect x="336" y="240" width="48" height="48" fill="#ff3df2"/><rect x="192" y="144" width="48" height="48" fill="#ffd166"/><rect x="240" y="144" width="48" height="48" fill="#ffd166"/><rect x="288" y="144" width="48" height="48" fill="#ffd166"/></g>
+  <text x="256" y="72" text-anchor="middle" font-family="Arial Black,Arial" font-size="42" fill="#fff">TETRIS</text>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8f7dff"/><stop offset="1" stop-color="#ff3df2"/></linearGradient></defs>
+  <rect width="512" height="512" fill="url(#g)"/>
+  <path d="M0 356h512v156H0z" fill="#111827"/><path d="M0 356h512" stroke="#35e8ff" stroke-width="6"/>
+  <circle cx="216" cy="174" r="32" fill="#ffd166"/><path d="M214 208l-38 76h70l38 72" stroke="#fff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M200 244l-70 18M236 238l58-44" stroke="#fff" stroke-width="24" stroke-linecap="round"/>
+  <rect x="344" y="282" width="44" height="74" fill="#ff7a3d"/><circle cx="420" cy="318" r="18" fill="#67ffb4"/>
+  <text x="256" y="92" text-anchor="middle" font-family="Arial Black,Arial" font-size="42" fill="#fff">RUNNER</text>
+</svg>
