@@ -7,9 +7,10 @@ const defaultPrompt = "cyberpunk doge samurai fighting AI robots in a neon arena
 
 function templateForPrompt(prompt) {
   const text = prompt.toLowerCase();
-  const match = (ids, terms) => terms.some(term => text.includes(term))
-    ? gameTemplates.find(template => ids.includes(template.id))
-    : null;
+  const match = (ids, terms) =>
+    terms.some((term) => text.includes(term))
+      ? gameTemplates.find((template) => ids.includes(template.id))
+      : null;
 
   return (
     match(["head-soccer-2026"], ["soccer", "football", "world cup", "sports"]) ||
@@ -17,10 +18,26 @@ function templateForPrompt(prompt) {
     match(["mini-racer"], ["racing", "racer", "race", "car", "cars", "driving", "traffic"]) ||
     match(["bubble-shooter"], ["bubble", "shooter", "aim"]) ||
     match(["blocks-match3"], ["match 3", "match-3", "match three", "blocks", "jewel", "candy"]) ||
-    gameTemplates.find(template => text.includes(template.category.toLowerCase())) ||
-    gameTemplates.find(template => text.includes(template.name.toLowerCase())) ||
+    gameTemplates.find((template) => text.includes(template.category.toLowerCase())) ||
+    gameTemplates.find((template) => text.includes(template.name.toLowerCase())) ||
     null
   );
+}
+
+function recentCreationContext() {
+  try {
+    const games = JSON.parse(localStorage.getItem("kult-created-games") ?? "[]");
+    return games.slice(0, 12).map((game) => ({
+      id: game.id,
+      title: game.title,
+      templateId: game.templateId,
+      category: game.category,
+      thumbnailUrl: game.thumbnailUrl,
+      createdAt: game.createdAt,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export function localPackage(template, options) {
@@ -43,31 +60,36 @@ export function localPackage(template, options) {
       theme: theme.label,
       level: options.customization,
       difficulty: options.difficulty,
-      extra: options.extra
+      extra: options.extra,
     },
     gameplay: {
       mechanic: template.mechanic,
       controls: template.controls,
-      tuning
+      tuning,
     },
     visuals: {
       mood: theme.mood,
       colors: theme.colors,
-      assets: template.assets
+      assets: template.assets,
     },
     build: {
-      renderer: template.engine === "construct" ? "Embedded HTML5 Construct runtime" : template.engine === "unity" ? "Unity WebGL runtime" : "Playable Canvas runtime",
+      renderer:
+        template.engine === "construct"
+          ? "Embedded HTML5 Construct runtime"
+          : template.engine === "unity"
+            ? "Unity WebGL runtime"
+            : "Playable Canvas runtime",
       runtimeTarget: "Browser",
       externalAssets: template.engine === "construct",
-      publishReady: true
+      publishReady: true,
     },
     checklist: [
       "Deterministic template selected",
       "Difficulty tuning applied",
       "Theme colors injected",
       "Canvas-safe asset plan generated",
-      "Optional AI refinement available"
-    ]
+      "Optional AI refinement available",
+    ],
   };
 }
 
@@ -78,27 +100,29 @@ function localTemplateExport() {
     generatedAt: new Date().toISOString(),
     strategy: {
       tier1: "Templates are primary: instant, deterministic, zero API cost.",
-      tier2: "LLM refinement is optional and prompt-driven."
+      tier2: "LLM refinement is optional and prompt-driven.",
     },
     themes: themePresets,
-    templates: gameTemplates.map(template => ({
+    templates: gameTemplates.map((template) => ({
       ...template,
       assets: [
         {
           id: `${template.id}-procedural-assets`,
           type: "procedural",
           format: "canvas",
-          description: template.assets
-        }
+          description: template.assets,
+        },
       ],
       aiRefinement: {
-        system: "You are an expert Phaser 3 game developer. Output only executable JavaScript. Use Canvas-drawn assets. No markdown.",
-        userTemplate: `Game: ${template.name}\nMechanic: ${template.mechanic}\nControls: ${template.controls}`
-      }
+        system:
+          "You are an expert Phaser 3 game developer. Output only executable JavaScript. Use Canvas-drawn assets. No markdown.",
+        userTemplate: `Game: ${template.name}\nMechanic: ${template.mechanic}\nControls: ${template.controls}`,
+      },
     })),
     usage: {
-      exportNote: "Assets are procedural Canvas manifests. The game runtime draws them instead of shipping image files."
-    }
+      exportNote:
+        "Assets are procedural Canvas manifests. The game runtime draws them instead of shipping image files.",
+    },
   };
 }
 
@@ -117,7 +141,13 @@ export function useCreatorStudio() {
   const [orchestrationPlan, setOrchestrationPlan] = useState(null);
   const [assetResult, setAssetResult] = useState(null);
   const [generatedPackage, setGeneratedPackage] = useState(() =>
-    localPackage(gameTemplates[0], { prompt: defaultPrompt, theme: "neon", difficulty: "normal", customization: "light", extra: "none" })
+    localPackage(gameTemplates[0], {
+      prompt: defaultPrompt,
+      theme: "neon",
+      difficulty: "normal",
+      customization: "light",
+      extra: "none",
+    }),
   );
 
   useEffect(() => {
@@ -138,8 +168,8 @@ export function useCreatorStudio() {
               background: "deepseek-v4-flash",
               image: "z-image",
               vision: "qwen/qwen3-vl-30b-a3b-instruct",
-              speech: "openai/whisper-large-v3"
-            }
+              speech: "openai/whisper-large-v3",
+            },
           });
         }
       }
@@ -152,24 +182,30 @@ export function useCreatorStudio() {
   }, []);
 
   const filteredTemplates = useMemo(
-    () => gameTemplates.map(t => ({ ...t, engine: t.engine ?? "threejs" })).filter(t => t.engine === engine),
-    [engine]
+    () =>
+      gameTemplates
+        .map((t) => ({ ...t, engine: t.engine ?? "threejs" }))
+        .filter((t) => t.engine === engine),
+    [engine],
   );
 
   useEffect(() => {
-    if (filteredTemplates.length > 0 && !filteredTemplates.some(t => t.id === selectedId)) {
+    if (filteredTemplates.length > 0 && !filteredTemplates.some((t) => t.id === selectedId)) {
       setSelectedId(filteredTemplates[0].id);
     }
   }, [engine, filteredTemplates, selectedId]);
 
   const selectedTemplate = useMemo(
-    () => filteredTemplates.find(template => template.id === selectedId) ?? filteredTemplates[0] ?? gameTemplates[0],
-    [selectedId, filteredTemplates]
+    () =>
+      filteredTemplates.find((template) => template.id === selectedId) ??
+      filteredTemplates[0] ??
+      gameTemplates[0],
+    [selectedId, filteredTemplates],
   );
 
   const options = useMemo(
     () => ({ prompt, theme, difficulty, customization, extra }),
-    [prompt, theme, difficulty, customization, extra]
+    [prompt, theme, difficulty, customization, extra],
   );
 
   const createFromTemplate = useCallback(async () => {
@@ -178,7 +214,7 @@ export function useCreatorStudio() {
     try {
       const response = await api.post("/games/create", {
         templateId: selectedTemplate.id,
-        ...options
+        ...options,
       });
       setGeneratedPackage(response.data.game);
       setStatus("Generated");
@@ -188,91 +224,101 @@ export function useCreatorStudio() {
     }
   }, [options, selectedTemplate]);
 
-  const generateFromPrompt = useCallback(async (strategy = "hybrid", promptOverride = "") => {
-    const effectivePrompt = promptOverride || prompt;
-    const effectiveOptions = { ...options, prompt: effectivePrompt };
-    setStatus("Generating from prompt");
-    setPackageMode(strategy === "pure-agent" ? "Pure Agent" : "Prompt");
-    setAgentStatus(`Running ${strategy === "pure-agent" ? "pure agent" : "hybrid"} pipeline`);
-    const promptTemplate = templateForPrompt(effectivePrompt) ?? selectedTemplate;
+  const generateFromPrompt = useCallback(
+    async (strategy = "hybrid", promptOverride = "") => {
+      const effectivePrompt = promptOverride || prompt;
+      const effectiveOptions = { ...options, prompt: effectivePrompt };
+      setStatus("Generating from prompt");
+      setPackageMode(strategy === "pure-agent" ? "Pure Agent" : "Prompt");
+      setAgentStatus(`Running ${strategy === "pure-agent" ? "pure agent" : "hybrid"} pipeline`);
+      const promptTemplate = templateForPrompt(effectivePrompt) ?? selectedTemplate;
 
-    if (strategy === "hybrid") {
-      setEngine(engineOf(promptTemplate));
-      setSelectedId(promptTemplate.id);
-      const game = localPackage(promptTemplate, effectiveOptions);
-      setGeneratedPackage(game);
-      setPackageMode("Template");
-      setAgentStatus(`Template matched: ${promptTemplate.name}`);
-      setStatus("Generated from template");
-      return game;
-    }
+      try {
+        const response = await api.post(
+          "/games/generate-from-prompt",
+          {
+            prompt: effectivePrompt,
+            context: {
+              preferredTemplateId: promptTemplate.id,
+              recentCreations: recentCreationContext(),
+              requestedStrategy: strategy,
+            },
+            theme,
+            difficulty,
+            customization,
+            extra,
+            includePlan: true,
+            includeCode: true,
+            includeAssets: true,
+            strategy,
+          },
+          { timeout: 3900000 },
+        );
 
-    try {
-      const response = await api.post("/games/generate-from-prompt", {
-        prompt: effectivePrompt,
-        templateId: promptTemplate.id,
-        theme,
-        difficulty,
-        customization,
-        extra,
-        includePlan: true,
-        includeCode: true,
-        includeAssets: false,
-        strategy
-      }, { timeout: 180000 });
-
-      const result = response.data;
-      setGeneratedPackage(result.game);
-      if (result.game?.templateId) {
-        const template = gameTemplates.find(t => t.id === result.game.templateId);
-        if (template) setEngine(engineOf(template));
-        setSelectedId(result.game.templateId);
+        const result = response.data;
+        const generatedGame = {
+          ...result.game,
+          thumbnailUrl: result.game?.thumbnailUrl ?? "/thumbnails/simple-agent-game-cover.png",
+        };
+        setGeneratedPackage(generatedGame);
+        if (generatedGame?.templateId) {
+          const template = gameTemplates.find((t) => t.id === generatedGame.templateId);
+          if (template) setEngine(engineOf(template));
+          setSelectedId(generatedGame.templateId);
+        }
+        if (result.plan) setOrchestrationPlan(result.plan);
+        if (result.assets) setAssetResult(result.assets);
+        setPackageMode(generatedGame?.tier === "prompt-agent" ? "Prompt + Agents" : "Prompt");
+        setAgentStatus(
+          result.warnings?.length ? result.warnings.join(" ") : "Prompt pipeline complete",
+        );
+        setStatus(result.refinement?.generatedCode ? "Game generated with code" : "Game generated");
+        return generatedGame;
+      } catch (error) {
+        setEngine(engineOf(promptTemplate));
+        setSelectedId(promptTemplate.id);
+        const game = localPackage(promptTemplate, effectiveOptions);
+        setGeneratedPackage(game);
+        setAgentStatus(error.response?.data?.error ?? "Prompt pipeline unavailable");
+        setStatus("Generated locally");
+        return game;
       }
-      if (result.plan) setOrchestrationPlan(result.plan);
-      if (result.assets) setAssetResult(result.assets);
-      setPackageMode(result.game?.tier === "prompt-agent" ? "Prompt + Agents" : "Prompt");
-      setAgentStatus(result.warnings?.length ? result.warnings.join(" ") : "Prompt pipeline complete");
-      setStatus(result.refinement?.generatedCode ? "Game generated with code" : "Game generated");
-      return result.game;
-    } catch (error) {
-      setEngine(engineOf(promptTemplate));
-      setSelectedId(promptTemplate.id);
-      const game = localPackage(promptTemplate, effectiveOptions);
-      setGeneratedPackage(game);
-      setAgentStatus(error.response?.data?.error ?? "Prompt pipeline unavailable");
-      setStatus("Generated locally");
-      return game;
-    }
-  }, [customization, difficulty, extra, options, prompt, selectedTemplate, theme]);
+    },
+    [customization, difficulty, extra, options, prompt, selectedTemplate, theme],
+  );
 
   const refineWithAi = useCallback(async () => {
     setStatus("Preparing AI");
     setPackageMode("Tier 2");
     try {
-      const response = await api.post("/agents/code", {
-        gamePackage: generatedPackage,
-        request: prompt,
-        refinementLevel: customization
-      }, { timeout: 120000 });
+      const response = await api.post(
+        "/agents/code",
+        {
+          gamePackage: generatedPackage,
+          request: prompt,
+          refinementLevel: customization,
+        },
+        { timeout: 120000 },
+      );
       const refinement = response.data.refinement;
-      setGeneratedPackage(prev => ({
+      setGeneratedPackage((prev) => ({
         ...prev,
         tier: "ai-refinement",
-        refinement
+        refinement,
       }));
       setAgentStatus(`Code agent: ${refinement?.model ?? "deepseek-v4-pro"}`);
       setStatus(refinement?.generatedCode ? "AI code generated" : "AI prompt ready");
     } catch (error) {
-      setGeneratedPackage(prev => ({
+      setGeneratedPackage((prev) => ({
         ...prev,
         tier: "ai-refinement",
         refinement: {
           error: error.response?.data?.error ?? "AI refinement failed",
           promptBundle: {
             system: "Tier 2 could not reach the configured 0G agent.",
-            user: `Refine ${prev.title}. User request: ${prompt}`
-          }
-        }
+            user: `Refine ${prev.title}. User request: ${prompt}`,
+          },
+        },
       }));
       setAgentStatus("Code agent unavailable");
       setStatus("AI setup needed");
@@ -282,20 +328,24 @@ export function useCreatorStudio() {
   const orchestrateBuild = useCallback(async () => {
     setAgentStatus("Planning with orchestrator");
     try {
-      const response = await api.post("/agents/orchestrate", {
-        prompt,
-        context: {
-          template: selectedTemplate,
-          options,
-          gamePackage: generatedPackage
-        }
-      }, { timeout: 60000 });
+      const response = await api.post(
+        "/agents/orchestrate",
+        {
+          prompt,
+          context: {
+            template: selectedTemplate,
+            options,
+            gamePackage: generatedPackage,
+          },
+        },
+        { timeout: 60000 },
+      );
       setOrchestrationPlan(response.data.result);
       setAgentStatus(`Orchestrator: ${response.data.result?.model ?? "glm-5.1"}`);
     } catch (error) {
       setOrchestrationPlan({
         error: error.response?.data?.error ?? "Orchestrator unavailable",
-        content: "Use the selected template and local deterministic package."
+        content: "Use the selected template and local deterministic package.",
       });
       setAgentStatus("Orchestrator unavailable");
     }
@@ -304,19 +354,25 @@ export function useCreatorStudio() {
   const generateAssets = useCallback(async () => {
     setAgentStatus("Generating image assets");
     try {
-      const response = await api.post("/agents/assets", {
-        prompt: [
-          `${generatedPackage.title} game thumbnail`,
-          generatedPackage.gameplay?.mechanic,
-          generatedPackage.visuals?.mood,
-          "polished colorful game cover art, no text"
-        ].filter(Boolean).join(", ")
-      }, { timeout: 60000 });
+      const response = await api.post(
+        "/agents/assets",
+        {
+          prompt: [
+            `${generatedPackage.title} game thumbnail`,
+            generatedPackage.gameplay?.mechanic,
+            generatedPackage.visuals?.mood,
+            "polished colorful game cover art, no text",
+          ]
+            .filter(Boolean)
+            .join(", "),
+        },
+        { timeout: 60000 },
+      );
       setAssetResult(response.data.result);
       setAgentStatus(`Image agent: ${response.data.result?.model ?? "z-image"}`);
     } catch (error) {
       setAssetResult({
-        error: error.response?.data?.error ?? "Asset generation unavailable"
+        error: error.response?.data?.error ?? "Asset generation unavailable",
       });
       setAgentStatus("Image agent unavailable");
     }
@@ -361,6 +417,6 @@ export function useCreatorStudio() {
     refineWithAi,
     orchestrateBuild,
     generateAssets,
-    getTemplateExport
+    getTemplateExport,
   };
 }

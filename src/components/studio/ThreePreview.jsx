@@ -18,7 +18,7 @@ const CONTROL_KEYS = new Set([
   "KeyR",
   "KeyS",
   "KeyW",
-  "Space"
+  "Space",
 ]);
 
 function clamp(value, min, max) {
@@ -42,7 +42,7 @@ function makeInput() {
     restartPressed: false,
     numberPressed: null,
     pointer: { active: false, pressed: false, released: false, x: 0, y: 0 },
-    keys: new Set()
+    keys: new Set(),
   };
 }
 
@@ -73,10 +73,14 @@ function applyGamepad(input) {
   input.restartPressed = Boolean(pad.buttons[9]?.pressed || input.restartPressed);
 }
 
+let latestGameState = null;
+
 function makeGamePackage(gamePackage) {
   const colors = gamePackage.visuals?.colors ?? ["#35e8ff", "#ff3df2", "#ffd166"];
   const tuning = gamePackage.gameplay?.tuning ?? {};
-  return { colors, tuning, score: 0, message: "", over: false, level: 1, levelUpTimer: 0 };
+  const game = { colors, tuning, score: 0, message: "", over: false, level: 1, levelUpTimer: 0 };
+  latestGameState = game;
+  return game;
 }
 
 function drawBackground(ctx, colors) {
@@ -119,19 +123,32 @@ function drawButton(ctx, rect, label, active, colors) {
 }
 
 function contains(rect, point) {
-  return point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h;
+  return (
+    point.x >= rect.x &&
+    point.x <= rect.x + rect.w &&
+    point.y >= rect.y &&
+    point.y <= rect.y + rect.h
+  );
 }
 
 function drawGameHud(ctx, game, label) {
   drawText(ctx, label, 28, 72, 18, "#91a4b8");
   drawText(ctx, `Score ${Math.floor(game.score)}`, 28, 102, 28);
-  
+
   // Draw Level Indicator next to Score
   drawText(ctx, `Lvl ${game.level ?? 1}`, 220, 102, 24, "#67ffb4");
 
   if (game.levelUpTimer > 0 && !game.over) {
     // Show a bold Level Up text flashing in the center of the game screen
-    drawText(ctx, `LEVEL UP! LEVEL ${game.level}`, WIDTH / 2, HEIGHT / 2 - 40, 36, "#67ffb4", "center");
+    drawText(
+      ctx,
+      `LEVEL UP! LEVEL ${game.level}`,
+      WIDTH / 2,
+      HEIGHT / 2 - 40,
+      36,
+      "#67ffb4",
+      "center",
+    );
   } else if (game.message && !game.over) {
     drawText(ctx, game.message, WIDTH / 2, 102, 20, "#ffd166", "center");
   }
@@ -139,12 +156,15 @@ function drawGameHud(ctx, game, label) {
   if (game.over) {
     ctx.fillStyle = "rgba(7,10,18,0.72)";
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    
-    const isWin = game.message === "LEVEL COMPLETE!" || game.message === "RACE COMPLETE!" || game.message === "VICTORY!";
+
+    const isWin =
+      game.message === "LEVEL COMPLETE!" ||
+      game.message === "RACE COMPLETE!" ||
+      game.message === "VICTORY!";
     const title = isWin ? "Victory!" : "Game Over";
     const subtitle = isWin ? "Press R or Space to play again" : "Press R or Space to restart";
     const titleColor = isWin ? "#67ffb4" : "#eef6ff";
-    
+
     drawText(ctx, title, WIDTH / 2, HEIGHT / 2 - 24, 42, titleColor, "center");
     drawText(ctx, subtitle, WIDTH / 2, HEIGHT / 2 + 24, 20, "#91a4b8", "center");
     if (game.message) {
@@ -163,7 +183,7 @@ function makeFlappy(gamePackage) {
   const pipes = Array.from({ length: 4 }, (_, index) => ({
     x: WIDTH + index * 250,
     gapY: randomBetween(155, 380),
-    passed: false
+    passed: false,
   }));
 
   function reset() {
@@ -229,7 +249,9 @@ function makeFlappy(gamePackage) {
           pipe.passed = true;
         }
         const hitX = bird.x + bird.r > pipe.x && bird.x - bird.r < pipe.x + 58;
-        const hitY = bird.y - bird.r < pipe.gapY - currentGap / 2 || bird.y + bird.r > pipe.gapY + currentGap / 2;
+        const hitY =
+          bird.y - bird.r < pipe.gapY - currentGap / 2 ||
+          bird.y + bird.r > pipe.gapY + currentGap / 2;
         if (hitX && hitY) game.over = true;
       });
 
@@ -238,7 +260,7 @@ function makeFlappy(gamePackage) {
     draw(ctx) {
       drawBackground(ctx, game.colors);
       const currentGap = gap * (1 - (game.level - 1) * 0.12);
-      pipes.forEach(pipe => {
+      pipes.forEach((pipe) => {
         ctx.fillStyle = game.colors[1];
         ctx.fillRect(pipe.x, 112, 58, pipe.gapY - currentGap / 2 - 112);
         ctx.fillRect(pipe.x, pipe.gapY + currentGap / 2, 58, HEIGHT - pipe.gapY);
@@ -248,7 +270,7 @@ function makeFlappy(gamePackage) {
       ctx.arc(bird.x, bird.y, bird.r, 0, Math.PI * 2);
       ctx.fill();
       drawGameHud(ctx, game, "Flappy: tap Space to jump through gates");
-    }
+    },
   };
 }
 
@@ -257,8 +279,16 @@ function makeRunner(gamePackage) {
   const lanes = game.tuning.lanes ?? 3;
   const laneYs = Array.from({ length: lanes }, (_, index) => 210 + index * 70);
   const runner = { x: 150, lane: Math.floor(lanes / 2), y: 0, jump: 0, vy: 0, lives: 3 };
-  const obstacles = Array.from({ length: 4 }, (_, index) => ({ x: WIDTH + index * 230, lane: index % lanes, hit: false }));
-  const coins = Array.from({ length: 5 }, (_, index) => ({ x: WIDTH + index * 180 + 100, lane: (index + 1) % lanes, taken: false }));
+  const obstacles = Array.from({ length: 4 }, (_, index) => ({
+    x: WIDTH + index * 230,
+    lane: index % lanes,
+    hit: false,
+  }));
+  const coins = Array.from({ length: 5 }, (_, index) => ({
+    x: WIDTH + index * 180 + 100,
+    lane: (index + 1) % lanes,
+    taken: false,
+  }));
   let laneCooldown = 0;
 
   function reset() {
@@ -327,7 +357,11 @@ function makeRunner(gamePackage) {
           obstacle.lane = (Math.floor(performance.now() / 1500) + index) % lanes;
         }
 
-        const hit = Math.abs(obstacle.x - runner.x) < 42 && obstacle.lane === runner.lane && runner.jump > -42 && !obstacle.hit;
+        const hit =
+          Math.abs(obstacle.x - runner.x) < 42 &&
+          obstacle.lane === runner.lane &&
+          runner.jump > -42 &&
+          !obstacle.hit;
         if (hit) {
           obstacle.hit = true;
           runner.lives -= 1;
@@ -335,7 +369,7 @@ function makeRunner(gamePackage) {
           if (runner.lives <= 0) game.over = true;
         }
       });
-      coins.forEach(coin => {
+      coins.forEach((coin) => {
         coin.x -= currentSpeed * dt;
         if (coin.x < -40) recycle(coin, 280);
         if (!coin.taken && Math.abs(coin.x - runner.x) < 42 && coin.lane === runner.lane) {
@@ -347,7 +381,7 @@ function makeRunner(gamePackage) {
     },
     draw(ctx) {
       drawBackground(ctx, game.colors);
-      laneYs.forEach(y => {
+      laneYs.forEach((y) => {
         ctx.strokeStyle = "rgba(255,255,255,0.2)";
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -355,14 +389,14 @@ function makeRunner(gamePackage) {
         ctx.lineTo(WIDTH - 70, y + 24);
         ctx.stroke();
       });
-      coins.forEach(coin => {
+      coins.forEach((coin) => {
         if (coin.taken) return;
         ctx.fillStyle = game.colors[2];
         ctx.beginPath();
         ctx.arc(coin.x, laneYs[coin.lane], 12, 0, Math.PI * 2);
         ctx.fill();
       });
-      obstacles.forEach(obstacle => {
+      obstacles.forEach((obstacle) => {
         ctx.fillStyle = obstacle.hit ? "#ff4d6d66" : game.colors[1];
         ctx.fillRect(obstacle.x - 18, laneYs[obstacle.lane] - 32, 36, 58);
       });
@@ -370,7 +404,7 @@ function makeRunner(gamePackage) {
       ctx.fillRect(runner.x - 18, runner.y - 42, 36, 54);
       drawText(ctx, `Lives ${runner.lives}`, WIDTH - 130, 62, 22);
       drawGameHud(ctx, game, "Runner: Up/Down change lane, Space jumps");
-    }
+    },
   };
 }
 
@@ -380,7 +414,7 @@ function makeClicker(gamePackage) {
   const buttons = [
     { label: "Click +", cost: 25, level: 0, rect: { x: 610, y: 170, w: 220, h: 54 } },
     { label: "Auto", cost: 75, level: 0, rect: { x: 610, y: 245, w: 220, h: 54 } },
-    { label: "Factory", cost: 180, level: 0, rect: { x: 610, y: 320, w: 220, h: 54 } }
+    { label: "Factory", cost: 180, level: 0, rect: { x: 610, y: 320, w: 220, h: 54 } },
   ];
   let pulse = 0;
 
@@ -398,7 +432,7 @@ function makeClicker(gamePackage) {
       pulse = Math.max(0, pulse - dt * 4);
       if (input.actionPressed || input.pointer.pressed) {
         const point = input.pointer;
-        const button = buttons.find(item => contains(item.rect, point));
+        const button = buttons.find((item) => contains(item.rect, point));
         if (button) buy(button);
         else {
           game.score += clickValue + buttons[0].level;
@@ -413,9 +447,17 @@ function makeClicker(gamePackage) {
       ctx.arc(310, 275, 90 + pulse * 14, 0, Math.PI * 2);
       ctx.fill();
       drawText(ctx, "TAP", 310, 275, 28, "#061018", "center");
-      buttons.forEach(button => drawButton(ctx, button.rect, `${button.label} L${button.level} - ${button.cost}`, game.score >= button.cost, game.colors));
+      buttons.forEach((button) =>
+        drawButton(
+          ctx,
+          button.rect,
+          `${button.label} L${button.level} - ${button.cost}`,
+          game.score >= button.cost,
+          game.colors,
+        ),
+      );
       drawGameHud(ctx, game, "Clicker: click token, buy upgrades, earn passively");
-    }
+    },
   };
 }
 
@@ -424,7 +466,9 @@ function makeMatch3(gamePackage) {
   const size = Math.min(game.tuning.grid ?? 7, 8);
   const colorCount = Math.min(game.tuning.colors ?? 5, 6);
   const palette = [...game.colors, "#ffffff", "#67ffb4", "#ff4d6d"].slice(0, colorCount);
-  const board = Array.from({ length: size }, () => Array.from({ length: size }, () => Math.floor(Math.random() * colorCount)));
+  const board = Array.from({ length: size }, () =>
+    Array.from({ length: size }, () => Math.floor(Math.random() * colorCount)),
+  );
   const cell = 46;
   const origin = { x: WIDTH / 2 - (size * cell) / 2, y: 130 };
   let cursor = { row: 0, col: 0 };
@@ -445,7 +489,8 @@ function makeMatch3(gamePackage) {
       for (let col = 1; col <= size; col += 1) {
         if (col < size && board[row][col] === board[row][col - 1]) run += 1;
         else {
-          if (run >= 3) for (let index = col - run; index < col; index += 1) matches.add(`${row},${index}`);
+          if (run >= 3)
+            for (let index = col - run; index < col; index += 1) matches.add(`${row},${index}`);
           run = 1;
         }
       }
@@ -455,7 +500,8 @@ function makeMatch3(gamePackage) {
       for (let row = 1; row <= size; row += 1) {
         if (row < size && board[row][col] === board[row - 1][col]) run += 1;
         else {
-          if (run >= 3) for (let index = row - run; index < row; index += 1) matches.add(`${index},${col}`);
+          if (run >= 3)
+            for (let index = row - run; index < row; index += 1) matches.add(`${index},${col}`);
           run = 1;
         }
       }
@@ -467,12 +513,12 @@ function makeMatch3(gamePackage) {
     let matches = findMatches();
     while (matches.size) {
       game.score += matches.size * 10;
-      matches.forEach(key => {
+      matches.forEach((key) => {
         const [row, col] = key.split(",").map(Number);
         board[row][col] = null;
       });
       for (let col = 0; col < size; col += 1) {
-        const column = board.map(row => row[col]).filter(value => value !== null);
+        const column = board.map((row) => row[col]).filter((value) => value !== null);
         while (column.length < size) column.unshift(Math.floor(Math.random() * colorCount));
         for (let row = 0; row < size; row += 1) board[row][col] = column[row];
       }
@@ -526,24 +572,31 @@ function makeMatch3(gamePackage) {
       [selected, cursor].filter(Boolean).forEach((tile, index) => {
         ctx.strokeStyle = index === 0 ? "#ffd166" : "#ffffff";
         ctx.lineWidth = 4;
-        ctx.strokeRect(origin.x + tile.col * cell + 3, origin.y + tile.row * cell + 3, cell - 6, cell - 6);
+        ctx.strokeRect(
+          origin.x + tile.col * cell + 3,
+          origin.y + tile.row * cell + 3,
+          cell - 6,
+          cell - 6,
+        );
       });
       drawGameHud(ctx, game, "Match-3: select adjacent tiles to swap");
-    }
+    },
   };
 }
 
 function makeMemory(gamePackage) {
   const game = makeGamePackage(gamePackage);
   const pairs = Math.min(game.tuning.pairs ?? 8, 10);
-  const values = Array.from({ length: pairs }, (_, index) => index).flatMap(value => [value, value]).sort(() => Math.random() - 0.5);
+  const values = Array.from({ length: pairs }, (_, index) => index)
+    .flatMap((value) => [value, value])
+    .sort(() => Math.random() - 0.5);
   const cols = 5;
   const cards = values.map((value, index) => ({
     value,
     x: 250 + (index % cols) * 92,
     y: 135 + Math.floor(index / cols) * 92,
     revealed: false,
-    matched: false
+    matched: false,
   }));
   let cursor = 0;
   let open = [];
@@ -556,7 +609,7 @@ function makeMemory(gamePackage) {
     open.push(card);
     if (open.length === 2) {
       if (open[0].value === open[1].value) {
-        open.forEach(item => {
+        open.forEach((item) => {
           item.matched = true;
         });
         game.score += 50;
@@ -572,7 +625,7 @@ function makeMemory(gamePackage) {
       if (wait > 0) {
         wait -= dt;
         if (wait <= 0) {
-          open.forEach(card => {
+          open.forEach((card) => {
             card.revealed = false;
           });
           open = [];
@@ -583,20 +636,27 @@ function makeMemory(gamePackage) {
         cursor = clamp(next, 0, cards.length - 1);
       }
       if (input.pointer.pressed) {
-        const clicked = cards.findIndex(card => contains({ x: card.x, y: card.y, w: 70, h: 70 }, input.pointer));
+        const clicked = cards.findIndex((card) =>
+          contains({ x: card.x, y: card.y, w: 70, h: 70 }, input.pointer),
+        );
         flip(clicked);
       }
       if (input.actionPressed) flip(cursor);
-      if (cards.every(card => card.matched)) game.message = "Board clear";
+      if (cards.every((card) => card.matched)) game.message = "Board clear";
     },
     draw(ctx) {
       drawBackground(ctx, game.colors);
       cards.forEach((card, index) => {
-        ctx.fillStyle = card.matched ? `${game.colors[1]}66` : card.revealed ? game.colors[2] : game.colors[0];
+        ctx.fillStyle = card.matched
+          ? `${game.colors[1]}66`
+          : card.revealed
+            ? game.colors[2]
+            : game.colors[0];
         ctx.beginPath();
         ctx.roundRect(card.x, card.y, 70, 70, 8);
         ctx.fill();
-        if (card.revealed || card.matched) drawText(ctx, String(card.value + 1), card.x + 35, card.y + 35, 24, "#061018", "center");
+        if (card.revealed || card.matched)
+          drawText(ctx, String(card.value + 1), card.x + 35, card.y + 35, 24, "#061018", "center");
         if (index === cursor) {
           ctx.strokeStyle = "#ffffff";
           ctx.lineWidth = 3;
@@ -604,13 +664,18 @@ function makeMemory(gamePackage) {
         }
       });
       drawGameHud(ctx, game, "Memory: flip cards and find pairs");
-    }
+    },
   };
 }
 
 function makeQuiz(gamePackage) {
   const game = makeGamePackage(gamePackage);
-  const buttons = [0, 1, 2, 3].map(index => ({ x: 180 + (index % 2) * 310, y: 270 + Math.floor(index / 2) * 80, w: 270, h: 56 }));
+  const buttons = [0, 1, 2, 3].map((index) => ({
+    x: 180 + (index % 2) * 310,
+    y: 270 + Math.floor(index / 2) * 80,
+    w: 270,
+    h: 56,
+  }));
   let question;
   let timer = game.tuning.seconds ?? 16;
   let streak = 0;
@@ -619,7 +684,9 @@ function makeQuiz(gamePackage) {
     const a = Math.floor(randomBetween(2, 13));
     const b = Math.floor(randomBetween(2, 13));
     const answer = a + b;
-    const options = [answer, answer + 1, answer - 1, answer + Math.floor(randomBetween(3, 8))].sort(() => Math.random() - 0.5);
+    const options = [answer, answer + 1, answer - 1, answer + Math.floor(randomBetween(3, 8))].sort(
+      () => Math.random() - 0.5,
+    );
     question = { text: `${a} + ${b} = ?`, options, answer };
     timer = game.tuning.seconds ?? 16;
   }
@@ -649,15 +716,18 @@ function makeQuiz(gamePackage) {
         nextQuestion();
       }
       if (input.numberPressed) answer(input.numberPressed - 1);
-      if (input.pointer.pressed) answer(buttons.findIndex(button => contains(button, input.pointer)));
+      if (input.pointer.pressed)
+        answer(buttons.findIndex((button) => contains(button, input.pointer)));
     },
     draw(ctx) {
       drawBackground(ctx, game.colors);
       drawText(ctx, question.text, WIDTH / 2, 180, 48, "#eef6ff", "center");
-      buttons.forEach((button, index) => drawButton(ctx, button, `${index + 1}. ${question.options[index]}`, false, game.colors));
+      buttons.forEach((button, index) =>
+        drawButton(ctx, button, `${index + 1}. ${question.options[index]}`, false, game.colors),
+      );
       drawText(ctx, `Time ${Math.ceil(timer)}`, WIDTH - 120, 62, 22, "#ffd166");
       drawGameHud(ctx, game, "Quiz: click answers or press 1-4");
-    }
+    },
   };
 }
 
@@ -670,7 +740,13 @@ function makeDrawing(gamePackage) {
   const brush = { x: area.x + area.w / 2, y: area.y + area.h / 2 };
   let color = game.colors[0];
   let current = null;
-  const palette = game.colors.map((item, index) => ({ x: 205 + index * 58, y: 470, w: 42, h: 42, color: item }));
+  const palette = game.colors.map((item, index) => ({
+    x: 205 + index * 58,
+    y: 470,
+    w: 42,
+    h: 42,
+    color: item,
+  }));
 
   function addBrushPoint() {
     if (!current) {
@@ -688,7 +764,7 @@ function makeDrawing(gamePackage) {
         game.score = 0;
       }
       if (input.pointer.pressed) {
-        const swatch = palette.find(item => contains(item, input.pointer));
+        const swatch = palette.find((item) => contains(item, input.pointer));
         if (swatch) {
           color = swatch.color;
           return;
@@ -732,7 +808,7 @@ function makeDrawing(gamePackage) {
         ctx.lineTo(area.x + area.w, y);
         ctx.stroke();
       }
-      strokes.forEach(stroke => {
+      strokes.forEach((stroke) => {
         ctx.strokeStyle = stroke.color;
         ctx.lineWidth = 7;
         ctx.lineCap = "round";
@@ -744,10 +820,26 @@ function makeDrawing(gamePackage) {
         ctx.stroke();
       });
       if (strokes.length === 0) {
-        drawText(ctx, "Draw here", area.x + area.w / 2, area.y + area.h / 2 - 12, 32, "#0b111b", "center");
-        drawText(ctx, `Prompt: ${prompt.slice(0, 44)}`, area.x + area.w / 2, area.y + area.h / 2 + 28, 18, "#4c5b6c", "center");
+        drawText(
+          ctx,
+          "Draw here",
+          area.x + area.w / 2,
+          area.y + area.h / 2 - 12,
+          32,
+          "#0b111b",
+          "center",
+        );
+        drawText(
+          ctx,
+          `Prompt: ${prompt.slice(0, 44)}`,
+          area.x + area.w / 2,
+          area.y + area.h / 2 + 28,
+          18,
+          "#4c5b6c",
+          "center",
+        );
       }
-      palette.forEach(item => {
+      palette.forEach((item) => {
         ctx.fillStyle = item.color;
         ctx.fillRect(item.x, item.y, item.w, item.h);
         if (item.color === color) {
@@ -763,7 +855,7 @@ function makeDrawing(gamePackage) {
       ctx.arc(brush.x, brush.y, 10, 0, Math.PI * 2);
       ctx.stroke();
       drawGameHud(ctx, game, "Drawing: drag or hold Space and steer brush");
-    }
+    },
   };
 }
 
@@ -775,7 +867,7 @@ function makeRacing(gamePackage) {
     y: -index * 160,
     w: 44,
     h: 72,
-    swayDir: Math.random() > 0.5 ? 1 : -1
+    swayDir: Math.random() > 0.5 ? 1 : -1,
   }));
 
   function reset() {
@@ -813,9 +905,13 @@ function makeRacing(gamePackage) {
         game.levelUpTimer = 2.0;
       }
 
-      car.speed = clamp(car.speed + (input.action ? 420 : -180) * dt, 120, 460 + (game.level - 1) * 60);
+      car.speed = clamp(
+        car.speed + (input.action ? 420 : -180) * dt,
+        120,
+        460 + (game.level - 1) * 60,
+      );
       car.x = clamp(car.x + input.x * 360 * dt, 225, 735);
-      traffic.forEach(item => {
+      traffic.forEach((item) => {
         const trafficBaseSpeed = car.speed - 100 * game.level;
         item.y += trafficBaseSpeed * dt;
 
@@ -852,14 +948,14 @@ function makeRacing(gamePackage) {
       ctx.lineTo(490, 530);
       ctx.stroke();
       ctx.setLineDash([]);
-      traffic.forEach(item => {
+      traffic.forEach((item) => {
         ctx.fillStyle = game.colors[1];
         ctx.fillRect(item.x - item.w / 2, item.y - item.h / 2, item.w, item.h);
       });
       ctx.fillStyle = game.colors[2];
       ctx.fillRect(car.x - 24, car.y - 42, 48, 84);
       drawGameHud(ctx, game, "Racing: steer, hold Space/Button A for throttle");
-    }
+    },
   };
 }
 
@@ -875,17 +971,20 @@ function makeIdle(gamePackage) {
     value: 2 + index * 5,
     cost: Math.round(35 * (index + 1) ** 1.7),
     x: 150 + (index % 4) * 175,
-    y: 185 + Math.floor(index / 4) * 130
+    y: 185 + Math.floor(index / 4) * 130,
   }));
   const upgradeButtons = nodes.map((node, index) => ({
     node,
-    rect: { x: 70 + index * 126, y: 462, w: 112, h: 46 }
+    rect: { x: 70 + index * 126, y: 462, w: 112, h: 46 },
   }));
   let selected = 0;
   let selectCooldown = 0;
 
   function incomePerSecond() {
-    return nodes.reduce((total, node) => (node.unlocked ? total + node.level * node.value * node.rate : total), 0);
+    return nodes.reduce(
+      (total, node) => (node.unlocked ? total + node.level * node.value * node.rate : total),
+      0,
+    );
   }
 
   function buy(node) {
@@ -915,7 +1014,7 @@ function makeIdle(gamePackage) {
       }
       if (input.actionPressed) buy(nodes[selected]);
       if (input.pointer.pressed) {
-        const button = upgradeButtons.find(item => contains(item.rect, input.pointer));
+        const button = upgradeButtons.find((item) => contains(item.rect, input.pointer));
         if (button) buy(button.node);
       }
       nodes.forEach((node, index) => {
@@ -936,7 +1035,11 @@ function makeIdle(gamePackage) {
       drawText(ctx, `Rate ${incomePerSecond().toFixed(1)}/s`, WIDTH - 142, 102, 22, "#ffd166");
       nodes.forEach((node, index) => {
         const active = index === selected;
-        ctx.strokeStyle = active ? "#ffffff" : node.unlocked ? game.colors[index % game.colors.length] : "rgba(255,255,255,0.2)";
+        ctx.strokeStyle = active
+          ? "#ffffff"
+          : node.unlocked
+            ? game.colors[index % game.colors.length]
+            : "rgba(255,255,255,0.2)";
         ctx.lineWidth = active ? 4 : 2;
         ctx.fillStyle = node.unlocked ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.025)";
         ctx.beginPath();
@@ -951,11 +1054,25 @@ function makeIdle(gamePackage) {
           ctx.strokeStyle = "#061018";
           ctx.lineWidth = 6;
           ctx.beginPath();
-          ctx.arc(node.x, node.y - 12, 27, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * node.progress);
+          ctx.arc(
+            node.x,
+            node.y - 12,
+            27,
+            -Math.PI / 2,
+            -Math.PI / 2 + Math.PI * 2 * node.progress,
+          );
           ctx.stroke();
         }
         drawText(ctx, node.label, node.x, node.y + 24, 15, "#eef6ff", "center");
-        drawText(ctx, node.unlocked ? `L${node.level}` : "LOCK", node.x, node.y + 43, 13, "#91a4b8", "center");
+        drawText(
+          ctx,
+          node.unlocked ? `L${node.level}` : "LOCK",
+          node.x,
+          node.y + 43,
+          13,
+          "#91a4b8",
+          "center",
+        );
         if (index > 0) {
           ctx.strokeStyle = `${game.colors[1]}66`;
           ctx.lineWidth = 3;
@@ -966,24 +1083,36 @@ function makeIdle(gamePackage) {
         }
       });
       upgradeButtons.forEach((button, index) => {
-        const label = button.node.unlocked ? `${button.node.label} ${button.node.cost}` : `Unlock ${button.node.cost}`;
-        drawButton(ctx, button.rect, label, game.score >= button.node.cost || index === 0, game.colors);
+        const label = button.node.unlocked
+          ? `${button.node.label} ${button.node.cost}`
+          : `Unlock ${button.node.cost}`;
+        drawButton(
+          ctx,
+          button.rect,
+          label,
+          game.score >= button.node.cost || index === 0,
+          game.colors,
+        );
       });
       drawGameHud(ctx, game, "Idle Factory: automate nodes, upgrade lines, unlock chains");
-    }
+    },
   };
 }
 
 function makeMinigames(gamePackage) {
   const game = makeGamePackage(gamePackage);
   const player = { x: WIDTH / 2 };
-  const targets = Array.from({ length: 5 }, (_, index) => ({ x: randomBetween(120, 840), y: -index * 90, good: index % 3 !== 0 }));
+  const targets = Array.from({ length: 5 }, (_, index) => ({
+    x: randomBetween(120, 840),
+    y: -index * 90,
+    good: index % 3 !== 0,
+  }));
   let lives = game.tuning.lives ?? 4;
 
   return {
     update(dt, input) {
       player.x = clamp(player.x + input.x * 420 * dt, 70, WIDTH - 70);
-      targets.forEach(target => {
+      targets.forEach((target) => {
         target.y += 250 * dt;
         if (target.y > HEIGHT + 30) {
           target.y = randomBetween(-180, -40);
@@ -1007,7 +1136,7 @@ function makeMinigames(gamePackage) {
     },
     draw(ctx) {
       drawBackground(ctx, game.colors);
-      targets.forEach(target => {
+      targets.forEach((target) => {
         ctx.fillStyle = target.good ? game.colors[0] : "#ff4d6d";
         ctx.beginPath();
         ctx.arc(target.x, target.y, 20, 0, Math.PI * 2);
@@ -1017,13 +1146,19 @@ function makeMinigames(gamePackage) {
       ctx.fillRect(player.x - 52, 445, 104, 18);
       drawText(ctx, `Lives ${lives}`, WIDTH - 130, 62, 22);
       drawGameHud(ctx, game, "Mini-game: catch blue targets, avoid red");
-    }
+    },
   };
 }
 
 function makeArenaBattle(gamePackage) {
   const game = makeGamePackage(gamePackage);
-  const player = { x: WIDTH / 2, y: HEIGHT / 2 + 50, health: game.tuning.health ?? 4, cooldown: 0, invuln: 0 };
+  const player = {
+    x: WIDTH / 2,
+    y: HEIGHT / 2 + 50,
+    health: game.tuning.health ?? 4,
+    cooldown: 0,
+    invuln: 0,
+  };
   const bullets = [];
   const enemyBullets = []; // Added enemy bullets for level 3
   const explosions = [];
@@ -1032,7 +1167,7 @@ function makeArenaBattle(gamePackage) {
     x: 120 + (index % 4) * 210,
     y: 150 + Math.floor(index / 4) * 70,
     health: 2,
-    shootCooldown: randomBetween(1, 3)
+    shootCooldown: randomBetween(1, 3),
   }));
 
   function spawn(enemy) {
@@ -1049,7 +1184,12 @@ function makeArenaBattle(gamePackage) {
       return !closest || distance < closest.distance ? { enemy, distance } : closest;
     }, null)?.enemy;
     const angle = target ? Math.atan2(target.y - player.y, target.x - player.x) : -Math.PI / 2;
-    bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 560, vy: Math.sin(angle) * 560 });
+    bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: Math.cos(angle) * 560,
+      vy: Math.sin(angle) * 560,
+    });
     player.cooldown = game.tuning.fireRate ?? 0.34;
   }
 
@@ -1094,17 +1234,18 @@ function makeArenaBattle(gamePackage) {
       player.invuln -= dt;
       if (input.action || input.pointer.pressed) shoot();
 
-      bullets.forEach(bullet => {
+      bullets.forEach((bullet) => {
         bullet.x += bullet.vx * dt;
         bullet.y += bullet.vy * dt;
       });
       for (let index = bullets.length - 1; index >= 0; index -= 1) {
         const bullet = bullets[index];
-        if (bullet.x < -20 || bullet.x > WIDTH + 20 || bullet.y < 90 || bullet.y > HEIGHT + 20) bullets.splice(index, 1);
+        if (bullet.x < -20 || bullet.x > WIDTH + 20 || bullet.y < 90 || bullet.y > HEIGHT + 20)
+          bullets.splice(index, 1);
       }
 
       // Update enemy bullets for Level 3
-      enemyBullets.forEach(bullet => {
+      enemyBullets.forEach((bullet) => {
         bullet.x += bullet.vx * dt;
         bullet.y += bullet.vy * dt;
         if (Math.hypot(player.x - bullet.x, player.y - bullet.y) < 20 && player.invuln <= 0) {
@@ -1116,10 +1257,11 @@ function makeArenaBattle(gamePackage) {
       });
       for (let index = enemyBullets.length - 1; index >= 0; index -= 1) {
         const bullet = enemyBullets[index];
-        if (bullet.x < -20 || bullet.x > WIDTH + 20 || bullet.y < 90 || bullet.y > HEIGHT + 20) enemyBullets.splice(index, 1);
+        if (bullet.x < -20 || bullet.x > WIDTH + 20 || bullet.y < 90 || bullet.y > HEIGHT + 20)
+          enemyBullets.splice(index, 1);
       }
 
-      enemies.forEach(enemy => {
+      enemies.forEach((enemy) => {
         const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
         const currentSpeed = (game.tuning.speed ?? 120) * (1 + (game.level - 1) * 0.3);
         enemy.x += Math.cos(angle) * currentSpeed * dt;
@@ -1133,7 +1275,7 @@ function makeArenaBattle(gamePackage) {
               x: enemy.x,
               y: enemy.y,
               vx: Math.cos(angle) * 320,
-              vy: Math.sin(angle) * 320
+              vy: Math.sin(angle) * 320,
             });
             enemy.shootCooldown = randomBetween(2, 4);
           }
@@ -1157,7 +1299,7 @@ function makeArenaBattle(gamePackage) {
           }
         });
       });
-      explosions.forEach(explosion => {
+      explosions.forEach((explosion) => {
         explosion.t -= dt;
       });
       for (let index = explosions.length - 1; index >= 0; index -= 1) {
@@ -1168,14 +1310,14 @@ function makeArenaBattle(gamePackage) {
       drawBackground(ctx, game.colors);
       ctx.strokeStyle = `${game.colors[2]}44`;
       ctx.strokeRect(90, 118, WIDTH - 180, HEIGHT - 170);
-      enemies.forEach(enemy => {
+      enemies.forEach((enemy) => {
         ctx.fillStyle = game.colors[1];
         ctx.fillRect(enemy.x - 20, enemy.y - 20, 40, 40);
         ctx.fillStyle = "#070a12";
         ctx.fillRect(enemy.x - 8, enemy.y - 8, 6, 6);
         ctx.fillRect(enemy.x + 4, enemy.y - 8, 6, 6);
       });
-      bullets.forEach(bullet => {
+      bullets.forEach((bullet) => {
         ctx.fillStyle = game.colors[2];
         ctx.beginPath();
         ctx.arc(bullet.x, bullet.y, 5, 0, Math.PI * 2);
@@ -1183,12 +1325,12 @@ function makeArenaBattle(gamePackage) {
       });
       // Draw enemy bullets for Level 3
       ctx.fillStyle = "#ff4d6d";
-      enemyBullets.forEach(bullet => {
+      enemyBullets.forEach((bullet) => {
         ctx.beginPath();
         ctx.arc(bullet.x, bullet.y, 5, 0, Math.PI * 2);
         ctx.fill();
       });
-      explosions.forEach(explosion => {
+      explosions.forEach((explosion) => {
         ctx.strokeStyle = game.colors[2];
         ctx.lineWidth = 4;
         ctx.beginPath();
@@ -1204,17 +1346,28 @@ function makeArenaBattle(gamePackage) {
       ctx.fill();
       drawText(ctx, `HP ${player.health}`, WIDTH - 110, 102, 22, "#ffd166");
       drawGameHud(ctx, game, "AI Arena: move, hold Space/click to fire at robots");
-    }
+    },
   };
 }
 
 function makeCyberRunner(gamePackage) {
   const game = makeGamePackage(gamePackage);
   const lanes = game.tuning.lanes ?? 3;
-  const laneXs = Array.from({ length: lanes }, (_, index) => 270 + index * (420 / Math.max(1, lanes - 1)));
+  const laneXs = Array.from(
+    { length: lanes },
+    (_, index) => 270 + index * (420 / Math.max(1, lanes - 1)),
+  );
   const vehicle = { lane: Math.floor(lanes / 2), x: laneXs[Math.floor(lanes / 2)], lives: 3 };
-  const traffic = Array.from({ length: game.tuning.traffic ?? 6 }, (_, index) => ({ lane: index % lanes, y: -index * 105, hit: false }));
-  const shards = Array.from({ length: 6 }, (_, index) => ({ lane: (index + 1) % lanes, y: -index * 120 - 60, taken: false }));
+  const traffic = Array.from({ length: game.tuning.traffic ?? 6 }, (_, index) => ({
+    lane: index % lanes,
+    y: -index * 105,
+    hit: false,
+  }));
+  const shards = Array.from({ length: 6 }, (_, index) => ({
+    lane: (index + 1) % lanes,
+    y: -index * 120 - 60,
+    taken: false,
+  }));
   let laneCooldown = 0;
 
   function recycle(item) {
@@ -1245,7 +1398,7 @@ function makeCyberRunner(gamePackage) {
       }
       vehicle.x += (laneXs[vehicle.lane] - vehicle.x) * 12 * dt;
       const speed = (game.tuning.speed ?? 330) * (input.action ? (game.tuning.boost ?? 1.55) : 1);
-      traffic.forEach(car => {
+      traffic.forEach((car) => {
         car.y += speed * dt;
         if (car.y > HEIGHT + 70) recycle(car);
         if (!car.hit && car.lane === vehicle.lane && Math.abs(car.y - 428) < 54) {
@@ -1255,7 +1408,7 @@ function makeCyberRunner(gamePackage) {
           if (vehicle.lives <= 0) game.over = true;
         }
       });
-      shards.forEach(shard => {
+      shards.forEach((shard) => {
         shard.y += speed * dt;
         if (shard.y > HEIGHT + 40) recycle(shard);
         if (!shard.taken && shard.lane === vehicle.lane && Math.abs(shard.y - 428) < 52) {
@@ -1269,7 +1422,7 @@ function makeCyberRunner(gamePackage) {
       drawBackground(ctx, game.colors);
       ctx.fillStyle = "#101725";
       ctx.fillRect(220, 110, 520, 410);
-      laneXs.forEach(x => {
+      laneXs.forEach((x) => {
         ctx.strokeStyle = `${game.colors[0]}66`;
         ctx.setLineDash([20, 22]);
         ctx.lineWidth = 4;
@@ -1279,11 +1432,11 @@ function makeCyberRunner(gamePackage) {
         ctx.stroke();
       });
       ctx.setLineDash([]);
-      traffic.forEach(car => {
+      traffic.forEach((car) => {
         ctx.fillStyle = car.hit ? "#ff4d6d66" : game.colors[1];
         ctx.fillRect(laneXs[car.lane] - 24, car.y - 34, 48, 68);
       });
-      shards.forEach(shard => {
+      shards.forEach((shard) => {
         if (shard.taken) return;
         ctx.fillStyle = game.colors[2];
         ctx.beginPath();
@@ -1300,7 +1453,7 @@ function makeCyberRunner(gamePackage) {
       ctx.fill();
       drawText(ctx, `Lives ${vehicle.lives}`, WIDTH - 130, 102, 22);
       drawGameHud(ctx, game, "Cyber Runner: switch lanes, hold Space to boost");
-    }
+    },
   };
 }
 
@@ -1312,9 +1465,15 @@ function makeSpaceShooter(gamePackage) {
   const enemies = Array.from({ length: game.tuning.enemies ?? 6 }, (_, index) => ({
     x: 170 + (index % 6) * 120,
     y: 150 + Math.floor(index / 6) * 56,
-    alive: true
+    alive: true,
   }));
-  const boss = { x: WIDTH / 2, y: 100, health: game.tuning.bossHealth ?? 52, max: game.tuning.bossHealth ?? 52, cooldown: 0 };
+  const boss = {
+    x: WIDTH / 2,
+    y: 100,
+    health: game.tuning.bossHealth ?? 52,
+    max: game.tuning.bossHealth ?? 52,
+    cooldown: 0,
+  };
 
   function reset() {
     game.score = 0;
@@ -1367,16 +1526,17 @@ function makeSpaceShooter(gamePackage) {
       boss.cooldown -= dt;
       if (input.action || input.pointer.pressed) shoot();
 
-      bullets.forEach(bullet => {
+      bullets.forEach((bullet) => {
         bullet.y += bullet.vy * dt;
       });
-      enemyBullets.forEach(bullet => {
+      enemyBullets.forEach((bullet) => {
         bullet.y += 270 * (1 + (game.level - 1) * 0.25) * dt;
       });
 
-      enemies.forEach(enemy => {
+      enemies.forEach((enemy) => {
         if (!enemy.alive) return;
-        enemy.x += Math.sin(performance.now() / 500 + enemy.y) * 18 * (1 + (game.level - 1) * 0.3) * dt;
+        enemy.x +=
+          Math.sin(performance.now() / 500 + enemy.y) * 18 * (1 + (game.level - 1) * 0.3) * dt;
         const shootChance = 0.008 * game.level;
         if (Math.random() < shootChance) enemyBullets.push({ x: enemy.x, y: enemy.y + 18 });
         bullets.forEach((bullet, bulletIndex) => {
@@ -1390,7 +1550,7 @@ function makeSpaceShooter(gamePackage) {
 
       if (boss.health > 0) {
         boss.x = WIDTH / 2 + Math.sin(performance.now() / 700) * 210;
-        
+
         // Level 3 Boss: Regenerate shield over time
         if (game.level === 3) {
           boss.health = Math.min(boss.max, boss.health + dt * 0.5);
@@ -1403,10 +1563,13 @@ function makeSpaceShooter(gamePackage) {
               { x: boss.x - 40, y: boss.y + 34 },
               { x: boss.x + 40, y: boss.y + 34 },
               { x: boss.x - 10, y: boss.y + 34 },
-              { x: boss.x + 10, y: boss.y + 34 }
+              { x: boss.x + 10, y: boss.y + 34 },
             );
           } else {
-            enemyBullets.push({ x: boss.x - 40, y: boss.y + 34 }, { x: boss.x + 40, y: boss.y + 34 });
+            enemyBullets.push(
+              { x: boss.x - 40, y: boss.y + 34 },
+              { x: boss.x + 40, y: boss.y + 34 },
+            );
           }
           boss.cooldown = 0.65;
         }
@@ -1428,8 +1591,10 @@ function makeSpaceShooter(gamePackage) {
           if (player.lives <= 0) game.over = true;
         }
       });
-      for (let index = bullets.length - 1; index >= 0; index -= 1) if (bullets[index].y < 70) bullets.splice(index, 1);
-      for (let index = enemyBullets.length - 1; index >= 0; index -= 1) if (enemyBullets[index].y > HEIGHT + 20) enemyBullets.splice(index, 1);
+      for (let index = bullets.length - 1; index >= 0; index -= 1)
+        if (bullets[index].y < 70) bullets.splice(index, 1);
+      for (let index = enemyBullets.length - 1; index >= 0; index -= 1)
+        if (enemyBullets[index].y > HEIGHT + 20) enemyBullets.splice(index, 1);
     },
     draw(ctx) {
       drawBackground(ctx, game.colors);
@@ -1443,7 +1608,7 @@ function makeSpaceShooter(gamePackage) {
         ctx.fillStyle = "#ff4d6d";
         ctx.fillRect(boss.x - 95, boss.y - 46, 190 * (boss.health / boss.max), 8);
       }
-      enemies.forEach(enemy => {
+      enemies.forEach((enemy) => {
         if (!enemy.alive) return;
         ctx.fillStyle = game.colors[1];
         ctx.beginPath();
@@ -1454,9 +1619,9 @@ function makeSpaceShooter(gamePackage) {
         ctx.fill();
       });
       ctx.fillStyle = game.colors[2];
-      bullets.forEach(bullet => ctx.fillRect(bullet.x - 3, bullet.y - 12, 6, 20));
+      bullets.forEach((bullet) => ctx.fillRect(bullet.x - 3, bullet.y - 12, 6, 20));
       ctx.fillStyle = "#ff4d6d";
-      enemyBullets.forEach(bullet => {
+      enemyBullets.forEach((bullet) => {
         ctx.beginPath();
         ctx.arc(bullet.x, bullet.y, 6, 0, Math.PI * 2);
         ctx.fill();
@@ -1470,7 +1635,7 @@ function makeSpaceShooter(gamePackage) {
       ctx.fill();
       drawText(ctx, `Lives ${player.lives}`, WIDTH - 130, 102, 22);
       drawGameHud(ctx, game, "Space Shooter: move and hold Space/click to fire");
-    }
+    },
   };
 }
 
@@ -1483,7 +1648,7 @@ function makeFpsSurvival(gamePackage) {
   let currentAmmo = 30;
   let isReloading = false;
   let reloadTimer = 0;
-  
+
   const zombies = [];
   const crosshair = { x: WIDTH / 2, y: HEIGHT / 2 };
   const muzzleFlashes = [];
@@ -1495,7 +1660,7 @@ function makeFpsSurvival(gamePackage) {
       y: HEIGHT / 2,
       scale: 0.1,
       speed: zombieSpeed * randomBetween(0.8, 1.2),
-      health: 2 * game.level
+      health: 2 * game.level,
     });
   }
 
@@ -1563,7 +1728,7 @@ function makeFpsSurvival(gamePackage) {
         if (currentAmmo > 0 && !isReloading) {
           currentAmmo--;
           muzzleFlashes.push({ x: crosshair.x, y: crosshair.y, duration: 0.05 });
-          
+
           const sortedZombies = [...zombies].sort((a, b) => b.scale - a.scale);
           for (let z of sortedZombies) {
             const zWidth = 80 * z.scale;
@@ -1571,9 +1736,18 @@ function makeFpsSurvival(gamePackage) {
             const zX = z.x;
             const zY = z.y - zHeight / 2;
 
-            if (Math.abs(crosshair.x - zX) < zWidth / 2 && Math.abs(crosshair.y - zY) < zHeight / 2) {
+            if (
+              Math.abs(crosshair.x - zX) < zWidth / 2 &&
+              Math.abs(crosshair.y - zY) < zHeight / 2
+            ) {
               z.health--;
-              splatters.push({ x: crosshair.x, y: crosshair.y, vx: randomBetween(-100, 100), vy: randomBetween(-100, 100), life: 0.3 });
+              splatters.push({
+                x: crosshair.x,
+                y: crosshair.y,
+                vx: randomBetween(-100, 100),
+                vy: randomBetween(-100, 100),
+                life: 0.3,
+              });
               if (z.health <= 0) {
                 game.score += 100 * game.level;
                 zombies.splice(zombies.indexOf(z), 1);
@@ -1598,7 +1772,7 @@ function makeFpsSurvival(gamePackage) {
         const currentSpeed = z.speed * (1 + (game.level - 1) * 0.25);
         z.scale += 0.12 * currentSpeed * dt;
         z.x += Math.sin(performance.now() / 200 + i) * 20 * dt * z.scale;
-        
+
         if (z.scale >= 1.2) {
           health -= 15 * game.level;
           game.message = `HIT! -${15 * game.level} HP`;
@@ -1635,9 +1809,11 @@ function makeFpsSurvival(gamePackage) {
       ctx.strokeStyle = "#1a1f35";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(0, 112); ctx.lineTo(WIDTH / 2, HEIGHT / 2);
+      ctx.moveTo(0, 112);
+      ctx.lineTo(WIDTH / 2, HEIGHT / 2);
       ctx.lineTo(WIDTH, 112);
-      ctx.moveTo(0, HEIGHT); ctx.lineTo(WIDTH / 2, HEIGHT / 2);
+      ctx.moveTo(0, HEIGHT);
+      ctx.lineTo(WIDTH / 2, HEIGHT / 2);
       ctx.lineTo(WIDTH, HEIGHT);
       ctx.stroke();
 
@@ -1648,7 +1824,7 @@ function makeFpsSurvival(gamePackage) {
       ctx.stroke();
 
       const sortedZombies = [...zombies].sort((a, b) => a.scale - b.scale);
-      sortedZombies.forEach(z => {
+      sortedZombies.forEach((z) => {
         const zWidth = 80 * z.scale;
         const zHeight = 150 * z.scale;
         const zX = z.x;
@@ -1677,7 +1853,7 @@ function makeFpsSurvival(gamePackage) {
         ctx.fillRect(zX - zWidth / 2, zY - zHeight - 12, zWidth * (z.health / (2 * game.level)), 6);
       });
 
-      splatters.forEach(s => {
+      splatters.forEach((s) => {
         ctx.fillStyle = "rgba(139, 0, 0, 0.8)";
         ctx.beginPath();
         ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
@@ -1696,7 +1872,7 @@ function makeFpsSurvival(gamePackage) {
       ctx.fillStyle = "#1a1c1e";
       ctx.fillRect(WIDTH / 2 - 15, HEIGHT - 50, 30, 50);
 
-      muzzleFlashes.forEach(f => {
+      muzzleFlashes.forEach((f) => {
         const grad = ctx.createRadialGradient(f.x, f.y, 2, f.x, f.y, 40);
         grad.addColorStop(0, "#ffffff");
         grad.addColorStop(0.2, "#ffd166");
@@ -1732,7 +1908,7 @@ function makeFpsSurvival(gamePackage) {
       }
 
       drawGameHud(ctx, game, "FPS Survival: Aim with Mouse/WASD, click to shoot, R to reload");
-    }
+    },
   };
 }
 
@@ -1750,7 +1926,7 @@ function makeRealisticDriving(gamePackage) {
   for (let i = 0; i < totalSegments; i++) {
     segments.push({
       curve: Math.sin(i / 30) * 2 * (i > 100 ? 1 : 0),
-      y: i * segmentLength
+      y: i * segmentLength,
     });
   }
 
@@ -1760,7 +1936,7 @@ function makeRealisticDriving(gamePackage) {
       x: randomBetween(-0.6, 0.6),
       speed: randomBetween(80, 150),
       width: 0.3,
-      color: game.colors[Math.floor(Math.random() * game.colors.length)]
+      color: game.colors[Math.floor(Math.random() * game.colors.length)],
     });
   }
 
@@ -1791,7 +1967,7 @@ function makeRealisticDriving(gamePackage) {
       }
 
       if (input.pointer.active) {
-        const targetX = ((input.pointer.x / WIDTH) - 0.5) * 2.5;
+        const targetX = (input.pointer.x / WIDTH - 0.5) * 2.5;
         carX += (targetX - carX) * 5 * dt;
       } else {
         carX = clamp(carX + input.x * 2 * dt, -1.2, 1.2);
@@ -1803,11 +1979,11 @@ function makeRealisticDriving(gamePackage) {
       const currentSegment = segments[currentSegmentIndex];
 
       if (currentSegment) {
-        carX -= (currentSegment.curve * 0.05) * (speed / maxSpeed) * dt;
+        carX -= currentSegment.curve * 0.05 * (speed / maxSpeed) * dt;
       }
 
-      traffic.forEach(t => {
-        t.segmentIndex = (t.segmentIndex + (t.speed * dt / segmentLength));
+      traffic.forEach((t) => {
+        t.segmentIndex = t.segmentIndex + (t.speed * dt) / segmentLength;
         if (t.segmentIndex >= totalSegments) {
           t.segmentIndex = 0;
           t.x = randomBetween(-0.7, 0.7);
@@ -1852,23 +2028,26 @@ function makeRealisticDriving(gamePackage) {
       for (let i = maxDrawDistance; i > 0; i--) {
         const segment = segments[(startSeg + i) % totalSegments];
         dCurve += segment.curve;
-        
+
         const z = i * segmentLength - (roadPosition % segmentLength);
         const nextZ = (i + 1) * segmentLength - (roadPosition % segmentLength);
-        
+
         const scale = 250 / z;
         const nextScale = 250 / nextZ;
-        
+
         const screenY = HEIGHT / 2 + scale * 100;
         const nextScreenY = HEIGHT / 2 + nextScale * 100;
-        
+
         if (screenY <= HEIGHT / 2 || screenY >= HEIGHT) continue;
 
         const roadW = scale * 300;
         const nextRoadW = nextScale * 300;
 
         const screenX = WIDTH / 2 + dCurve * 5 - carX * scale * 100;
-        const nextScreenX = WIDTH / 2 + (dCurve + segments[(startSeg + i + 1) % totalSegments].curve) * 5 - carX * nextScale * 100;
+        const nextScreenX =
+          WIDTH / 2 +
+          (dCurve + segments[(startSeg + i + 1) % totalSegments].curve) * 5 -
+          carX * nextScale * 100;
 
         ctx.fillStyle = (startSeg + i) % 2 === 0 ? "#112233" : "#0d1b2a";
         ctx.fillRect(0, nextScreenY, WIDTH, screenY - nextScreenY);
@@ -1885,7 +2064,7 @@ function makeRealisticDriving(gamePackage) {
         ctx.fillStyle = (startSeg + i) % 2 === 0 ? "#ff4d6d" : "#ffffff";
         const rumbleW = roadW * 0.1;
         const nextRumbleW = nextRoadW * 0.1;
-        
+
         ctx.beginPath();
         ctx.moveTo(screenX - roadW, screenY);
         ctx.lineTo(nextScreenX - nextRoadW, nextScreenY);
@@ -1907,10 +2086,10 @@ function makeRealisticDriving(gamePackage) {
           const dashW = roadW * 0.05;
           const nextDashW = nextRoadW * 0.05;
           ctx.beginPath();
-          ctx.moveTo(screenX - dashW/2, screenY);
-          ctx.lineTo(nextScreenX - nextDashW/2, nextScreenY);
-          ctx.lineTo(nextScreenX + nextDashW/2, nextScreenY);
-          ctx.lineTo(screenX + dashW/2, screenY);
+          ctx.moveTo(screenX - dashW / 2, screenY);
+          ctx.lineTo(nextScreenX - nextDashW / 2, nextScreenY);
+          ctx.lineTo(nextScreenX + nextDashW / 2, nextScreenY);
+          ctx.lineTo(screenX + dashW / 2, screenY);
           ctx.closePath();
           ctx.fill();
         }
@@ -1918,20 +2097,20 @@ function makeRealisticDriving(gamePackage) {
 
       const carSeg = roadPosition / segmentLength;
       const sortedTraffic = [...traffic]
-        .map(t => {
+        .map((t) => {
           let relativeSeg = t.segmentIndex - carSeg;
           if (relativeSeg < 0) relativeSeg += totalSegments;
           return { t, relativeSeg };
         })
-        .filter(item => item.relativeSeg > 0 && item.relativeSeg < maxDrawDistance)
+        .filter((item) => item.relativeSeg > 0 && item.relativeSeg < maxDrawDistance)
         .sort((a, b) => b.relativeSeg - a.relativeSeg);
 
-      sortedTraffic.forEach(item => {
+      sortedTraffic.forEach((item) => {
         const t = item.t;
         const relativeSeg = item.relativeSeg;
         const z = relativeSeg * segmentLength;
         const scale = 250 / z;
-        
+
         let dCurve = 0;
         const start = Math.floor(carSeg);
         const end = Math.floor(t.segmentIndex);
@@ -1960,21 +2139,25 @@ function makeRealisticDriving(gamePackage) {
       ctx.strokeRect(0, HEIGHT - 60, WIDTH, 60);
 
       drawText(ctx, `SPEED: ${Math.floor(speed)} MPH`, 40, HEIGHT - 20, 24, "#ffd166");
-      
+
       ctx.fillStyle = game.colors[0];
       const pW = 120;
       const pH = 70;
       ctx.fillRect(WIDTH / 2 - pW / 2, HEIGHT - 120, pW, pH);
-      
+
       ctx.fillStyle = "#1b263b";
       ctx.fillRect(WIDTH / 2 - pW / 2 + 10, HEIGHT - 115, pW - 20, 25);
-      
+
       ctx.fillStyle = "#ff4d6d";
       ctx.fillRect(WIDTH / 2 - pW / 2 + 5, HEIGHT - 85, 20, 10);
       ctx.fillRect(WIDTH / 2 + pW / 2 - 25, HEIGHT - 85, 20, 10);
 
-      drawGameHud(ctx, game, "3D City Driving: Steer left/right with A/D or Mouse, hold Space to gas");
-    }
+      drawGameHud(
+        ctx,
+        game,
+        "3D City Driving: Steer left/right with A/D or Mouse, hold Space to gas",
+      );
+    },
   };
 }
 
@@ -1991,7 +2174,7 @@ function makeFlightSim(gamePackage) {
       x: randomBetween(-200, 200),
       y: randomBetween(-100, 100),
       z: index * 400 + 400,
-      passed: false
+      passed: false,
     });
   }
 
@@ -2021,8 +2204,8 @@ function makeFlightSim(gamePackage) {
       }
 
       if (input.pointer.active) {
-        roll += (((input.pointer.x / WIDTH) - 0.5) * 2 - roll) * 4 * dt;
-        pitch += (((input.pointer.y / HEIGHT) - 0.5) * 2 - pitch) * 4 * dt;
+        roll += ((input.pointer.x / WIDTH - 0.5) * 2 - roll) * 4 * dt;
+        pitch += ((input.pointer.y / HEIGHT - 0.5) * 2 - pitch) * 4 * dt;
       } else {
         roll = clamp(roll + input.x * 2 * dt, -1, 1);
         pitch = clamp(pitch + input.y * 2 * dt, -1, 1);
@@ -2077,7 +2260,7 @@ function makeFlightSim(gamePackage) {
 
       ctx.fillStyle = "#1b263b";
       ctx.fillRect(-WIDTH, pitch * 100, WIDTH * 2, HEIGHT);
-      
+
       ctx.strokeStyle = "#415a77";
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -2090,7 +2273,7 @@ function makeFlightSim(gamePackage) {
       ctx.restore();
 
       const sortedRings = [...rings].sort((a, b) => b.z - a.z);
-      sortedRings.forEach(ring => {
+      sortedRings.forEach((ring) => {
         if (ring.z <= 0) return;
         const scale = 300 / ring.z;
         const rx = WIDTH / 2 + ring.x * scale;
@@ -2103,12 +2286,14 @@ function makeFlightSim(gamePackage) {
           ctx.beginPath();
           ctx.arc(rx, ry, rSize, 0, Math.PI * 2);
           ctx.stroke();
-          
+
           ctx.strokeStyle = ring.passed ? "rgba(103, 255, 180, 0.2)" : "rgba(255, 61, 242, 0.3)";
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.moveTo(rx - rSize, ry); ctx.lineTo(rx + rSize, ry);
-          ctx.moveTo(rx, ry - rSize); ctx.lineTo(rx, ry + rSize);
+          ctx.moveTo(rx - rSize, ry);
+          ctx.lineTo(rx + rSize, ry);
+          ctx.moveTo(rx, ry - rSize);
+          ctx.lineTo(rx, ry + rSize);
           ctx.stroke();
         }
       });
@@ -2135,11 +2320,15 @@ function makeFlightSim(gamePackage) {
       drawText(ctx, `SPD: ${Math.round(throttle * 1.5)} KTS`, 40, 180, 16, "#91a4b8");
 
       ctx.beginPath();
-      ctx.arc(WIDTH / 2, HEIGHT / 2, 120, -Math.PI/6 - Math.PI/2, Math.PI/6 - Math.PI/2);
+      ctx.arc(WIDTH / 2, HEIGHT / 2, 120, -Math.PI / 6 - Math.PI / 2, Math.PI / 6 - Math.PI / 2);
       ctx.stroke();
 
-      drawGameHud(ctx, game, "Flight Sim: Fly through rings, steer with WASD or Mouse, Space to speed up");
-    }
+      drawGameHud(
+        ctx,
+        game,
+        "Flight Sim: Fly through rings, steer with WASD or Mouse, Space to speed up",
+      );
+    },
   };
 }
 
@@ -2148,24 +2337,24 @@ function makeUnityPlatformer(gamePackage) {
   const player = { x: 100, y: 300, vx: 0, vy: 0, width: 24, height: 32, grounded: false };
   const gravity = 600;
   const jumpForce = -350;
-  
+
   const platforms = [
     { x: 0, y: 400, w: 300, h: 40 },
     { x: 380, y: 350, w: 180, h: 20 },
     { x: 620, y: 280, w: 200, h: 20 },
     { x: 480, y: 180, w: 120, h: 20 },
-    { x: 150, y: 180, w: 200, h: 20 }
+    { x: 150, y: 180, w: 200, h: 20 },
   ];
-  
+
   const keys = [
     { x: 470, y: 310, collected: false },
     { x: 720, y: 240, collected: false },
-    { x: 250, y: 140, collected: false }
+    { x: 250, y: 140, collected: false },
   ];
 
   const spikes = [
     { x: 420, y: 430, w: 120 },
-    { x: 680, y: 430, w: 100 }
+    { x: 680, y: 430, w: 100 },
   ];
 
   function reset() {
@@ -2176,7 +2365,7 @@ function makeUnityPlatformer(gamePackage) {
     player.y = 300;
     player.vx = 0;
     player.vy = 0;
-    keys.forEach(k => k.collected = false);
+    keys.forEach((k) => (k.collected = false));
   }
 
   return {
@@ -2193,21 +2382,22 @@ function makeUnityPlatformer(gamePackage) {
 
       if (player.x < 0) player.x = 0;
       if (player.x > WIDTH - player.width) player.x = WIDTH - player.width;
-      
+
       player.grounded = false;
-      
+
       if (player.y > HEIGHT - 80) {
         player.y = HEIGHT - 80;
         player.vy = 0;
         player.grounded = true;
       }
 
-      platforms.forEach(p => {
-        if (player.x < p.x + p.w &&
-            player.x + player.width > p.x &&
-            player.y < p.y + p.h &&
-            player.y + player.height > p.y) {
-          
+      platforms.forEach((p) => {
+        if (
+          player.x < p.x + p.w &&
+          player.x + player.width > p.x &&
+          player.y < p.y + p.h &&
+          player.y + player.height > p.y
+        ) {
           if (player.vy > 0 && player.y + player.height - player.vy * dt <= p.y + 4) {
             player.y = p.y - player.height;
             player.vy = 0;
@@ -2221,24 +2411,30 @@ function makeUnityPlatformer(gamePackage) {
         player.grounded = false;
       }
 
-      keys.forEach(k => {
-        if (!k.collected && 
-            Math.abs(player.x + player.width / 2 - k.x) < 20 &&
-            Math.abs(player.y + player.height / 2 - k.y) < 20) {
+      keys.forEach((k) => {
+        if (
+          !k.collected &&
+          Math.abs(player.x + player.width / 2 - k.x) < 20 &&
+          Math.abs(player.y + player.height / 2 - k.y) < 20
+        ) {
           k.collected = true;
           game.score += 200;
           game.message = "KEY COLLECTED!";
         }
       });
 
-      spikes.forEach(s => {
-        if (player.x < s.x + s.w && player.x + player.width > s.x && player.y + player.height > HEIGHT - 90) {
+      spikes.forEach((s) => {
+        if (
+          player.x < s.x + s.w &&
+          player.x + player.width > s.x &&
+          player.y + player.height > HEIGHT - 90
+        ) {
           game.over = true;
           game.message = "KILLED BY SPIKES";
         }
       });
 
-      if (keys.every(k => k.collected)) {
+      if (keys.every((k) => k.collected)) {
         game.over = true;
         game.message = "LEVEL COMPLETE!";
       }
@@ -2248,7 +2444,7 @@ function makeUnityPlatformer(gamePackage) {
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
       ctx.fillStyle = "#475569";
-      platforms.forEach(p => {
+      platforms.forEach((p) => {
         ctx.fillRect(p.x, p.y, p.w, p.h);
         ctx.strokeStyle = "#94a3b8";
         ctx.lineWidth = 2;
@@ -2256,7 +2452,7 @@ function makeUnityPlatformer(gamePackage) {
       });
 
       ctx.fillStyle = "#ef4444";
-      spikes.forEach(s => {
+      spikes.forEach((s) => {
         ctx.beginPath();
         for (let x = s.x; x < s.x + s.w; x += 15) {
           ctx.moveTo(x, HEIGHT - 60);
@@ -2267,7 +2463,7 @@ function makeUnityPlatformer(gamePackage) {
       });
 
       ctx.fillStyle = "#fbbf24";
-      keys.forEach(k => {
+      keys.forEach((k) => {
         if (k.collected) return;
         ctx.beginPath();
         ctx.arc(k.x, k.y, 8, 0, Math.PI * 2);
@@ -2280,14 +2476,14 @@ function makeUnityPlatformer(gamePackage) {
 
       ctx.fillStyle = game.colors[0];
       ctx.fillRect(player.x, player.y, player.width, player.height);
-      
+
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(player.x + (player.vx >= 0 ? 12 : 4), player.y + 6, 6, 6);
       ctx.fillStyle = "#000000";
       ctx.fillRect(player.x + (player.vx >= 0 ? 15 : 5), player.y + 8, 3, 3);
 
       drawGameHud(ctx, game, "Unity Platformer: Move with A/D or Mouse, Space to Jump");
-    }
+    },
   };
 }
 
@@ -2307,7 +2503,7 @@ function makeUnityFps(gamePackage) {
       z: randomBetween(200, 400),
       vx: randomBetween(-80, 80),
       vy: randomBetween(-50, 50),
-      health: 3
+      health: 3,
     });
   }
 
@@ -2345,12 +2541,12 @@ function makeUnityFps(gamePackage) {
       if (input.actionPressed || (input.pointer.pressed && ammo > 0)) {
         ammo--;
         muzzleFlashes.push({ x: crosshair.x, y: crosshair.y, t: 0.05 });
-        
+
         for (let i = drones.length - 1; i >= 0; i--) {
           const d = drones[i];
           const scale = 300 / d.z;
           const radius = 24 * scale;
-          
+
           if (Math.hypot(crosshair.x - d.x, crosshair.y - d.y) < radius) {
             d.health--;
             if (d.health <= 0) {
@@ -2364,7 +2560,7 @@ function makeUnityFps(gamePackage) {
         }
       }
 
-      drones.forEach(d => {
+      drones.forEach((d) => {
         d.x += d.vx * dt;
         d.y += d.vy * dt;
 
@@ -2398,13 +2594,19 @@ function makeUnityFps(gamePackage) {
       ctx.strokeStyle = "rgba(148, 163, 184, 0.1)";
       ctx.lineWidth = 1;
       for (let x = 0; x < WIDTH; x += 40) {
-        ctx.beginPath(); ctx.moveTo(x, 112); ctx.lineTo(x, HEIGHT); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, 112);
+        ctx.lineTo(x, HEIGHT);
+        ctx.stroke();
       }
       for (let y = 112; y < HEIGHT; y += 40) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WIDTH, y); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(WIDTH, y);
+        ctx.stroke();
       }
 
-      drones.forEach(d => {
+      drones.forEach((d) => {
         const scale = 300 / d.z;
         const radius = 24 * scale;
 
@@ -2424,11 +2626,11 @@ function makeUnityFps(gamePackage) {
         ctx.arc(d.x, d.y, radius * 1.3, -Math.PI / 4, Math.PI / 4);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(d.x, d.y, radius * 1.3, Math.PI * 3 / 4, Math.PI * 5 / 4);
+        ctx.arc(d.x, d.y, radius * 1.3, (Math.PI * 3) / 4, (Math.PI * 5) / 4);
         ctx.stroke();
       });
 
-      explosions.forEach(e => {
+      explosions.forEach((e) => {
         ctx.strokeStyle = "#f97316";
         ctx.lineWidth = 4;
         ctx.beginPath();
@@ -2436,7 +2638,7 @@ function makeUnityFps(gamePackage) {
         ctx.stroke();
       });
 
-      muzzleFlashes.forEach(f => {
+      muzzleFlashes.forEach((f) => {
         ctx.fillStyle = "rgba(251, 191, 36, 0.7)";
         ctx.beginPath();
         ctx.arc(f.x, f.y, 25, 0, Math.PI * 2);
@@ -2449,14 +2651,16 @@ function makeUnityFps(gamePackage) {
       ctx.arc(crosshair.x, crosshair.y, 16, 0, Math.PI * 2);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(crosshair.x - 24, crosshair.y); ctx.lineTo(crosshair.x + 24, crosshair.y);
-      ctx.moveTo(crosshair.x, crosshair.y - 24); ctx.lineTo(crosshair.x, crosshair.y + 24);
+      ctx.moveTo(crosshair.x - 24, crosshair.y);
+      ctx.lineTo(crosshair.x + 24, crosshair.y);
+      ctx.moveTo(crosshair.x, crosshair.y - 24);
+      ctx.lineTo(crosshair.x, crosshair.y + 24);
       ctx.stroke();
 
       drawText(ctx, `SHIELD: ${health}%`, WIDTH - 180, 102, 28, "#10b981");
       drawText(ctx, `AMMO: ${ammo}`, 28, 102, 28, "#fbbf24");
       drawGameHud(ctx, game, "Unity FPS: Move Mouse to Aim, Click to Shoot drones");
-    }
+    },
   };
 }
 
@@ -2470,7 +2674,7 @@ function makeUnityKarting(gamePackage) {
     { x: 150, y: 200, w: 80, h: 80, hit: false },
     { x: WIDTH / 2, y: 160, w: 80, h: 80, hit: false },
     { x: WIDTH - 150, y: 200, w: 80, h: 80, hit: false },
-    { x: WIDTH / 2, y: HEIGHT - 100, w: 80, h: 80, hit: false }
+    { x: WIDTH / 2, y: HEIGHT - 100, w: 80, h: 80, hit: false },
   ];
 
   function reset() {
@@ -2482,7 +2686,7 @@ function makeUnityKarting(gamePackage) {
     angle = 0;
     kart.x = WIDTH / 2;
     kart.y = HEIGHT / 2 + 120;
-    checkpoints.forEach(c => c.hit = false);
+    checkpoints.forEach((c) => (c.hit = false));
   }
 
   return {
@@ -2512,8 +2716,8 @@ function makeUnityKarting(gamePackage) {
           c.hit = true;
           game.score += 250;
           game.message = `CHECKPOINT ${index + 1}!`;
-          
-          if (checkpoints.every(c => c.hit)) {
+
+          if (checkpoints.every((c) => c.hit)) {
             game.over = true;
             game.message = "RACE COMPLETE!";
           }
@@ -2563,7 +2767,7 @@ function makeUnityKarting(gamePackage) {
       ctx.restore();
 
       drawGameHud(ctx, game, "Unity Kart: Steer with A/D or Mouse, hold Space to Accelerate");
-    }
+    },
   };
 }
 
@@ -2587,13 +2791,16 @@ function makeRuntime(gamePackage) {
     "flight-sim": makeFlightSim,
     "unity-karting": makeUnityKarting,
     "unity-fps": makeUnityFps,
-    "unity-platformer": makeUnityPlatformer
+    "unity-platformer": makeUnityPlatformer,
   };
 
-  return (makers[gamePackage.templateId] ?? makeFlappy)(gamePackage);
+  const runtime = (makers[gamePackage.templateId] ?? makeFlappy)(gamePackage);
+  runtime.__gameState = latestGameState;
+  latestGameState = null;
+  return runtime;
 }
 
-export function ThreePreview({ gamePackage }) {
+export function ThreePreview({ gamePackage, onScoreSubmit }) {
   const mountRef = useRef(null);
   const wrapRef = useRef(null);
   const runtimeRef = useRef(null);
@@ -2634,6 +2841,7 @@ export function ThreePreview({ gamePackage }) {
 
     let lastTime = performance.now();
     let animationId = 0;
+    let scoreSubmittedForRun = false;
 
     function frame(time) {
       const dt = Math.max(0, Math.min(0.033, (time - lastTime) / 1000));
@@ -2642,9 +2850,17 @@ export function ThreePreview({ gamePackage }) {
       updateKeyboardInput(input);
       applyGamepad(input);
       runtimeRef.current.update(dt, input);
+      const gameState = runtimeRef.current.__gameState;
+      if (gameState?.over && !scoreSubmittedForRun) {
+        scoreSubmittedForRun = true;
+        onScoreSubmit?.(Math.max(0, Math.floor(gameState.score ?? 0)));
+      }
+      if (!gameState?.over) {
+        scoreSubmittedForRun = false;
+      }
       runtimeRef.current.draw(ctx);
 
-      if (gamePackage.engine === 'unity') {
+      if (gamePackage.engine === "unity") {
         ctx.fillStyle = "rgba(0,0,0,0.55)";
         ctx.fillRect(WIDTH - 210, HEIGHT - 32, 210, 32);
         drawText(ctx, "Development Build", WIDTH - 15, HEIGHT - 10, 14, "#ff4d6d", "right");
@@ -2688,7 +2904,8 @@ export function ThreePreview({ gamePackage }) {
       if (!inputRef.current.keys.has(event.code)) {
         if (event.code === "Space" || event.code === "Enter") inputRef.current.actionPressed = true;
         if (event.code === "KeyR") inputRef.current.restartPressed = true;
-        if (event.code.startsWith("Digit")) inputRef.current.numberPressed = Number(event.code.replace("Digit", ""));
+        if (event.code.startsWith("Digit"))
+          inputRef.current.numberPressed = Number(event.code.replace("Digit", ""));
       }
       inputRef.current.keys.add(event.code);
     }
@@ -2717,7 +2934,7 @@ export function ThreePreview({ gamePackage }) {
       cancelAnimationFrame(animationId);
       mount.removeChild(canvas);
     };
-  }, [gamePackage]);
+  }, [gamePackage, onScoreSubmit]);
 
   return (
     <div className="three-preview-wrap" ref={wrapRef}>
@@ -2728,9 +2945,15 @@ export function ThreePreview({ gamePackage }) {
         aria-label={`${gamePackage.templateName} playable game. Use WASD or arrow keys, Space, touch, or a connected controller.`}
       />
       <div className="player-controls" aria-label="Player controls">
-        <span>Move <kbd>WASD</kbd> <kbd>Arrows</kbd></span>
-        <span>Action <kbd>Space</kbd> <kbd>Click</kbd></span>
-        <span>More <kbd>1-4</kbd> <kbd>R</kbd></span>
+        <span>
+          Move <kbd>WASD</kbd> <kbd>Arrows</kbd>
+        </span>
+        <span>
+          Action <kbd>Space</kbd> <kbd>Click</kbd>
+        </span>
+        <span>
+          More <kbd>1-4</kbd> <kbd>R</kbd>
+        </span>
       </div>
       <button
         type="button"

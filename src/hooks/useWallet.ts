@@ -214,6 +214,7 @@ export function useWallet() {
       title: gamePackage.title ?? "Untitled Game",
       templateId: gamePackage.templateId,
       category: gamePackage.category ?? "Game",
+      thumbnailUrl: gamePackage.thumbnailUrl ?? "/thumbnails/simple-agent-game-cover.png",
       createdAt: new Date().toISOString(),
       wallet: address
     };

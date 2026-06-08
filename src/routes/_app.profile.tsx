@@ -25,6 +25,7 @@ function Profile() {
     emoji: templateEmoji[g.templateId] ?? "🎮",
     gradient: gradientForId(g.templateId ?? g.id),
     creator: wallet.shortAddress || "you",
+    thumbnailUrl: g.thumbnailUrl,
     templateId: g.templateId,
   }));
 

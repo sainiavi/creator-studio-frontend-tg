@@ -242,7 +242,7 @@ function Create() {
               {phase === "building" ? (
                 <><Loader2 className="size-5 animate-spin" /> Building…</>
               ) : (
-                <><Rocket className="size-5" /> Template-First Hybrid</>
+                <><Rocket className="size-5" /> Hybrid</>
               )}
             </button>
             <button

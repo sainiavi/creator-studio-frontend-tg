@@ -1,5 +1,2806 @@
 const rawGameTemplates = [
   {
+    "id": "offline-12minibattles",
+    "name": "1 2minibattles",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic 1 2minibattles offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-1on1soccer",
+    "name": "1on 1soccer",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic 1on 1soccer offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-1on1tennis",
+    "name": "1on 1tennis",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic 1on 1tennis offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-2048",
+    "name": "2 0 4 8",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic 2 0 4 8 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-2048cupcakes",
+    "name": "2 0 4 8cupcakes",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic 2 0 4 8cupcakes offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-8ballclassic",
+    "name": "8ballclassic",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic 8ballclassic offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-alpha_1.2.6",
+    "name": "Alpha_ 1. 2. 6",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Alpha_ 1. 2. 6 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-beta_1.3",
+    "name": "Beta_ 1. 3",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Beta_ 1. 3 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-indev",
+    "name": "Indev",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Indev offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-agariolite",
+    "name": "Agariolite",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Agariolite offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-ageofwar",
+    "name": "Ageofwar",
+    "category": "Action",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Ageofwar offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-amongus",
+    "name": "Amongus",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Amongus offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-awesometanks",
+    "name": "Awesometanks",
+    "category": "Strategy",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Awesometanks offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-baconmaydie",
+    "name": "Baconmaydie",
+    "category": "Strategy",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Baconmaydie offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-badicecream",
+    "name": "Badicecream",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Badicecream offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-badicecream2",
+    "name": "Badicecream 2",
+    "category": "Retro",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Badicecream 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-badicecream3",
+    "name": "Badicecream 3",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Badicecream 3 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-badpiggies",
+    "name": "Badpiggies",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Badpiggies offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-basketballlegends",
+    "name": "Basketballlegends",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Basketballlegends offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-basketballstars",
+    "name": "Basketballstars",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Basketballstars offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-basketbros",
+    "name": "Basketbros",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Basketbros offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-basketrandom",
+    "name": "Basketrandom",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Basketrandom offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-bloonstd",
+    "name": "Bloons T D",
+    "category": "Casual",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Bloons T D offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-bloonstd2",
+    "name": "Bloons T D 2",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Bloons T D 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-bloonstd3",
+    "name": "Bloons T D 3",
+    "category": "Retro",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Bloons T D 3 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-bloonstd4",
+    "name": "Bloons T D 4",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Bloons T D 4 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-bloxorz",
+    "name": "Bloxorz",
+    "category": "Action",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Bloxorz offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-blumgiracers",
+    "name": "Blumgiracers",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Blumgiracers offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-blumgirocket",
+    "name": "Blumgirocket",
+    "category": "Action",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Blumgirocket offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-bobtherobber2",
+    "name": "Bobtherobber 2",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Bobtherobber 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-bobtherobber5",
+    "name": "Bobtherobber 5",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Bobtherobber 5 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-breakingthebank",
+    "name": "Breakingthebank",
+    "category": "Strategy",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Breakingthebank offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-bubbleshooter",
+    "name": "Bubbleshooter",
+    "category": "Action",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Bubbleshooter offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-candycrush",
+    "name": "Candycrush",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Candycrush offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-chess",
+    "name": "Chess",
+    "category": "Strategy",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Chess offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-choppyorc",
+    "name": "Choppyorc",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Choppyorc offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-circloo",
+    "name": "Circlo O",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Circlo O offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-circloo2",
+    "name": "Circlo O 2",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Circlo O 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-clashofvikings",
+    "name": "Clashofvikings",
+    "category": "Action",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Clashofvikings offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-dadish",
+    "name": "Dadish",
+    "category": "Retro",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Dadish offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-dadish2",
+    "name": "Dadish 2",
+    "category": "Action",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Dadish 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-dadish3",
+    "name": "Dadish 3",
+    "category": "Casual",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Dadish 3 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-deathrun3d",
+    "name": "Deathrun 3 D",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Deathrun 3 D offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-doodlejump",
+    "name": "Doodlejump",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Doodlejump offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-drawclimber",
+    "name": "Drawclimber",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Drawclimber offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-ducklife",
+    "name": "Ducklife",
+    "category": "Casual",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Ducklife offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-ducklife2",
+    "name": "Ducklife 2",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Ducklife 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-ducklingsio",
+    "name": "Ducklingsio",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Ducklingsio offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-earntodie",
+    "name": "Earntodie",
+    "category": "Retro",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Earntodie offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-eggycar",
+    "name": "Eggycar",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Eggycar offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-evilglitch",
+    "name": "Evilglitch",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Evilglitch offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-fancypantsadventure",
+    "name": "Fancypantsadventure",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Fancypantsadventure offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-fireboyandwatergirl",
+    "name": "Fireboyandwatergirl",
+    "category": "Casual",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Fireboyandwatergirl offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-fireboyandwatergirl2",
+    "name": "Fireboyandwatergirl 2",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Fireboyandwatergirl 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-fireboyandwatergirl3",
+    "name": "Fireboyandwatergirl 3",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Fireboyandwatergirl 3 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-fireboyandwatergirl4",
+    "name": "Fireboyandwatergirl 4",
+    "category": "Casual",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Fireboyandwatergirl 4 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-flappybird",
+    "name": "Flappybird",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Flappybird offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-floodrunner2",
+    "name": "Floodrunner 2",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Floodrunner 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-floodrunner3",
+    "name": "Floodrunner 3",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Floodrunner 3 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-footballlegends",
+    "name": "Footballlegends",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Footballlegends offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-freerider3",
+    "name": "Freerider 3",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Freerider 3 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-fruitninja",
+    "name": "Fruitninja",
+    "category": "Retro",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Fruitninja offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-funnybattle",
+    "name": "Funnybattle",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Funnybattle offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-getontop",
+    "name": "Getontop",
+    "category": "Casual",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Getontop offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-googlebaseball",
+    "name": "Googlebaseball",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Googlebaseball offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-googledino",
+    "name": "Googledino",
+    "category": "Action",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Googledino offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-hanger2",
+    "name": "Hanger 2",
+    "category": "Casual",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Hanger 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-helixjump",
+    "name": "Helixjump",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Helixjump offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-hillclimbracinglite",
+    "name": "Hillclimbracinglite",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Hillclimbracinglite offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-idlebreakout",
+    "name": "Idlebreakout",
+    "category": "Retro",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Idlebreakout offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-ironsnout",
+    "name": "Ironsnout",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Ironsnout offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-johnnytrigger",
+    "name": "Johnnytrigger",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Johnnytrigger offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-jumpingshell",
+    "name": "Jumpingshell",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Jumpingshell offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-karatebros",
+    "name": "Karatebros",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Karatebros offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-learntofly",
+    "name": "Learntofly",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Learntofly offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-learntoflyidle",
+    "name": "Learntoflyidle",
+    "category": "Retro",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Learntoflyidle offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-leveldevil",
+    "name": "Leveldevil",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Leveldevil offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-mergeroundracers",
+    "name": "Mergeroundracers",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Mergeroundracers offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-minesweeper",
+    "name": "Minesweeper",
+    "category": "Action",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Minesweeper offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-monstertracks",
+    "name": "Monstertracks",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Monstertracks offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-motox3m2",
+    "name": "Motox 3m 2",
+    "category": "Strategy",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Motox 3m 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-motox3m3",
+    "name": "Motox 3m 3",
+    "category": "Strategy",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Motox 3m 3 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-motox3mpoolparty",
+    "name": "Motox 3mpoolparty",
+    "category": "Strategy",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Motox 3mpoolparty offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-motox3mspookyland",
+    "name": "Motox 3mspookyland",
+    "category": "Action",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Motox 3mspookyland offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-motox3mwinter",
+    "name": "Motox 3mwinter",
+    "category": "Retro",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Motox 3mwinter offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-noobminer",
+    "name": "Noobminer",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Noobminer offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-oppositeday",
+    "name": "Oppositeday",
+    "category": "Casual",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Oppositeday offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-ovo",
+    "name": "Ovo",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Ovo offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-ovo2",
+    "name": "Ovo 2",
+    "category": "Action",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Ovo 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-pacman",
+    "name": "Pacman",
+    "category": "Retro",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Pacman offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-papasburgeria",
+    "name": "Papasburgeria",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Papasburgeria offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-papaspizzeria",
+    "name": "Papaspizzeria",
+    "category": "Strategy",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Papaspizzeria offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-parkingfury",
+    "name": "Parkingfury",
+    "category": "Racing",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Parkingfury offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-parkingfury2",
+    "name": "Parkingfury 2",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Parkingfury 2 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-parkingfury3",
+    "name": "Parkingfury 3",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Parkingfury 3 offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-picosschool",
+    "name": "Picosschool",
+    "category": "Puzzle",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Picosschool offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-pingpongchaos",
+    "name": "Pingpongchaos",
+    "category": "Retro",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Pingpongchaos offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-pixelspeedrun",
+    "name": "Pixelspeedrun",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Pixelspeedrun offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-plonky",
+    "name": "Plonky",
+    "category": "Arcade",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Plonky offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+  {
+    "id": "offline-polytrack",
+    "name": "Polytrack",
+    "category": "Sports",
+    "time": "Ready",
+    "reliability": "100%",
+    "accent": "#35e8ff",
+    "colors": [
+        "#35e8ff",
+        "#ffd166",
+        "#67ffb4"
+    ],
+    "mechanic": "Classic Polytrack offline HTML5 edition. Survive and score high.",
+    "controls": "Mouse, keyboard, or touch controls",
+    "assets": "HTML5 game engine assets",
+    "engine": "construct",
+    "difficulty": {
+        "easy": {
+            "speedMultiplier": 0.8
+        },
+        "normal": {
+            "speedMultiplier": 1
+        },
+        "hard": {
+            "speedMultiplier": 1.2
+        }
+    }
+},
+
+  {
     id: "flappy",
     name: "Flappy Bird",
     category: "Arcade",
@@ -1212,6 +4013,158 @@ const rawGameTemplates = [
       normal: { bubbleRows: 7 },
       hard: { bubbleRows: 9 },
       insane: { bubbleRows: 11 }
+    }
+  },
+  {
+    id: "chicken-cross",
+    name: "Chicken Cross",
+    category: "Arcade",
+    time: "Ready",
+    reliability: "HTML5",
+    accent: "#ffd166",
+    colors: ["#ffd166", "#67ffb4", "#35e8ff"],
+    mechanic: "Help the chicken cross the road while dodging cars and obstacles.",
+    controls: "Tap, click, or keyboard controls",
+    assets: "Chicken sprite, car obstacles, road background",
+    engine: "construct",
+    difficulty: {
+      easy: { speedMultiplier: 0.85 },
+      normal: { speedMultiplier: 1 },
+      hard: { speedMultiplier: 1.2 },
+      insane: { speedMultiplier: 1.45 }
+    }
+  },
+  {
+    id: "cratch-royale",
+    name: "Cratch Royale",
+    category: "Casino",
+    time: "Ready",
+    reliability: "HTML5",
+    accent: "#ffd166",
+    colors: ["#ffd166", "#ff8bd6", "#8f7dff"],
+    mechanic: "Scratch cards to reveal prizes and win big rewards.",
+    controls: "Mouse drag or touch to scratch",
+    assets: "Scratch card sprites, prize reveals, particle effects",
+    engine: "construct",
+    difficulty: {
+      easy: { winChance: 0.5 },
+      normal: { winChance: 0.35 },
+      hard: { winChance: 0.2 },
+      insane: { winChance: 0.1 }
+    }
+  },
+  {
+    id: "neon-bounce",
+    name: "Neon Bounce",
+    category: "Arcade",
+    time: "Ready",
+    reliability: "HTML5",
+    accent: "#35e8ff",
+    colors: ["#35e8ff", "#ff3df2", "#67ffb4"],
+    mechanic: "Bounce a neon ball through obstacles in a glowing world.",
+    controls: "Tap, click, or keyboard to bounce",
+    assets: "Neon ball, glowing platforms, particle trails",
+    engine: "construct",
+    difficulty: {
+      easy: { speedMultiplier: 0.85 },
+      normal: { speedMultiplier: 1 },
+      hard: { speedMultiplier: 1.2 },
+      insane: { speedMultiplier: 1.45 }
+    }
+  },
+  {
+    id: "plinko-pro",
+    name: "Plinko Pro",
+    category: "Casino",
+    time: "Ready",
+    reliability: "HTML5",
+    accent: "#8f7dff",
+    colors: ["#8f7dff", "#ffd166", "#35e8ff"],
+    mechanic: "Drop balls through a peg board and land on multiplier slots.",
+    controls: "Click or tap to drop balls",
+    assets: "Plinko board, pegs, balls, multiplier slots, sound effects",
+    engine: "construct",
+    difficulty: {
+      easy: { rows: 8 },
+      normal: { rows: 12 },
+      hard: { rows: 16 },
+      insane: { rows: 20 }
+    }
+  },
+  {
+    id: "race-kings",
+    name: "Race Kings",
+    category: "Racing",
+    time: "Ready",
+    reliability: "HTML5",
+    accent: "#ff4d6d",
+    colors: ["#ff4d6d", "#ffd166", "#35e8ff"],
+    mechanic: "Race against opponents in high-speed car battles.",
+    controls: "Keyboard or touch steering controls",
+    assets: "Multiple car models, road, race effects",
+    engine: "construct",
+    difficulty: {
+      easy: { traffic: 0.8 },
+      normal: { traffic: 1 },
+      hard: { traffic: 1.25 },
+      insane: { traffic: 1.5 }
+    }
+  },
+  {
+    id: "spin-wheel-royale",
+    name: "Spin Wheel Royale",
+    category: "Casino",
+    time: "Ready",
+    reliability: "HTML5",
+    accent: "#ff3df2",
+    colors: ["#ff3df2", "#ffd166", "#67ffb4"],
+    mechanic: "Spin the wheel of fortune and win prizes with each spin.",
+    controls: "Click or tap to spin the wheel",
+    assets: "Fortune wheel, prize segments, spin animations",
+    engine: "construct",
+    difficulty: {
+      easy: { segments: 6 },
+      normal: { segments: 8 },
+      hard: { segments: 12 },
+      insane: { segments: 16 }
+    }
+  },
+  {
+    id: "stake-mines",
+    name: "Stake Mines",
+    category: "Casino",
+    time: "Ready",
+    reliability: "HTML5",
+    accent: "#67ffb4",
+    colors: ["#67ffb4", "#ff4d6d", "#ffd166"],
+    mechanic: "Reveal tiles on a grid while avoiding hidden mines to multiply your stake.",
+    controls: "Click or tap tiles to reveal",
+    assets: "Mine grid, gem tiles, mine sprites, multiplier UI",
+    engine: "construct",
+    difficulty: {
+      easy: { mines: 3 },
+      normal: { mines: 5 },
+      hard: { mines: 8 },
+      insane: { mines: 12 }
+    }
+  },
+  {
+    id: "satoshi-head",
+    name: "Satoshi Head",
+    category: "Sports",
+    time: "Ready",
+    reliability: "HTML5",
+    accent: "#ff7a3d",
+    colors: ["#ff7a3d", "#ffd166", "#35e8ff"],
+    mechanic: "Play head-to-head soccer with physics-based characters.",
+    controls: "Keyboard or touch controls from the HTML5 build",
+    assets: "Player characters, ball, stadium, crowd, sound effects",
+    engine: "construct",
+    difficulty: {
+      easy: { matchSpeed: 0.85 },
+      normal: { matchSpeed: 1 },
+      hard: { matchSpeed: 1.15 },
+      insane: { matchSpeed: 1.3 }
     }
   }
 ];
