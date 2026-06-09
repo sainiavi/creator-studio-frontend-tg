@@ -4147,25 +4147,6 @@ const rawGameTemplates = [
       hard: { mines: 8 },
       insane: { mines: 12 }
     }
-  },
-  {
-    id: "satoshi-head",
-    name: "Satoshi Head",
-    category: "Sports",
-    time: "Ready",
-    reliability: "HTML5",
-    accent: "#ff7a3d",
-    colors: ["#ff7a3d", "#ffd166", "#35e8ff"],
-    mechanic: "Play head-to-head soccer with physics-based characters.",
-    controls: "Keyboard or touch controls from the HTML5 build",
-    assets: "Player characters, ball, stadium, crowd, sound effects",
-    engine: "construct",
-    difficulty: {
-      easy: { matchSpeed: 0.85 },
-      normal: { matchSpeed: 1 },
-      hard: { matchSpeed: 1.15 },
-      insane: { matchSpeed: 1.3 }
-    }
   }
 ];
 

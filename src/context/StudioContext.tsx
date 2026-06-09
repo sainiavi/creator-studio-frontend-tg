@@ -1,16 +1,15 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCreatorStudio } from "@/hooks/useCreatorStudio";
-import { useWallet } from "@/hooks/useWallet";
 import { engineOf } from "@/lib/studio-meta";
 import { gameTemplates } from "@/lib/templates";
 
 type Studio = ReturnType<typeof useCreatorStudio>;
-type Wallet = ReturnType<typeof useWallet>;
 
 type StudioContextValue = {
   studio: Studio;
-  wallet: Wallet;
+  createdGames: any[];
+  addCreatedGame: (game: any) => void;
   /** Select a template (switching engine if needed) and jump to the Studio route. */
   openInStudio: (templateId: string) => void;
   sidebarCollapsed: boolean;
@@ -21,9 +20,25 @@ const StudioContext = createContext<StudioContextValue | null>(null);
 
 export function StudioProvider({ children }: { children: ReactNode }) {
   const studio = useCreatorStudio();
-  const wallet = useWallet();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const [createdGames, setCreatedGames] = useState<any[]>(() => {
+    try {
+      const stored = localStorage.getItem("kult-created-games");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const addCreatedGame = (game: any) => {
+    setCreatedGames((prev) => {
+      const updated = [game, ...prev];
+      localStorage.setItem("kult-created-games", JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const {
     createFromTemplate,
@@ -47,7 +62,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <StudioContext.Provider value={{ studio, wallet, openInStudio, sidebarCollapsed, setSidebarCollapsed }}>
+    <StudioContext.Provider value={{ studio, createdGames, addCreatedGame, openInStudio, sidebarCollapsed, setSidebarCollapsed }}>
       {children}
     </StudioContext.Provider>
   );

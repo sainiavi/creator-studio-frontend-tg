@@ -30,8 +30,7 @@ export function UnityPreview({ templateId }: { templateId: string }) {
         width="100%"
         height="100%"
         style={{ border: "none" }}
-        allow="autoplay; fullscreen; keyboard"
-        allowFullScreen
+        allow="autoplay; keyboard"
       />
       <button
         type="button"

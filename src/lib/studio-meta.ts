@@ -75,7 +75,6 @@ export const templateEmoji: Record<string, string> = {
   "race-kings": "🏁",
   "spin-wheel-royale": "🎡",
   "stake-mines": "💣",
-  "satoshi-head": "⚽",
 };
 
 // Standalone Unity WebGL build entry points (served from /public/templates).
@@ -242,7 +241,6 @@ export const constructGameUrls: Record<string, string> = {
   "race-kings": "/templates/race-kings/index.html",
   "spin-wheel-royale": "/templates/spin-wheel-royale/index.html",
   "stake-mines": "/templates/stake-mines/index.html",
-  "satoshi-head": "/templates/satoshi-head/index.html",
 };
 
 export const templateThumbnails: Record<string, string> = {

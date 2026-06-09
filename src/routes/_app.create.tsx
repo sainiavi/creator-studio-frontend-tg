@@ -71,7 +71,7 @@ function conceptFor(game: string, vibe: string) {
 }
 
 function Create() {
-  const { studio, wallet } = useStudioContext();
+  const { studio, addCreatedGame } = useStudioContext();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<"idle" | "building" | "done">("idle");
   const [step, setStep] = useState(0);
@@ -108,7 +108,7 @@ function Create() {
     try {
       const game = await studio.generateFromPrompt(strategy, buildPrompt);
       setCreatedTemplateId(game?.templateId ?? null);
-      wallet.addCreatedGame(game ?? studio.generatedPackage);
+      addCreatedGame(game ?? studio.generatedPackage);
     } finally {
       if (timer.current) clearInterval(timer.current);
       setStep(steps.length - 1);
@@ -237,20 +237,20 @@ function Create() {
             <button
               onClick={() => build("hybrid")}
               disabled={phase === "building"}
-              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[oklch(0.65_0.25_295)] py-4.5 text-base font-bold uppercase tracking-wider text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-gradient-to-r from-primary to-[oklch(0.65_0.25_295)] py-3 sm:py-4.5 text-sm sm:text-base font-bold uppercase tracking-wider text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
             >
               {phase === "building" ? (
-                <><Loader2 className="size-5 animate-spin" /> Building…</>
+                <><Loader2 className="size-4 sm:size-5 animate-spin" /> Building…</>
               ) : (
-                <><Rocket className="size-5" /> Hybrid</>
+                <><Rocket className="size-4 sm:size-5" /> Hybrid</>
               )}
             </button>
             <button
               onClick={() => build("pure-agent")}
               disabled={phase === "building"}
-              className="flex items-center justify-center gap-2 rounded-xl border border-primary/60 py-4.5 text-base font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-primary/60 py-3 sm:py-4.5 text-sm sm:text-base font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
             >
-              <Bot className="size-5" /> Pure Agent Strategy
+              <Bot className="size-4 sm:size-5" /> Pure Agent Strategy
             </button>
           </div>
         </div>
