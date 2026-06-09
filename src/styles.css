@@ -342,6 +342,23 @@ kbd {
   background: oklch(0.2 0.03 285 / 0.92);
 }
 
+.generated-badge {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 4;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: oklch(0.13 0.02 280 / 0.82);
+  color: var(--foreground);
+  pointer-events: none;
+}
+
 .feed-game-frame {
   position: relative;
 }

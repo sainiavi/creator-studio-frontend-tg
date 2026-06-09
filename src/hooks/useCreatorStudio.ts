@@ -13,6 +13,7 @@ function templateForPrompt(prompt) {
       : null;
 
   return (
+    match(["chess"], ["chess", "checkmate", "chessboard", "grandmaster"]) ||
     match(["head-soccer-2026"], ["soccer", "football", "world cup", "sports"]) ||
     match(["goof-runner"], ["endless runner", "runner", "run", "jump", "parkour"]) ||
     match(["mini-racer"], ["racing", "racer", "race", "car", "cars", "driving", "traffic"]) ||

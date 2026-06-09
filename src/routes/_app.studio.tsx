@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/studio/PageHeader";
-import { ThreePreview } from "@/components/studio/ThreePreview";
+import { GamePreview } from "@/components/studio/GamePreview";
 import { UnityPreview } from "@/components/studio/UnityPreview";
 import { Html5Preview } from "@/components/studio/Html5Preview";
 import { useStudioContext } from "@/context/StudioContext";
@@ -125,7 +125,7 @@ function Studio() {
               ) : studio.engine === "construct" ? (
                 <Html5Preview templateId={pkg.templateId} />
               ) : (
-                <ThreePreview gamePackage={pkg} />
+                <GamePreview gamePackage={pkg} />
               )}
             </div>
             <div className="mt-3 flex flex-wrap gap-2">

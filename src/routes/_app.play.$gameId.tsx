@@ -29,7 +29,7 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ThreePreview } from "@/components/studio/ThreePreview";
+import { GamePreview } from "@/components/studio/GamePreview";
 import { UnityPreview } from "@/components/studio/UnityPreview";
 import { Html5Preview } from "@/components/studio/Html5Preview";
 import { SimpleAgentGame } from "@/components/studio/SimpleAgentGame";
@@ -80,12 +80,12 @@ function LeaderboardButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="group flex min-w-14 flex-col items-center gap-2 text-white transition-transform active:scale-90 sm:min-w-16"
+      className="group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 lg:min-w-12"
     >
-      <span className="grid size-12 place-items-center rounded-full bg-white/10 transition sm:size-14 group-hover:bg-white/18">
-        <Trophy className="size-6 text-amber-400" />
+      <span className="grid size-11 place-items-center rounded-full bg-white/10 transition lg:size-10 group-hover:bg-white/18">
+        <Trophy className="size-5 text-amber-400" />
       </span>
-      <span className="text-[11px] font-black sm:text-xs">Rank</span>
+      <span className="text-[10px] font-black lg:text-[10px]">Rank</span>
     </button>
   );
 }
@@ -625,31 +625,18 @@ function PlayFeed() {
         onToggle={social.handleFavorite}
         animating={social.favoriteAnimating}
       />
+      <ActionButton
+        icon={isFullscreen ? <Minimize2 className="size-6" /> : <Maximize2 className="size-6" />}
+        label={isFullscreen ? "Exit" : "Expand"}
+        onClick={toggleFullscreen}
+      />
     </>
   );
 
   return (
     <div className="relative h-[calc(100dvh-56px)] lg:h-[100dvh] w-full bg-black overflow-hidden touch-none text-white">
-      <header className={`absolute top-0 left-0 right-0 z-40 hidden sm:block bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none transition-opacity duration-300 ${isUiHidden ? "opacity-0" : "opacity-100"}`}>
-        <div className="mx-auto flex h-20 max-w-6xl items-start justify-start sm:justify-center gap-6 px-4 pt-6 sm:px-6 pointer-events-auto overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {feedTabs.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => handleTabClick(item.label, item.gameId)}
-              className={`shrink-0 pb-2 text-[15px] font-bold drop-shadow-md transition ${
-                activeTab === item.label
-                  ? "text-white border-b-[3px] border-white"
-                  : "text-white/60 hover:text-white"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </header>
-
-      {/* Navigation Arrows for Desktop */}
-      <div className={`absolute left-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col gap-4 transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+      {/* Navigation Arrows for Desktop (Moved to right) */}
+      <div className={`absolute right-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col gap-4 transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
         <button
           type="button"
           onClick={triggerPrevGame}
@@ -668,10 +655,7 @@ function PlayFeed() {
         </button>
       </div>
 
-      {/* Right Sidebar - Social Actions */}
-      <aside className={`absolute right-2 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-6 lg:right-8 pointer-events-auto transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
-        {socialButtons}
-      </aside>
+      {/* (Old Right Sidebar removed, moved to Game Container wrapper) */}
 
       <main
         onMouseDown={handleDragStart}
@@ -698,84 +682,82 @@ function PlayFeed() {
           />
         )}
         
-        {/* Game Container */}
-        <div className="absolute inset-0 pb-[60px] lg:pb-0 z-10 flex items-center justify-center lg:pr-32 pointer-events-none">
-          <div
-            ref={frameRef}
-            className={`relative feed-game-frame w-full h-full rounded-b-3xl overflow-hidden pointer-events-auto lg:h-[calc(100vh-6rem)] lg:max-w-[calc(100vw-16rem)] lg:rounded-2xl lg:shadow-2xl ${
-              engine === "unity"
-                ? "feed-game-frame--unity"
-                : engine === "construct"
-                  ? "feed-game-frame--construct"
-                  : "feed-game-frame--canvas"
-            } ${leaderboardOpen ? "feed-game-frame--leaderboard-open" : ""}`}
-          >
-            <div className={`w-full h-full lg:pointer-events-auto ${!isGameActive ? "pointer-events-none" : ""}`}>
-              {isNeonSudoku ? (
-                <NeonSudokuGame onScoreSubmit={handleScoreSubmit} />
-              ) : isSimpleAgentGame ? (
-                <SimpleAgentGame onScoreSubmit={handleScoreSubmit} />
-              ) : engine === "unity" ? (
-                <UnityPreview templateId={template.id} />
-              ) : engine === "construct" ? (
-                <Html5Preview templateId={template.id} />
-              ) : (
-                <ThreePreview gamePackage={pkg} onScoreSubmit={handleScoreSubmit} />
-              )}
-            </div>
+        {/* Game Container Wrapper */}
+        <div className={`absolute inset-0 pb-[60px] lg:pb-0 z-10 flex items-center justify-center pointer-events-none transition-all duration-500 ease-out ${leaderboardOpen ? "lg:pr-[420px]" : ""}`}>
+          <div className="relative flex items-center justify-center w-full h-full lg:w-auto lg:h-full">
+            <div
+              ref={frameRef}
+              className={`relative feed-game-frame w-full h-full rounded-b-3xl overflow-hidden pointer-events-auto lg:w-[400px] lg:h-full lg:rounded-none lg:shadow-2xl lg:border-x lg:border-white/10 ${
+                engine === "unity"
+                  ? "feed-game-frame--unity"
+                  : engine === "construct"
+                    ? "feed-game-frame--construct"
+                    : "feed-game-frame--canvas"
+              } ${leaderboardOpen ? "feed-game-frame--leaderboard-open" : ""}`}
+            >
+              <div className={`w-full h-full lg:h-[calc(100%-76px)] lg:pointer-events-auto ${!isGameActive ? "pointer-events-none" : ""}`}>
+                {isNeonSudoku ? (
+                  <NeonSudokuGame onScoreSubmit={handleScoreSubmit} />
+                ) : isSimpleAgentGame ? (
+                  <SimpleAgentGame onScoreSubmit={handleScoreSubmit} />
+                ) : engine === "unity" ? (
+                  <UnityPreview templateId={template.id} />
+                ) : engine === "construct" ? (
+                  <Html5Preview templateId={template.id} />
+                ) : (
+                  <GamePreview gamePackage={pkg} onScoreSubmit={handleScoreSubmit} />
+                )}
+              </div>
 
-            {/* Play Button Overlay (Mobile/Tablet only) */}
-            {!isGameActive && (
-              <div 
-                className="absolute inset-0 z-20 flex lg:hidden items-center justify-center bg-black/20"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsGameActive(true);
-                }}
-              >
-                <div className="grid size-20 place-items-center rounded-full bg-white/20 text-white shadow-xl backdrop-blur-md transition-transform active:scale-95 border border-white/30">
-                  <Play size={40} className="ml-2 fill-current" />
+              {/* Play Button Overlay (Mobile/Tablet only) */}
+              {!isGameActive && (
+                <div 
+                  className="absolute inset-0 z-20 flex lg:hidden items-center justify-center bg-black/20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsGameActive(true);
+                  }}
+                >
+                  <div className="grid size-20 place-items-center rounded-full bg-white/20 text-white shadow-xl backdrop-blur-md transition-transform active:scale-95 border border-white/30">
+                    <Play size={40} className="ml-2 fill-current" />
+                  </div>
+                </div>
+              )}
+              {/* Desktop Creator Bar (Bottom of Game Frame) */}
+              <div className="absolute bottom-0 left-0 right-0 h-[76px] px-4 bg-zinc-950/90 backdrop-blur-md hidden lg:flex items-center justify-between z-30 border-t border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="grid size-10 shrink-0 place-items-center rounded-full border border-white/20 bg-black/40 font-display text-sm font-black shadow-lg">
+                    {profile.avatar}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">{profile.name}</p>
+                    <p className="text-[10px] text-white/70">Browse their games</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {isFullscreen && (
+                    <button
+                      onClick={toggleFullscreen}
+                      className="grid size-8 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                      title="Exit Fullscreen"
+                    >
+                      <Minimize2 className="size-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsFollowing(!isFollowing)}
+                    className="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-black hover:bg-white/90 transition-colors"
+                  >
+                    {isFollowing ? "Following" : "Follow"}
+                  </button>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Bottom Gradient for Text Legibility */}
-        <div className={`absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-30 pointer-events-none transition-opacity duration-300 ${isUiHidden ? "opacity-0" : "opacity-100"}`} />
-
-        {/* Overlay Info (Bottom Left) */}
-        <div className={`absolute bottom-6 left-4 lg:bottom-8 lg:left-8 z-40 hidden lg:block max-w-[calc(100%-80px)] pointer-events-none drop-shadow-md transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
-          <div className="flex items-center gap-3 pointer-events-auto mb-3">
-            <div className="grid size-11 shrink-0 place-items-center rounded-full border border-white/20 bg-black/40 font-display text-lg font-black backdrop-blur-md shadow-lg">
-              {profile.avatar}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-base font-black text-white">@{profile.name}</p>
-              <p className="text-xs text-white/80 font-medium">
-                {formatCount(social.likeCount + 15200)} plays
-              </p>
-            </div>
-          </div>
-          
-          <div className="pointer-events-auto">
-            <h1 className="font-display text-xl font-black text-white mb-1.5 drop-shadow-lg">
-              {generatedPackageMatches ? pkg.title : template.name}
-            </h1>
-            <p className="line-clamp-2 text-sm font-medium leading-snug text-white/95 drop-shadow-md mb-3">
-              {generatedPackageMatches ? pkg.gameplay?.mechanic : template.mechanic}{" "}
-              {template.controls}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {gameTags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-white/20 bg-black/30 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
+            {/* Desktop Right Actions (Floating next to game frame) */}
+            <aside className={`hidden lg:flex flex-col items-center gap-6 ml-6 pb-6 pointer-events-auto transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+              {socialButtons}
+            </aside>
           </div>
         </div>
       </main>
@@ -850,7 +832,7 @@ function PlayFeed() {
             className="fixed inset-0 z-[65] bg-black/80 backdrop-blur-sm animate-in fade-in lg:hidden"
             onClick={() => setLeaderboardOpen(false)}
           />
-          <div className="fixed z-[70] flex flex-col bg-[#0a0a0f] shadow-2xl transition-all inset-x-0 bottom-0 max-h-[90vh] w-full rounded-t-[2.5rem] animate-in slide-in-from-bottom p-6 pb-8 lg:inset-y-0 lg:bottom-auto lg:right-0 lg:left-auto lg:w-[min(420px,calc(100vw-92px))] lg:max-h-screen lg:rounded-none lg:border-l lg:border-white/10 lg:bg-zinc-950/95 lg:animate-in lg:slide-in-from-right lg:pb-6">
+          <div className="fixed z-[70] flex flex-col bg-[#0a0a0f] shadow-2xl transition-all inset-x-0 bottom-0 max-h-[90vh] w-full rounded-t-[2.5rem] animate-in slide-in-from-bottom p-6 pb-8 lg:top-0 lg:bottom-0 lg:right-0 lg:left-auto lg:w-[min(420px,calc(100vw-92px))] lg:max-h-screen lg:rounded-none lg:border-l lg:border-white/10 lg:bg-zinc-950/95 lg:animate-in lg:slide-in-from-right lg:pb-6">
             <div className="mx-auto mb-6 h-1 w-12 shrink-0 rounded-full bg-white/20 lg:hidden" />
             <div className="flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <LeaderboardPanel
@@ -885,16 +867,16 @@ function ActionButton({
   return (
     <button
       onClick={onClick}
-      className={`group flex min-w-14 flex-col items-center gap-2 text-white transition-transform active:scale-90 sm:min-w-16 ${active ? "text-white/100" : ""}`}
+      className={`group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 lg:min-w-12 ${active ? "text-white/100" : ""}`}
     >
       <span
-        className={`grid size-12 place-items-center rounded-full transition sm:size-14 ${
+        className={`grid size-11 place-items-center rounded-full transition lg:size-10 ${
           active ? "bg-white/25 ring-1 ring-white/30" : "bg-white/10 group-hover:bg-white/18"
         }`}
       >
-        {icon}
+        <div className="scale-75">{icon}</div>
       </span>
-      <span className="text-[11px] font-black sm:text-xs">{label}</span>
+      <span className="text-[10px] font-black lg:text-[10px]">{label}</span>
     </button>
   );
 }
@@ -909,22 +891,22 @@ function FollowSidebarButton({
   return (
     <button
       onClick={onToggle}
-      className={`group flex min-w-14 flex-col items-center gap-2 transition-transform active:scale-90 sm:min-w-16 ${following ? "text-white/60" : "text-white"}`}
+      className={`group flex min-w-12 flex-col items-center gap-1.5 transition-transform active:scale-90 lg:min-w-12 ${following ? "text-white/60" : "text-white"}`}
     >
       <span
-        className={`grid size-12 place-items-center rounded-full transition duration-300 sm:size-14 ${
+        className={`grid size-11 place-items-center rounded-full transition duration-300 lg:size-10 ${
           following
             ? "bg-white/10"
             : "bg-gradient-to-tr from-rose-500 to-pink-500 shadow-[0_0_15px_rgba(244,63,94,0.4)]"
         }`}
       >
         {following ? (
-          <Check className="size-6 text-white/80" />
+          <Check className="size-5 text-white/80" />
         ) : (
-          <UserPlus className="size-6 text-white" />
+          <UserPlus className="size-5 text-white" />
         )}
       </span>
-      <span className="text-[11px] font-black sm:text-xs">
+      <span className="text-[10px] font-black lg:text-[10px]">
         {following ? "Following" : "Follow"}
       </span>
     </button>
@@ -945,21 +927,21 @@ function LikeButton({
   return (
     <button
       onClick={onToggle}
-      className="group flex min-w-14 flex-col items-center gap-2 transition-transform active:scale-90 sm:min-w-16"
+      className="group flex min-w-12 flex-col items-center gap-1.5 transition-transform active:scale-90 lg:min-w-12"
     >
       <span
-        className={`grid size-12 place-items-center rounded-full transition sm:size-14 ${
+        className={`grid size-11 place-items-center rounded-full transition lg:size-10 ${
           liked ? "bg-rose-500/30 ring-1 ring-rose-400/50" : "bg-white/10 group-hover:bg-white/18"
         }`}
       >
         <Heart
-          className={`size-6 transition-all ${
+          className={`size-5 transition-all ${
             liked ? "fill-rose-400 text-rose-400" : "text-white"
           } ${animating ? "scale-125" : "scale-100"}`}
         />
       </span>
       <span
-        className={`text-[11px] font-black sm:text-xs ${liked ? "text-rose-400" : "text-white"}`}
+        className={`text-[10px] font-black lg:text-[10px] ${liked ? "text-rose-400" : "text-white"}`}
       >
         {count > 0 ? formatCount(count) : "Like"}
       </span>
@@ -981,10 +963,10 @@ function FavoriteButton({
   return (
     <button
       onClick={onToggle}
-      className="group flex min-w-14 flex-col items-center gap-2 transition-transform active:scale-90 sm:min-w-16"
+      className="group flex min-w-12 flex-col items-center gap-1.5 transition-transform active:scale-90 lg:min-w-12"
     >
       <span
-        className={`grid size-12 place-items-center rounded-full transition sm:size-14 ${
+        className={`grid size-11 place-items-center rounded-full transition lg:size-10 ${
           favorited
             ? "bg-amber-500/30 ring-1 ring-amber-400/50"
             : "bg-white/10 group-hover:bg-white/18"
@@ -992,14 +974,14 @@ function FavoriteButton({
       >
         {favorited ? (
           <BookmarkCheck
-            className={`size-6 text-amber-400 transition-all ${animating ? "scale-125" : "scale-100"}`}
+            className={`size-5 text-amber-400 transition-all ${animating ? "scale-125" : "scale-100"}`}
           />
         ) : (
-          <Bookmark className="size-6 text-white" />
+          <Bookmark className="size-5 text-white" />
         )}
       </span>
       <span
-        className={`text-[11px] font-black sm:text-xs ${favorited ? "text-amber-400" : "text-white"}`}
+        className={`text-[10px] font-black lg:text-[10px] ${favorited ? "text-amber-400" : "text-white"}`}
       >
         {count > 0 ? formatCount(count) : "Favorite"}
       </span>
@@ -1259,16 +1241,16 @@ function ShareButton({
     <div className="relative">
       <button
         onClick={onToggle}
-        className="group flex min-w-14 flex-col items-center gap-2 text-white transition-transform active:scale-90 sm:min-w-16"
+        className="group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 lg:min-w-12"
       >
         <span
-          className={`grid size-12 place-items-center rounded-full transition sm:size-14 ${
+          className={`grid size-11 place-items-center rounded-full transition lg:size-10 ${
             open ? "bg-white/25 ring-1 ring-white/30" : "bg-white/10 group-hover:bg-white/18"
           }`}
         >
-          <Send className="size-6" />
+          <Send className="size-5" />
         </span>
-        <span className="text-[11px] font-black sm:text-xs">
+        <span className="text-[10px] font-black lg:text-[10px]">
           {count > 0 ? formatCount(count) : "Share"}
         </span>
       </button>

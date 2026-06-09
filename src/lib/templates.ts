@@ -2873,6 +2873,24 @@ const rawGameTemplates = [
     }
   },
   {
+    id: "chess",
+    name: "Chess",
+    category: "Board",
+    time: "30s",
+    reliability: "100%",
+    accent: "#ffd166",
+    colors: ["#ffd166", "#35e8ff", "#67ffb4"],
+    mechanic: "Click a piece, then a highlighted square. Full legal moves, check, checkmate, castling, en passant. Play White vs a built-in AI.",
+    controls: "Click or tap a piece then its destination, R to restart",
+    assets: "8x8 board, Unicode piece glyphs, move highlights, captured-piece tray",
+    difficulty: {
+      easy: { aiDelay: 0.35, aiThink: 0 },
+      normal: { aiDelay: 0.45, aiThink: 1 },
+      hard: { aiDelay: 0.25, aiThink: 1 },
+      insane: { aiDelay: 0.15, aiThink: 1 }
+    }
+  },
+  {
     id: "quiz",
     name: "Quiz Rush",
     category: "Trivia",

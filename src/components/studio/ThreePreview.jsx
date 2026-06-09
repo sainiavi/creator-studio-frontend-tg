@@ -2771,9 +2771,467 @@ function makeUnityKarting(gamePackage) {
   };
 }
 
+function makeChess(gamePackage) {
+  const game = makeGamePackage(gamePackage);
+  const TILE = 50;
+  const BOARD_X = 96;
+  const BOARD_Y = 122;
+  const aiDelay = game.tuning.aiDelay ?? 0.45;
+
+  const VALUE = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  const SOLID = { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" };
+
+  let board, turn, selected, legalForSelected, enPassant, castling, lastMove, capturedByWhite, capturedByBlack, aiTimer;
+
+  function inside(r, c) {
+    return r >= 0 && r < 8 && c >= 0 && c < 8;
+  }
+
+  function cloneBoard(b) {
+    return b.map((row) => row.slice());
+  }
+
+  function initBoard() {
+    const back = ["r", "n", "b", "q", "k", "b", "n", "r"];
+    const b = Array.from({ length: 8 }, () => Array(8).fill(null));
+    for (let c = 0; c < 8; c++) {
+      b[0][c] = { type: back[c], color: "b" };
+      b[1][c] = { type: "p", color: "b" };
+      b[6][c] = { type: "p", color: "w" };
+      b[7][c] = { type: back[c], color: "w" };
+    }
+    return b;
+  }
+
+  function reset() {
+    board = initBoard();
+    turn = "w";
+    selected = null;
+    legalForSelected = [];
+    enPassant = null;
+    castling = { w: { k: true, q: true }, b: { k: true, q: true } };
+    lastMove = null;
+    capturedByWhite = [];
+    capturedByBlack = [];
+    aiTimer = 0;
+    game.over = false;
+    game.score = 0;
+    game.message = "White to move";
+  }
+
+  function attacked(b, byColor, r, c) {
+    const dir = byColor === "w" ? -1 : 1;
+    for (const dc of [-1, 1]) {
+      const pr = r - dir;
+      const pc = c - dc;
+      if (inside(pr, pc)) {
+        const p = b[pr][pc];
+        if (p && p.color === byColor && p.type === "p") return true;
+      }
+    }
+    const kn = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
+    for (const [dr, dc] of kn) {
+      const tr = r + dr;
+      const tc = c + dc;
+      if (inside(tr, tc)) {
+        const p = b[tr][tc];
+        if (p && p.color === byColor && p.type === "n") return true;
+      }
+    }
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const tr = r + dr;
+        const tc = c + dc;
+        if (inside(tr, tc)) {
+          const p = b[tr][tc];
+          if (p && p.color === byColor && p.type === "k") return true;
+        }
+      }
+    }
+    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      let tr = r + dr;
+      let tc = c + dc;
+      while (inside(tr, tc)) {
+        const p = b[tr][tc];
+        if (p) {
+          if (p.color === byColor && (p.type === "r" || p.type === "q")) return true;
+          break;
+        }
+        tr += dr;
+        tc += dc;
+      }
+    }
+    for (const [dr, dc] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
+      let tr = r + dr;
+      let tc = c + dc;
+      while (inside(tr, tc)) {
+        const p = b[tr][tc];
+        if (p) {
+          if (p.color === byColor && (p.type === "b" || p.type === "q")) return true;
+          break;
+        }
+        tr += dr;
+        tc += dc;
+      }
+    }
+    return false;
+  }
+
+  function findKing(b, color) {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = b[r][c];
+        if (p && p.color === color && p.type === "k") return { r, c };
+      }
+    }
+    return null;
+  }
+
+  function inCheck(b, color) {
+    const king = findKing(b, color);
+    if (!king) return false;
+    return attacked(b, color === "w" ? "b" : "w", king.r, king.c);
+  }
+
+  function genPiece(b, r, c, ep) {
+    const p = b[r][c];
+    if (!p) return [];
+    const moves = [];
+    const color = p.color;
+    const enemy = color === "w" ? "b" : "w";
+    const add = (tr, tc, opts) => moves.push({ from: { r, c }, to: { r: tr, c: tc }, ...opts });
+
+    if (p.type === "p") {
+      const dir = color === "w" ? -1 : 1;
+      const startRow = color === "w" ? 6 : 1;
+      const addPawn = (tr, tc, opts) => {
+        const promo = tr === 0 || tr === 7;
+        add(tr, tc, { ...opts, promotion: promo ? "q" : null });
+      };
+      if (inside(r + dir, c) && !b[r + dir][c]) {
+        addPawn(r + dir, c, {});
+        if (r === startRow && !b[r + 2 * dir][c]) add(r + 2 * dir, c, { double: true, promotion: null });
+      }
+      for (const dc of [-1, 1]) {
+        const tr = r + dir;
+        const tc = c + dc;
+        if (!inside(tr, tc)) continue;
+        const target = b[tr][tc];
+        if (target && target.color === enemy) addPawn(tr, tc, { capture: true });
+        else if (ep && ep.r === tr && ep.c === tc) add(tr, tc, { enPassant: true, capture: true, promotion: null });
+      }
+    } else if (p.type === "n") {
+      const kn = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
+      for (const [dr, dc] of kn) {
+        const tr = r + dr;
+        const tc = c + dc;
+        if (inside(tr, tc) && (!b[tr][tc] || b[tr][tc].color === enemy)) add(tr, tc, { capture: !!b[tr][tc] });
+      }
+    } else if (p.type === "k") {
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const tr = r + dr;
+          const tc = c + dc;
+          if (inside(tr, tc) && (!b[tr][tc] || b[tr][tc].color === enemy)) add(tr, tc, { capture: !!b[tr][tc] });
+        }
+      }
+    } else {
+      const dirs = [];
+      if (p.type === "r" || p.type === "q") dirs.push([-1, 0], [1, 0], [0, -1], [0, 1]);
+      if (p.type === "b" || p.type === "q") dirs.push([-1, -1], [-1, 1], [1, -1], [1, 1]);
+      for (const [dr, dc] of dirs) {
+        let tr = r + dr;
+        let tc = c + dc;
+        while (inside(tr, tc)) {
+          if (!b[tr][tc]) add(tr, tc, {});
+          else {
+            if (b[tr][tc].color === enemy) add(tr, tc, { capture: true });
+            break;
+          }
+          tr += dr;
+          tc += dc;
+        }
+      }
+    }
+    return moves;
+  }
+
+  function boardAfter(b, m) {
+    const nb = cloneBoard(b);
+    const p = nb[m.from.r][m.from.c];
+    nb[m.to.r][m.to.c] = p;
+    nb[m.from.r][m.from.c] = null;
+    if (m.enPassant) nb[m.from.r][m.to.c] = null;
+    if (m.promotion) nb[m.to.r][m.to.c] = { type: m.promotion, color: p.color };
+    if (m.castle === "k") {
+      nb[m.from.r][5] = nb[m.from.r][7];
+      nb[m.from.r][7] = null;
+    }
+    if (m.castle === "q") {
+      nb[m.from.r][3] = nb[m.from.r][0];
+      nb[m.from.r][0] = null;
+    }
+    return nb;
+  }
+
+  function legalMoves(b, color, ep, cast) {
+    const list = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = b[r][c];
+        if (!p || p.color !== color) continue;
+        for (const m of genPiece(b, r, c, ep)) {
+          if (!inCheck(boardAfter(b, m), color)) list.push(m);
+        }
+      }
+    }
+    const rights = cast[color];
+    const homeRow = color === "w" ? 7 : 0;
+    const enemy = color === "w" ? "b" : "w";
+    const king = b[homeRow][4];
+    if (king && king.type === "k" && king.color === color && !attacked(b, enemy, homeRow, 4)) {
+      const rk = b[homeRow][7];
+      if (rights.k && !b[homeRow][5] && !b[homeRow][6] && rk && rk.type === "r" && rk.color === color &&
+        !attacked(b, enemy, homeRow, 5) && !attacked(b, enemy, homeRow, 6)) {
+        list.push({ from: { r: homeRow, c: 4 }, to: { r: homeRow, c: 6 }, castle: "k" });
+      }
+      const rq = b[homeRow][0];
+      if (rights.q && !b[homeRow][1] && !b[homeRow][2] && !b[homeRow][3] && rq && rq.type === "r" && rq.color === color &&
+        !attacked(b, enemy, homeRow, 3) && !attacked(b, enemy, homeRow, 2)) {
+        list.push({ from: { r: homeRow, c: 4 }, to: { r: homeRow, c: 2 }, castle: "q" });
+      }
+    }
+    return list;
+  }
+
+  function doMove(m) {
+    const p = board[m.from.r][m.from.c];
+    const captured = m.enPassant ? board[m.from.r][m.to.c] : board[m.to.r][m.to.c];
+    if (captured) {
+      if (captured.color === "b") capturedByWhite.push(captured);
+      else capturedByBlack.push(captured);
+    }
+    board = boardAfter(board, m);
+    if (p.type === "k") {
+      castling[p.color].k = false;
+      castling[p.color].q = false;
+    }
+    if (p.type === "r") {
+      const hr = p.color === "w" ? 7 : 0;
+      if (m.from.r === hr && m.from.c === 0) castling[p.color].q = false;
+      if (m.from.r === hr && m.from.c === 7) castling[p.color].k = false;
+    }
+    const enemy = p.color === "w" ? "b" : "w";
+    const ehr = enemy === "w" ? 7 : 0;
+    if (m.to.r === ehr && m.to.c === 0) castling[enemy].q = false;
+    if (m.to.r === ehr && m.to.c === 7) castling[enemy].k = false;
+    enPassant = m.double ? { r: (m.from.r + m.to.r) / 2, c: m.to.c } : null;
+    lastMove = m;
+    turn = enemy;
+    game.score = capturedByWhite.reduce((s, q) => s + VALUE[q.type], 0) * 10;
+  }
+
+  function updateStatus() {
+    const moves = legalMoves(board, turn, enPassant, castling);
+    const checked = inCheck(board, turn);
+    if (moves.length === 0) {
+      game.over = true;
+      if (checked) game.message = turn === "b" ? "VICTORY!" : "Checkmate — Black wins";
+      else game.message = "Stalemate — Draw";
+    } else {
+      game.message = (turn === "w" ? "White" : "Black") + " to move" + (checked ? " — Check!" : "");
+    }
+  }
+
+  function aiMove() {
+    const moves = legalMoves(board, "b", enPassant, castling);
+    if (!moves.length) return;
+    let best = null;
+    let bestScore = -Infinity;
+    for (const m of moves) {
+      let s = Math.random() * 0.5;
+      const target = m.enPassant ? board[m.from.r][m.to.c] : board[m.to.r][m.to.c];
+      if (target) s += VALUE[target.type] * 10;
+      if (m.promotion) s += 8;
+      const nb = boardAfter(board, m);
+      if (inCheck(nb, "w")) {
+        s += legalMoves(nb, "w", null, castling).length === 0 ? 1000 : 0.6;
+      }
+      if (attacked(nb, "w", m.to.r, m.to.c)) {
+        s -= VALUE[board[m.from.r][m.from.c].type] * 6;
+      }
+      if (s > bestScore) {
+        bestScore = s;
+        best = m;
+      }
+    }
+    doMove(best);
+    updateStatus();
+  }
+
+  function selectSquare(r, c) {
+    selected = { r, c };
+    legalForSelected = legalMoves(board, "w", enPassant, castling).filter(
+      (m) => m.from.r === r && m.from.c === c,
+    );
+  }
+
+  function handleClick(r, c) {
+    const p = board[r][c];
+    if (selected) {
+      const move = legalForSelected.find((m) => m.to.r === r && m.to.c === c);
+      if (move) {
+        doMove(move);
+        selected = null;
+        legalForSelected = [];
+        updateStatus();
+        if (!game.over && turn === "b") aiTimer = aiDelay;
+        return;
+      }
+      if (p && p.color === "w") selectSquare(r, c);
+      else {
+        selected = null;
+        legalForSelected = [];
+      }
+      return;
+    }
+    if (p && p.color === "w") selectSquare(r, c);
+  }
+
+  reset();
+
+  function squareCenter(r, c) {
+    return { x: BOARD_X + c * TILE + TILE / 2, y: BOARD_Y + r * TILE + TILE / 2 };
+  }
+
+  function drawPiece(ctx, piece, cx, cy) {
+    ctx.font = `${TILE - 9}px "Apple Symbols", "Segoe UI Symbol", "Arial Unicode MS", system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const g = SOLID[piece.type];
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = piece.color === "w" ? "#1a2436" : "#04060b";
+    ctx.fillStyle = piece.color === "w" ? "#f4f6fb" : "#11151d";
+    ctx.strokeText(g, cx, cy);
+    ctx.fillText(g, cx, cy);
+  }
+
+  return {
+    update(dt, input) {
+      if (game.over) {
+        if (input.restartPressed || input.actionPressed) reset();
+        return;
+      }
+      if (input.restartPressed) {
+        reset();
+        return;
+      }
+      if (turn === "b") {
+        aiTimer -= dt;
+        if (aiTimer <= 0) aiMove();
+        return;
+      }
+      if (input.pointer.pressed) {
+        const c = Math.floor((input.pointer.x - BOARD_X) / TILE);
+        const r = Math.floor((input.pointer.y - BOARD_Y) / TILE);
+        if (inside(r, c)) handleClick(r, c);
+      }
+    },
+    draw(ctx) {
+      drawBackground(ctx, game.colors);
+
+      const checkedColor = inCheck(board, turn) ? turn : null;
+      const checkedKing = checkedColor ? findKing(board, checkedColor) : null;
+
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const x = BOARD_X + c * TILE;
+          const y = BOARD_Y + r * TILE;
+          ctx.fillStyle = (r + c) % 2 === 0 ? "#ede6d2" : "#5d6b7c";
+          ctx.fillRect(x, y, TILE, TILE);
+        }
+      }
+
+      if (lastMove) {
+        ctx.fillStyle = `${game.colors[1]}40`;
+        ctx.fillRect(BOARD_X + lastMove.from.c * TILE, BOARD_Y + lastMove.from.r * TILE, TILE, TILE);
+        ctx.fillRect(BOARD_X + lastMove.to.c * TILE, BOARD_Y + lastMove.to.r * TILE, TILE, TILE);
+      }
+
+      if (checkedKing) {
+        ctx.fillStyle = "rgba(255,72,109,0.45)";
+        ctx.fillRect(BOARD_X + checkedKing.c * TILE, BOARD_Y + checkedKing.r * TILE, TILE, TILE);
+      }
+
+      if (selected) {
+        ctx.strokeStyle = game.colors[0];
+        ctx.lineWidth = 3;
+        ctx.strokeRect(BOARD_X + selected.c * TILE + 1.5, BOARD_Y + selected.r * TILE + 1.5, TILE - 3, TILE - 3);
+      }
+
+      for (const m of legalForSelected) {
+        const center = squareCenter(m.to.r, m.to.c);
+        ctx.fillStyle = `${game.colors[2]}cc`;
+        ctx.beginPath();
+        if (m.capture) {
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = `${game.colors[2]}cc`;
+          ctx.arc(center.x, center.y, TILE / 2 - 4, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.arc(center.x, center.y, 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const piece = board[r][c];
+          if (piece) {
+            const center = squareCenter(r, c);
+            drawPiece(ctx, piece, center.x, center.y);
+          }
+        }
+      }
+
+      // board border + coordinates
+      ctx.strokeStyle = "rgba(255,255,255,0.25)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(BOARD_X, BOARD_Y, TILE * 8, TILE * 8);
+      ctx.textBaseline = "middle";
+      for (let c = 0; c < 8; c++) {
+        drawText(ctx, String.fromCharCode(97 + c), BOARD_X + c * TILE + TILE / 2, BOARD_Y + TILE * 8 + 12, 12, "#7d8ba0", "center");
+      }
+      for (let r = 0; r < 8; r++) {
+        drawText(ctx, String(8 - r), BOARD_X - 12, BOARD_Y + r * TILE + TILE / 2, 12, "#7d8ba0", "center");
+      }
+
+      // side panel
+      const panelX = BOARD_X + TILE * 8 + 36;
+      drawText(ctx, "You — White", panelX, BOARD_Y + 16, 18, "#eef6ff", "left");
+      drawText(ctx, "AI — Black", panelX, BOARD_Y + 44, 18, "#91a4b8", "left");
+      drawText(ctx, "Captured", panelX, BOARD_Y + 92, 14, "#7d8ba0", "left");
+      ctx.font = "24px 'Apple Symbols','Segoe UI Symbol','Arial Unicode MS',system-ui,sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#f4f6fb";
+      ctx.fillText(capturedByWhite.map((p) => SOLID[p.type]).join(" ") || "—", panelX, BOARD_Y + 118);
+      ctx.fillStyle = "#11151d";
+      ctx.fillText(capturedByBlack.map((p) => SOLID[p.type]).join(" ") || "—", panelX, BOARD_Y + 150);
+      drawText(ctx, turn === "b" && !game.over ? "AI thinking…" : "Your move", panelX, BOARD_Y + 196, 16, game.colors[0], "left");
+      drawText(ctx, "Click piece, then square", panelX, BOARD_Y + 228, 12, "#7d8ba0", "left");
+      drawText(ctx, "R — new game", panelX, BOARD_Y + 250, 12, "#7d8ba0", "left");
+
+      drawGameHud(ctx, game, "Chess: click a piece, then its destination");
+    },
+  };
+}
+
 function makeRuntime(gamePackage) {
   const makers = {
     "ai-arena": makeArenaBattle,
+    chess: makeChess,
     "cyber-runner": makeCyberRunner,
     clicker: makeClicker,
     drawing: makeDrawing,
