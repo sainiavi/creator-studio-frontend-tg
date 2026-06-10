@@ -8,11 +8,16 @@ type AnyPackage = Record<string, unknown> & {
 
 // Strip the relative imports the agent module expects (gamePackage.js, styles.css,
 // and any other "./..." import) so the code can run as a self-contained inline module.
+// Exports must go too: the module body runs inside a try/catch, where `export`
+// is a syntax error that blanks the entire game.
 function prepareModule(code: string): string {
   return code
     .replace(/^\s*import\s+["'][^"']*\.css["'];?\s*$/gm, "")
     .replace(/^\s*import\s+[^;\n]*from\s+["']\.\.?\/[^"']*["'];?\s*$/gm, "")
-    .replace(/^\s*import\s+["']\.\.?\/[^"']*["'];?\s*$/gm, "");
+    .replace(/^\s*import\s+["']\.\.?\/[^"']*["'];?\s*$/gm, "")
+    .replace(/^\s*export\s+default\s+/gm, "")
+    .replace(/^\s*export\s*\{[^}]*\}\s*;?\s*$/gm, "")
+    .replace(/^(\s*)export\s+(const|let|var|function|class|async)/gm, "$1$2");
 }
 
 function buildSrcDoc(code: string, pkg: AnyPackage): string {

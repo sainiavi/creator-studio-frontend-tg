@@ -27,9 +27,10 @@ import {
   Zap,
 } from "lucide-react";
 import { gameTemplates } from "@/lib/templates";
-import { templateToGame } from "@/lib/studio-meta";
+import { templateToGame, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
 import type { Game } from "@/lib/games-data";
 import { useStudioContext } from "@/context/StudioContext";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -50,7 +51,7 @@ const featured: Game[] = [
     emoji: "S",
     gradient: "violet",
     creator: "@0g-agent",
-    thumbnailUrl: "/thumbnails/neon-sudoku-cover.png",
+    thumbnailUrl: getThumbnailUrl("neon-sudoku"),
     templateId: "neon-sudoku",
   },
   {
@@ -60,7 +61,7 @@ const featured: Game[] = [
     emoji: "A",
     gradient: "cyan",
     creator: "@0g-agent",
-    thumbnailUrl: "/thumbnails/simple-agent-game-cover.png",
+    thumbnailUrl: getThumbnailUrl("simple-agent-game"),
     templateId: "simple-agent-game",
   },
   ...library,
@@ -97,8 +98,48 @@ function uniqueGames(games: Game[]) {
 
 function Home() {
   const navigate = useNavigate();
-  const { studio, createdGames } = useStudioContext();
+  const { studio, createdGames, removeCreatedGame } = useStudioContext();
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Game[]>([]);
+  const [, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!query) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const handler = setTimeout(() => {
+      api
+        .get(`/games/list?q=${encodeURIComponent(query)}&limit=20`)
+        .then((res) => {
+          const games: any[] = res.data?.games ?? [];
+          const mapped = games.map((g: any, index: number) => ({
+            title: g.title,
+            category: g.category ?? "Game",
+            plays: "New",
+            emoji: "🎮",
+            gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
+            creator: g.creator ?? "you",
+            thumbnailUrl: resolveGameThumbnail(g),
+            templateId: g.id ?? g.templateId,
+            prompt: g.customization?.prompt || "",
+          }));
+          setSearchResults(mapped);
+        })
+        .catch(() => {
+          // fail silently
+        })
+        .finally(() => {
+          setIsSearching(false);
+        });
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
   const [prompt, setPrompt] = useState(
     "Create a cyberpunk racing game with AI drivers and neon city rewards.",
   );
@@ -109,15 +150,17 @@ function Home() {
     () =>
       createdGames
         .filter((g: any) => g?.title)
+        .filter((g: any, i: number, all: any[]) => !g?.id || all.findIndex((x: any) => x?.id === g.id) === i)
         .map((g: any, index: number) => ({
           title: g.title,
           category: g.category ?? "Game",
           plays: "New",
           emoji: "🎮",
-          gradient: index % 2 === 0 ? "violet" : "cyan",
+          gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
           creator: "you",
-          thumbnailUrl: g.thumbnailUrl ?? "/thumbnails/simple-agent-game-cover.png",
+          thumbnailUrl: resolveGameThumbnail(g),
           templateId: g.id ?? g.templateId,
+          prompt: g.customization?.prompt || "",
         })),
     [createdGames],
   );
@@ -186,17 +229,30 @@ function Home() {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return shelves;
 
-    return shelves
-      .map((shelf) => ({
-        ...shelf,
-        games: shelf.games.filter((game) =>
-          [game.title, game.category, game.creator].some((value) =>
-            value.toLowerCase().includes(query),
-          ),
+    // Local matches across all shelves as an instant starting point
+    const localMatches = shelves
+      .flatMap((shelf) => shelf.games)
+      .filter((game, index, self) =>
+        self.findIndex((g) => g.templateId === game.templateId || g.title === game.title) === index
+      )
+      .filter((game) =>
+        [game.title, game.category, game.creator, game.prompt || ""].some((value) =>
+          value.toLowerCase().includes(query),
         ),
-      }))
-      .filter((shelf) => shelf.games.length > 0);
-  }, [searchQuery, shelves]);
+      );
+
+    // Merge local matches with background search results from DB
+    const allResults = [...searchResults];
+    localMatches.forEach((lm) => {
+      if (!allResults.some((ar) => ar.templateId === lm.templateId || ar.title === lm.title)) {
+        allResults.push(lm);
+      }
+    });
+
+    return [
+      { title: `Search Results for “${searchQuery}”`, games: allResults }
+    ];
+  }, [searchQuery, shelves, searchResults]);
 
   const create = () => {
     studio.setPrompt(prompt);
@@ -241,7 +297,7 @@ function Home() {
         <main className="min-w-0 space-y-3">
           <section className="relative min-h-[380px] overflow-hidden rounded-lg border border-border/60 bg-card">
             <img
-              src="/thumbnails/cyber-runner-cover.png"
+              src={getThumbnailUrl("cyber-runner")}
               alt=""
               className="absolute inset-0 h-full w-full object-cover opacity-55"
             />
@@ -282,7 +338,17 @@ function Home() {
           </section>
 
           {visibleShelves.slice(0, 3).map((shelf) => (
-            <GameShelf key={shelf.title} title={shelf.title} games={shelf.games} cardsPerRow={4} />
+            <GameShelf
+              key={shelf.title}
+              title={shelf.title}
+              games={shelf.games}
+              cardsPerRow={4}
+              onDeleteGame={
+                shelf.title === "My Creations"
+                  ? (game) => { if (game.templateId) void removeCreatedGame(game.templateId); }
+                  : undefined
+              }
+            />
           ))}
         </main>
 
@@ -362,7 +428,16 @@ function Home() {
 
         <div className="min-w-0 space-y-3 xl:col-span-2">
           {visibleShelves.slice(3).map((shelf) => (
-            <GameShelf key={shelf.title} title={shelf.title} games={shelf.games} />
+            <GameShelf
+              key={shelf.title}
+              title={shelf.title}
+              games={shelf.games}
+              onDeleteGame={
+                shelf.title === "My Creations"
+                  ? (game) => { if (game.templateId) void removeCreatedGame(game.templateId); }
+                  : undefined
+              }
+            />
           ))}
         </div>
       </div>
@@ -392,7 +467,7 @@ function Feature({
   );
 }
 
-function GameShelf({ title, games, cardsPerRow }: { title: string; games: Game[]; cardsPerRow?: number }) {
+function GameShelf({ title, games, cardsPerRow, onDeleteGame }: { title: string; games: Game[]; cardsPerRow?: number; onDeleteGame?: (game: Game) => void }) {
   const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -489,7 +564,11 @@ function GameShelf({ title, games, cardsPerRow }: { title: string; games: Game[]
                 className={basisClass}
               >
                 {item.type === "game" ? (
-                  <GameTile game={item.game} onOpen={() => openGame(item.game)} />
+                  <GameTile
+                    game={item.game}
+                    onOpen={() => openGame(item.game)}
+                    onDelete={onDeleteGame ? () => onDeleteGame(item.game) : undefined}
+                  />
                 ) : (
                   <PlaceholderTile />
                 )}
@@ -535,6 +614,7 @@ function GameShelf({ title, games, cardsPerRow }: { title: string; games: Game[]
                       key={`${item.game.title}-grid-${index}`}
                       game={item.game}
                       onOpen={() => openGame(item.game)}
+                      onDelete={onDeleteGame ? () => onDeleteGame(item.game) : undefined}
                     />
                   ) : (
                     <PlaceholderTile key={`${title}-grid-placeholder-${item.slot}`} />
@@ -567,7 +647,24 @@ function PlaceholderTile() {
   );
 }
 
-function GameTile({ game, onOpen }: { game: Game; onOpen: () => void }) {
+// Inline cover shown when a game has no stored image (e.g. its generated
+// cover failed) — anything but a broken-image icon.
+const FALLBACK_COVER =
+  "data:image/svg+xml;base64," +
+  btoa(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#2b1a4f"/><stop offset="1" stop-color="#0c1230"/>
+      </linearGradient></defs>
+      <rect width="400" height="400" fill="url(#g)"/>
+      <circle cx="200" cy="170" r="64" fill="none" stroke="#8d6bff" stroke-width="6" opacity="0.7"/>
+      <rect x="160" y="150" width="80" height="40" rx="12" fill="#8d6bff" opacity="0.8"/>
+      <circle cx="176" cy="170" r="6" fill="#0c1230"/><circle cx="224" cy="170" r="6" fill="#0c1230"/>
+      <text x="200" y="290" text-anchor="middle" fill="#b9a8ff" font-family="monospace" font-size="20">AI GAME</text>
+    </svg>`,
+  );
+
+function GameTile({ game, onOpen, onDelete }: { game: Game; onOpen: () => void; onDelete?: () => void }) {
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
   return (
@@ -597,9 +694,29 @@ function GameTile({ game, onOpen }: { game: Game; onOpen: () => void }) {
           src={game.thumbnailUrl}
           alt=""
           draggable={false}
+          onError={(event) => {
+            const img = event.currentTarget;
+            if (img.dataset.fallback) return;
+            img.dataset.fallback = "1";
+            img.src = FALLBACK_COVER;
+          }}
           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent" />
+        {onDelete && (
+          <button
+            title={`Delete ${game.title}`}
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerUp={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (window.confirm(`Delete "${game.title}"? This cannot be undone.`)) onDelete();
+            }}
+            className="absolute right-1.5 top-1.5 z-10 grid size-6 place-items-center rounded-md bg-black/60 text-white/80 opacity-0 transition group-hover:opacity-100 hover:bg-red-600 hover:text-white"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
       </div>
       <div className="p-2">
         <p className="truncate text-[11px] font-bold">{game.title}</p>

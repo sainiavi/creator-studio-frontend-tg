@@ -8,6 +8,7 @@ export type Game = {
   thumbnailUrl?: string;
   /** When set, the card opens this real template in the Studio. */
   templateId?: string;
+  prompt?: string;
 };
 
 export const playersChoice: Game[] = [

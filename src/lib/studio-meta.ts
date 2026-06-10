@@ -1,5 +1,47 @@
 import type { Game } from "./games-data";
 
+// Build the API base URL from env, same logic as api.ts.
+const rawBaseUrl = import.meta.env.VITE_API_URL ?? "";
+const apiBase = rawBaseUrl.replace(/\/$/, "").endsWith("/api")
+  ? rawBaseUrl.replace(/\/$/, "")
+  : `${rawBaseUrl.replace(/\/$/, "")}/api`;
+
+/**
+ * Returns the backend API URL for a thumbnail image.
+ * Falls back to the static path from templateThumbnails if needed.
+ */
+export function getThumbnailUrl(templateId: string): string {
+  return `${apiBase}/thumbnails/${encodeURIComponent(templateId)}`;
+}
+
+/**
+ * Resolves the best cover image for a created game:
+ *  1. its own generated cover (served by the backend, stored as "/api/..."),
+ *  2. any non-placeholder URL it carries,
+ *  3. the game's OWN id in the thumbnails collection,
+ *  4. finally the template family cover.
+ * Backend-relative paths are made absolute against the API origin so they work
+ * regardless of dev-server proxying.
+ */
+export function resolveGameThumbnail(game: {
+  id?: string;
+  templateId?: string;
+  thumbnailUrl?: string | null;
+}): string {
+  const url = game?.thumbnailUrl ?? "";
+  const isPlaceholder = !url || url.startsWith("data:image/svg+xml") || url.startsWith("/thumbnails/");
+  if (!isPlaceholder) {
+    if (url.startsWith("/api/")) {
+      const origin = apiBase.replace(/\/api$/, "");
+      return `${origin}${url}`;
+    }
+    return url;
+  }
+  // The thumbnail job stores covers under the game's own id.
+  if (game?.id) return getThumbnailUrl(game.id);
+  return getThumbnailUrl(game?.templateId ?? "simple-agent-game");
+}
+
 // Maps every template id to a poster emoji (ported from the original studio shell).
 export const templateEmoji: Record<string, string> = {
   flappy: "🐤",
@@ -243,185 +285,7 @@ export const constructGameUrls: Record<string, string> = {
   "stake-mines": "/templates/stake-mines/index.html",
 };
 
-export const templateThumbnails: Record<string, string> = {
-  "offline-12minibattles": "/thumbnails/flappy-cover.png",
-  "offline-1on1soccer": "/thumbnails/flappy-cover.png",
-  "offline-1on1tennis": "/thumbnails/flappy-cover.png",
-  "offline-2048": "/thumbnails/flappy-cover.png",
-  "offline-2048cupcakes": "/thumbnails/flappy-cover.png",
-  "offline-8ballclassic": "/thumbnails/flappy-cover.png",
-  "offline-alpha_1.2.6": "/thumbnails/flappy-cover.png",
-  "offline-beta_1.3": "/thumbnails/flappy-cover.png",
-  "offline-indev": "/thumbnails/flappy-cover.png",
-  "offline-agariolite": "/thumbnails/flappy-cover.png",
-  "offline-ageofwar": "/thumbnails/flappy-cover.png",
-  "offline-amongus": "/thumbnails/flappy-cover.png",
-  "offline-awesometanks": "/thumbnails/flappy-cover.png",
-  "offline-baconmaydie": "/thumbnails/flappy-cover.png",
-  "offline-badicecream": "/thumbnails/flappy-cover.png",
-  "offline-badicecream2": "/thumbnails/flappy-cover.png",
-  "offline-badicecream3": "/thumbnails/flappy-cover.png",
-  "offline-badpiggies": "/thumbnails/flappy-cover.png",
-  "offline-basketballlegends": "/thumbnails/flappy-cover.png",
-  "offline-basketballstars": "/thumbnails/flappy-cover.png",
-  "offline-basketbros": "/thumbnails/flappy-cover.png",
-  "offline-basketrandom": "/thumbnails/flappy-cover.png",
-  "offline-bloonstd": "/thumbnails/flappy-cover.png",
-  "offline-bloonstd2": "/thumbnails/flappy-cover.png",
-  "offline-bloonstd3": "/thumbnails/flappy-cover.png",
-  "offline-bloonstd4": "/thumbnails/flappy-cover.png",
-  "offline-bloxorz": "/thumbnails/flappy-cover.png",
-  "offline-blumgiracers": "/thumbnails/flappy-cover.png",
-  "offline-blumgirocket": "/thumbnails/flappy-cover.png",
-  "offline-bobtherobber2": "/thumbnails/flappy-cover.png",
-  "offline-bobtherobber5": "/thumbnails/flappy-cover.png",
-  "offline-breakingthebank": "/thumbnails/flappy-cover.png",
-  "offline-bubbleshooter": "/thumbnails/flappy-cover.png",
-  "offline-candycrush": "/thumbnails/flappy-cover.png",
-  "offline-chess": "/thumbnails/chess-cover.png",
-  "offline-choppyorc": "/thumbnails/flappy-cover.png",
-  "offline-circloo": "/thumbnails/flappy-cover.png",
-  "offline-circloo2": "/thumbnails/flappy-cover.png",
-  "offline-clashofvikings": "/thumbnails/flappy-cover.png",
-  "offline-dadish": "/thumbnails/flappy-cover.png",
-  "offline-dadish2": "/thumbnails/flappy-cover.png",
-  "offline-dadish3": "/thumbnails/flappy-cover.png",
-  "offline-deathrun3d": "/thumbnails/flappy-cover.png",
-  "offline-doodlejump": "/thumbnails/flappy-cover.png",
-  "offline-drawclimber": "/thumbnails/flappy-cover.png",
-  "offline-ducklife": "/thumbnails/flappy-cover.png",
-  "offline-ducklife2": "/thumbnails/flappy-cover.png",
-  "offline-ducklingsio": "/thumbnails/flappy-cover.png",
-  "offline-earntodie": "/thumbnails/flappy-cover.png",
-  "offline-eggycar": "/thumbnails/flappy-cover.png",
-  "offline-evilglitch": "/thumbnails/flappy-cover.png",
-  "offline-fancypantsadventure": "/thumbnails/flappy-cover.png",
-  "offline-fireboyandwatergirl": "/thumbnails/flappy-cover.png",
-  "offline-fireboyandwatergirl2": "/thumbnails/flappy-cover.png",
-  "offline-fireboyandwatergirl3": "/thumbnails/flappy-cover.png",
-  "offline-fireboyandwatergirl4": "/thumbnails/flappy-cover.png",
-  "offline-flappybird": "/thumbnails/flappy-cover.png",
-  "offline-floodrunner2": "/thumbnails/flappy-cover.png",
-  "offline-floodrunner3": "/thumbnails/flappy-cover.png",
-  "offline-footballlegends": "/thumbnails/flappy-cover.png",
-  "offline-freerider3": "/thumbnails/flappy-cover.png",
-  "offline-fruitninja": "/thumbnails/flappy-cover.png",
-  "offline-funnybattle": "/thumbnails/flappy-cover.png",
-  "offline-getontop": "/thumbnails/flappy-cover.png",
-  "offline-googlebaseball": "/thumbnails/flappy-cover.png",
-  "offline-googledino": "/thumbnails/flappy-cover.png",
-  "offline-hanger2": "/thumbnails/flappy-cover.png",
-  "offline-helixjump": "/thumbnails/flappy-cover.png",
-  "offline-hillclimbracinglite": "/thumbnails/flappy-cover.png",
-  "offline-idlebreakout": "/thumbnails/flappy-cover.png",
-  "offline-ironsnout": "/thumbnails/flappy-cover.png",
-  "offline-johnnytrigger": "/thumbnails/flappy-cover.png",
-  "offline-jumpingshell": "/thumbnails/flappy-cover.png",
-  "offline-karatebros": "/thumbnails/flappy-cover.png",
-  "offline-learntofly": "/thumbnails/flappy-cover.png",
-  "offline-learntoflyidle": "/thumbnails/flappy-cover.png",
-  "offline-leveldevil": "/thumbnails/flappy-cover.png",
-  "offline-mergeroundracers": "/thumbnails/flappy-cover.png",
-  "offline-minesweeper": "/thumbnails/flappy-cover.png",
-  "offline-monstertracks": "/thumbnails/flappy-cover.png",
-  "offline-motox3m2": "/thumbnails/flappy-cover.png",
-  "offline-motox3m3": "/thumbnails/flappy-cover.png",
-  "offline-motox3mpoolparty": "/thumbnails/flappy-cover.png",
-  "offline-motox3mspookyland": "/thumbnails/flappy-cover.png",
-  "offline-motox3mwinter": "/thumbnails/flappy-cover.png",
-  "offline-noobminer": "/thumbnails/flappy-cover.png",
-  "offline-oppositeday": "/thumbnails/flappy-cover.png",
-  "offline-ovo": "/thumbnails/flappy-cover.png",
-  "offline-ovo2": "/thumbnails/flappy-cover.png",
-  "offline-pacman": "/thumbnails/flappy-cover.png",
-  "offline-papasburgeria": "/thumbnails/flappy-cover.png",
-  "offline-papaspizzeria": "/thumbnails/flappy-cover.png",
-  "offline-parkingfury": "/thumbnails/flappy-cover.png",
-  "offline-parkingfury2": "/thumbnails/flappy-cover.png",
-  "offline-parkingfury3": "/thumbnails/flappy-cover.png",
-  "offline-picosschool": "/thumbnails/flappy-cover.png",
-  "offline-pingpongchaos": "/thumbnails/flappy-cover.png",
-  "offline-pixelspeedrun": "/thumbnails/flappy-cover.png",
-  "offline-plonky": "/thumbnails/flappy-cover.png",
-  "offline-polytrack": "/thumbnails/flappy-cover.png",
-
-  "neon-sudoku": "/thumbnails/neon-sudoku-cover.png",
-  "simple-agent-game": "/thumbnails/simple-agent-game-cover.png",
-  chess: "/thumbnails/chess-cover.png",
-  flappy: "/thumbnails/flappy-cover.png",
-  match3: "/thumbnails/match3-cover.png",
-  clicker: "/thumbnails/clicker-cover.png",
-  memory: "/thumbnails/memory-cover.png",
-  quiz: "/thumbnails/quiz-cover.png",
-  drawing: "/thumbnails/drawing-cover.png",
-  runner: "/thumbnails/runner-cover.png",
-  racing: "/thumbnails/racing-cover.png",
-  idle: "/thumbnails/idle-cover.png",
-  "ai-arena": "/thumbnails/ai-arena-cover.png",
-  "cyber-runner": "/thumbnails/cyber-runner-cover.png",
-  "space-shooter": "/thumbnails/space-shooter-cover.png",
-  minigames: "/thumbnails/minigames-cover.png",
-  "realistic-driving": "/thumbnails/realistic-driving-cover.png",
-  "fps-survival": "/thumbnails/fps-survival-cover.png",
-  "flight-sim": "/thumbnails/flight-sim-cover.png",
-  "unity-karting": "/thumbnails/unity-karting-cover.png",
-  "unity-fps": "/thumbnails/unity-fps.png",
-  "unity-zombiesmasher": "/thumbnails/unity-zombiesmasher-cover.png",
-  "unity-spaceinvaders": "/thumbnails/unity-spaceinvaders-cover.png",
-  "unity-pong": "/thumbnails/unity-pong-cover.png",
-  "unity-tetris": "/thumbnails/unity-tetris-cover.png",
-  "unity-snake": "/thumbnails/unity-snake-cover.png",
-  "unity-pacman": "/thumbnails/unity-pacman-cover.png",
-  "unity-towerdefense": "/thumbnails/unity-towerdefense-cover.png",
-  "unity-solitaire": "/thumbnails/unity-solitaire.png",
-  "unity-flappybird": "/thumbnails/unity-flappybird-cover.png",
-  "unity-runner": "/thumbnails/unity-runner-cover.png",
-  "head-soccer-2026": "/templates/head-soccer-2026/icons/icon-256.png",
-  "goof-runner": "/templates/goof-runner/icons/icon-256.png",
-  "mini-racer": "/templates/mini-racer/icons/icon-256.png",
-  "bubble-shooter": "/templates/bubble-shooter/icons/icon-256.png",
-  "blocks-match3": "/templates/blocks-match3/icons/icon-256.png",
-  "happy-halloween-match3": "/templates/happy-halloween-match3/icons/icon-256.png",
-  "happy-chef-bubble-shooter": "/templates/happy-chef-bubble-shooter/icons/icon-256.png",
-  "sea-animals": "/templates/sea-animals/icon-256.png",
-  "christmas-candy": "/templates/christmas-candy/icons/icon-256.png",
-  "lollipops-match3": "/templates/lollipops-match3/icons/icon-256.png",
-  "speed-racer": "/templates/speed-racer/icons/icon-256.png",
-  "candy-match3": "/templates/candy-match3/icons/icon-256.png",
-  "smiles-match3": "/templates/smiles-match3/icons/icon-256.png",
-  "valentines-match3": "/templates/valentines-match3/icons/icon-256.png",
-  "christmas-match3": "/templates/christmas-match3/icons/icon-256.png",
-  "animals-crash-match3": "/templates/animals-crash-match3/icons/icon-256.png",
-  "halloween-match3": "/templates/halloween-match3/icons/icon-256.png",
-  "scary-run": "/templates/scary-run/icons/icon-256.png",
-  "billiards": "/templates/billiards/icons/icon-256.png",
-  "crazy-match3": "/templates/crazy-match3/icons/icon-256.png",
-  "cars": "/templates/cars/icons/icon-256.png",
-  "monster-match3": "/templates/monster-match3/icons/icon-256.png",
-  "sweet-match3": "/templates/sweet-match3/icons/icon-256.png",
-  "crazy-car": "/templates/crazy-car/icons/icon-256.png",
-  "summer-match3": "/templates/summer-match3/icons/icon-256.png",
-  "funny-faces-match3": "/templates/funny-faces-match3/icons/icon-256.png",
-  "space-match3": "/templates/space-match3/icons/icon-256.png",
-  "math-game-kids": "/templates/math-game-kids/icons/icon-256.png",
-  "truck-racer": "/templates/truck-racer/icons/icon-256.png",
-  "christmas-gifts": "/templates/christmas-gifts/icons/icon-256.png",
-  "christmas-bubbles": "/templates/christmas-bubbles/icons/icon-256.png",
-  "stick-panda": "/templates/stick-panda/icons/icon-256.png",
-  "christmas-balls": "/templates/christmas-balls/icons/icon-256.png",
-  "road-racer": "/templates/road-racer/icons/icon-256.png",
-  "jewels-match": "/templates/jewels-match/icons/icon-256.png",
-  "pops-billiards": "/templates/pops-billiards/icons/icon-256.png",
-  "frog-super-bubbles": "/templates/frog-super-bubbles/icons/icon-256.png",
-  "chicken-cross": "/templates/chicken-cross/assets/chicken.png",
-  "cratch-royale": "/thumbnails/cratch-royale-cover.png",
-  "neon-bounce": "/thumbnails/neon-bounce-cover.png",
-  "plinko-pro": "/thumbnails/plinko-pro-cover.png",
-  "race-kings": "/templates/race-kings/assets/logo.png",
-  "spin-wheel-royale": "/templates/spin-wheel-royale/assets/loading.jpg",
-  "stake-mines": "/thumbnails/stake-mines-cover.png",
-  "satoshi-head": "/templates/satoshi-head/icons/icon-256.png",
-};
+export const templateThumbnails: Record<string, string> = {};
 
 const gradientKeys: Game["gradient"][] = ["pink", "green", "cyan", "warm", "violet"];
 
@@ -463,7 +327,7 @@ export function templateToGame(template: any, index = 0): Game {
         : engineOf(template) === "construct"
           ? "Construct Template"
           : "3D Web Game",
-    thumbnailUrl: templateThumbnails[template.id],
+    thumbnailUrl: getThumbnailUrl(template.id),
     templateId: template.id,
   };
 }

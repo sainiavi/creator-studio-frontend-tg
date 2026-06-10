@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#06061a"/>
-  <g stroke="#2848ff" stroke-width="18" fill="none"><rect x="64" y="112" width="384" height="300" rx="24"/><path d="M64 220h120v92H64M448 220H328v92h120M196 112v86h120v-86M196 412v-86h120v86"/></g>
-  <path d="M222 256l86-54a102 102 0 1 0 0 108z" fill="#ffd166"/>
-  <circle cx="358" cy="254" r="30" fill="#ff3df2"/><circle cx="404" cy="254" r="30" fill="#35e8ff"/>
-  <text x="256" y="78" text-anchor="middle" font-family="Arial Black,Arial" font-size="42" fill="#fff">PAC-MAN</text>
-</svg>

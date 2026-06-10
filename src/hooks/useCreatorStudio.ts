@@ -19,10 +19,17 @@ function getAnonymousUserId(): string {
 // (up to ~15 min for pure-agent) cannot survive a single HTTP request through
 // browsers and gateways, so the backend returns a jobId immediately and we
 // poll /agents/jobs/:id for the result.
+const PROGRESS_STAGE_LABELS: Record<string, string> = {
+  "writing-code": "Writing game code",
+  "editing-seed": "Customizing game code",
+  "repairing": "Repairing build",
+  "fixing-syntax": "Fixing syntax",
+};
+
 async function runCodeJob(
   body: Record<string, unknown>,
   maxWaitMs: number,
-  onProgress?: (elapsedSeconds: number) => void,
+  onProgress?: (statusText: string) => void,
   isCancelled?: () => boolean,
 ) {
   const response = await api.post("/agents/code", body, { timeout: 30000 });
@@ -39,7 +46,13 @@ async function runCodeJob(
     if (job?.status === "failed") {
       throw new Error(job.error?.message ?? "Code generation job failed");
     }
-    onProgress?.(Math.round((Date.now() - startedAt) / 1000));
+    const elapsed = Math.round((Date.now() - startedAt) / 1000);
+    // The backend streams the model output and reports how much code exists so
+    // far — much more informative than a bare elapsed-seconds counter.
+    const progress = job?.progress;
+    const stage = PROGRESS_STAGE_LABELS[progress?.stage] ?? "AI build in progress";
+    const chars = progress?.chars ? ` · ${Number(progress.chars).toLocaleString()} chars` : "";
+    onProgress?.(`${stage}…${chars} (${elapsed}s)`);
   }
   return null;
 }
@@ -380,7 +393,7 @@ export function useCreatorStudio() {
               strategy,
             },
             maxWaitMs,
-            (elapsed) => setAgentStatus(`AI build in progress… ${elapsed}s elapsed`),
+            (statusText) => setAgentStatus(statusText),
             () => generationRef.current !== token,
           );
 
@@ -423,7 +436,7 @@ export function useCreatorStudio() {
           refinementLevel: customization,
         },
         8 * 60 * 1000,
-        (elapsed) => setAgentStatus(`Code agent working… ${elapsed}s elapsed`),
+        (statusText) => setAgentStatus(statusText),
       );
       setGeneratedPackage((prev) => ({
         ...prev,

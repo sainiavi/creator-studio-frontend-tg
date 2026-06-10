@@ -35,13 +35,14 @@ import { Html5Preview } from "@/components/studio/Html5Preview";
 import { SimpleAgentGame } from "@/components/studio/SimpleAgentGame";
 import { NeonSudokuGame } from "@/components/studio/NeonSudokuGame";
 import { gameTemplates } from "@/lib/templates";
-import { engineOf, templateEmoji, templateThumbnails } from "@/lib/studio-meta";
+import { engineOf, templateEmoji, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
 import { localPackage } from "@/hooks/useCreatorStudio";
 import { gradientClass } from "@/lib/games-data";
 import { gradientForId, templateToGame } from "@/lib/studio-meta";
 import { useSocial } from "@/hooks/useSocial";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useStudioContext } from "@/context/StudioContext";
+import { api } from "@/lib/api";
 import type { LeaderboardEntry } from "@/lib/api/leaderboards";
 import type { SharePlatform } from "@/lib/api/social";
 
@@ -252,7 +253,7 @@ function LeaderboardPanel({
 function PlayFeed() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
-  const { setSidebarCollapsed, studio, createdGames } = useStudioContext();
+  const { setSidebarCollapsed, studio, createdGames, addCreatedGame, refreshCreatedGames } = useStudioContext();
   const isSimpleAgentGame = gameId === "simple-agent-game";
   const isNeonSudoku = gameId === "neon-sudoku";
   const generatedPackageMatches =
@@ -266,6 +267,37 @@ function PlayFeed() {
   const customGame = !generatedPackageMatches
     ? createdGames.find((cg: any) => cg?.id === gameId)
     : undefined;
+
+  // If the game is not found locally, fetch it from the backend by ID
+  useEffect(() => {
+    if (!gameId || isSimpleAgentGame || isNeonSudoku || generatedPackageMatches || customGame) {
+      return;
+    }
+
+    api
+      .get(`/games/list?q=${encodeURIComponent(gameId)}&limit=1`)
+      .then((res) => {
+        const found = res.data?.games?.[0];
+        if (found && found.id === gameId) {
+          addCreatedGame(found);
+        }
+      })
+      .catch(() => {
+        // fail silently
+      });
+  }, [gameId, isSimpleAgentGame, isNeonSudoku, generatedPackageMatches, customGame, addCreatedGame]);
+
+  // The AI build finishes minutes after the game record exists. While this
+  // created game has no code yet, poll the backend so the finished build
+  // swaps in without requiring a manual refresh.
+  const awaitingBuild = Boolean(customGame) && !customGame?.refinement?.generatedCode;
+  useEffect(() => {
+    if (!awaitingBuild) return;
+    const interval = setInterval(() => {
+      void refreshCreatedGames();
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [awaitingBuild, refreshCreatedGames]);
 
   const index = Math.max(
     0,
@@ -349,7 +381,7 @@ function PlayFeed() {
               emoji: "🎮",
               gradient: "from-purple-900 to-indigo-950",
               creator: "you",
-              thumbnailUrl: customGame.thumbnailUrl || "/thumbnails/chess-cover.png",
+              thumbnailUrl: resolveGameThumbnail(customGame),
               templateId: customGame.templateId,
             }
           : templateToGame(template, index);
@@ -732,9 +764,9 @@ function PlayFeed() {
         <div
           className={`absolute inset-0 bg-gradient-to-br ${gradientClass[gradientForId(template.id)]} opacity-30`}
         />
-        {templateThumbnails[template.id] && (
+        {getThumbnailUrl(template.id) && (
           <img
-            src={templateThumbnails[template.id]}
+            src={getThumbnailUrl(template.id)}
             alt=""
             className="absolute inset-0 h-full w-full object-cover opacity-20 blur-2xl"
           />
@@ -1227,9 +1259,9 @@ function ShareButton({
 
               <div className="mb-6 flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
                 <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white/10 text-3xl shadow-inner">
-                  {templateThumbnails[template.id] ? (
+                  {getThumbnailUrl(template.id) ? (
                     <img
-                      src={templateThumbnails[template.id]}
+                      src={getThumbnailUrl(template.id)}
                       alt={template.name}
                       className="size-full object-cover"
                     />
@@ -1514,9 +1546,9 @@ function DetailsModal({
         <div className="flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {/* Thumbnail Image */}
           <div className="relative mb-6 w-full overflow-hidden rounded-2xl bg-white/5 aspect-[4/3] sm:aspect-video">
-            {templateThumbnails[template.id] ? (
+            {getThumbnailUrl(template.id) ? (
               <img
-                src={templateThumbnails[template.id]}
+                src={getThumbnailUrl(template.id)}
                 alt={title}
                 className="size-full object-cover"
               />

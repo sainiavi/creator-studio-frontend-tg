@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { GameCard } from "@/components/studio/GameCard";
 import { type Game } from "@/lib/games-data";
-import { templateEmoji, gradientForId, templateThumbnails } from "@/lib/studio-meta";
+import { templateEmoji, gradientForId, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
 import { gameTemplates } from "@/lib/templates";
 import { useStudioContext } from "@/context/StudioContext";
 import {
@@ -179,18 +179,7 @@ function Profile() {
 
   const getThumbnail = useCallback((id: string | undefined, fallbackUrl?: string) => {
     if (!id) return fallbackUrl;
-    let thumb = templateThumbnails[id];
-    if (!thumb) {
-      const normalizedId = id.toLowerCase().replace("offline-", "");
-      const matchedKey = Object.keys(templateThumbnails).find(key => {
-        const normalizedKey = key.toLowerCase().replace("offline-", "");
-        return normalizedKey.includes(normalizedId) || normalizedId.includes(normalizedKey);
-      });
-      if (matchedKey) {
-        thumb = templateThumbnails[matchedKey];
-      }
-    }
-    return thumb || fallbackUrl;
+    return getThumbnailUrl(id);
   }, []);
 
   const mapActivityToGame = useCallback((gameId: string, gameTitle: string): Game => {
@@ -280,19 +269,18 @@ function Profile() {
     });
   }, [mapActivityToGame]);
 
-  const games: Game[] = createdGames.map((g: any) => {
-    const isFallback = !g.thumbnailUrl || g.thumbnailUrl.startsWith("data:image/svg+xml");
-    return {
+  const games: Game[] = createdGames
+    .filter((g: any, i: number, all: any[]) => !g?.id || all.findIndex((x: any) => x?.id === g.id) === i)
+    .map((g: any) => ({
       title: g.title,
       category: g.category ?? "Game",
       plays: "—",
       emoji: templateEmoji[g.templateId] ?? "🎮",
       gradient: gradientForId(g.templateId ?? g.id),
       creator: "you",
-      thumbnailUrl: isFallback ? (templateThumbnails[g.templateId] || g.thumbnailUrl) : g.thumbnailUrl,
-      templateId: g.templateId,
-    };
-  });
+      thumbnailUrl: resolveGameThumbnail(g),
+      templateId: g.id ?? g.templateId,
+    }));
 
   // Extract history games (played or created) from activities
   const historyGamesMap = new Map<string, string>();

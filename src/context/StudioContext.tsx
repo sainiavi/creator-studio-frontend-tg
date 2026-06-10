@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCreatorStudio } from "@/hooks/useCreatorStudio";
 import { api } from "@/lib/api";
@@ -11,6 +11,9 @@ type StudioContextValue = {
   studio: Studio;
   createdGames: any[];
   addCreatedGame: (game: any) => void;
+  removeCreatedGame: (gameId: string) => Promise<void>;
+  /** Re-fetches backend games and merges them in (e.g. while waiting for a build). */
+  refreshCreatedGames: () => Promise<void>;
   /** Select a template (switching engine if needed) and jump to the Studio route. */
   openInStudio: (templateId: string) => void;
   sidebarCollapsed: boolean;
@@ -18,6 +21,23 @@ type StudioContextValue = {
 };
 
 const StudioContext = createContext<StudioContextValue | null>(null);
+
+// localStorage holds lean metadata only: generated code is 20-30KB per game
+// and would blow the ~5MB quota within a few dozen creations. Full packages
+// (with code) live in memory and in the backend.
+function persistCreatedGames(games: any[]) {
+  try {
+    const lean = games.slice(0, 60).map((g: any) => {
+      const { refinement, plan, promptBundle, ...rest } = g ?? {};
+      void plan;
+      void promptBundle;
+      return { ...rest, hasBuild: Boolean(refinement?.generatedCode) };
+    });
+    localStorage.setItem("kult-created-games", JSON.stringify(lean));
+  } catch {
+    // quota exceeded — keep the in-memory state, drop persistence silently
+  }
+}
 
 export function StudioProvider({ children }: { children: ReactNode }) {
   const studio = useCreatorStudio();
@@ -27,7 +47,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [createdGames, setCreatedGames] = useState<any[]>(() => {
     try {
       const stored = localStorage.getItem("kult-created-games");
-      return stored ? JSON.parse(stored) : [];
+      const parsed: any[] = stored ? JSON.parse(stored) : [];
+      // older sessions could persist the same game several times — keep the first copy
+      return parsed.filter(
+        (g, i) => !g?.id || parsed.findIndex((x) => x?.id === g.id) === i,
+      );
     } catch {
       return [];
     }
@@ -35,43 +59,67 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   const addCreatedGame = (game: any) => {
     setCreatedGames((prev) => {
-      const updated = [game, ...prev];
-      localStorage.setItem("kult-created-games", JSON.stringify(updated));
+      const updated = [game, ...prev.filter((g: any) => g?.id !== game?.id)];
+      persistCreatedGames(updated);
       return updated;
     });
   };
+
+  const removeCreatedGame = useCallback(async (gameId: string) => {
+    await api.delete(`/games/${encodeURIComponent(gameId)}`).catch(() => {});
+    setCreatedGames((prev) => {
+      const updated = prev.filter((g: any) => g?.id !== gameId);
+      persistCreatedGames(updated);
+      return updated;
+    });
+  }, []);
 
   // localStorage only knows about games generated in this browser. Merge in
   // everything the backend persisted so creations show up on any client.
   // When both sides have the same game, prefer the copy that carries the
   // generated build (the backend saves it when the code job completes).
-  useEffect(() => {
-    api
-      .get("/games/list", { timeout: 15000 })
-      .then((response) => {
-        const remote: any[] = response.data?.games ?? [];
-        if (!remote.length) return;
-        setCreatedGames((prev) => {
-          const remoteById = new Map(remote.filter((g: any) => g?.id).map((g: any) => [g.id, g]));
-          let changed = false;
-          const upgraded = prev.map((g: any) => {
-            const r = remoteById.get(g?.id);
-            if (r?.refinement?.generatedCode && !g?.refinement?.generatedCode) {
-              changed = true;
-              return r;
-            }
-            return g;
-          });
-          const known = new Set(prev.map((g: any) => g?.id));
-          const added = remote.filter((g: any) => g?.id && !known.has(g.id));
-          if (!changed && added.length === 0) return prev;
-          return [...upgraded, ...added];
+  const refreshCreatedGames = useCallback(async () => {
+    try {
+      const response = await api.get("/games/list", { timeout: 15000 });
+      const remote: any[] = response.data?.games ?? [];
+      if (!remote.length) return;
+      setCreatedGames((prev) => {
+        const remoteById = new Map(remote.filter((g: any) => g?.id).map((g: any) => [g.id, g]));
+        let changed = false;
+        const upgraded = prev.map((g: any) => {
+          const r = remoteById.get(g?.id);
+          if (!r) return g;
+          if (r.refinement?.generatedCode && !g?.refinement?.generatedCode) {
+            changed = true;
+            return r;
+          }
+          // The backend generates a real cover image in the background —
+          // swap out the placeholder SVG when it has landed.
+          const localIsPlaceholder =
+            !g?.thumbnailUrl || String(g.thumbnailUrl).startsWith("data:image/svg+xml");
+          const remoteIsReal =
+            r.thumbnailUrl && !String(r.thumbnailUrl).startsWith("data:image/svg+xml");
+          if (localIsPlaceholder && remoteIsReal) {
+            changed = true;
+            return { ...g, thumbnailUrl: r.thumbnailUrl };
+          }
+          return g;
         });
-      })
-      .catch(() => {
-        // backend offline — local games still show
+        const known = new Set(prev.map((g: any) => g?.id));
+        const added = remote.filter((g: any) => g?.id && !known.has(g.id));
+        if (!changed && added.length === 0) return prev;
+        const merged = [...upgraded, ...added];
+        persistCreatedGames(merged);
+        return merged;
       });
+    } catch {
+      // backend offline — local games still show
+    }
   }, []);
+
+  useEffect(() => {
+    void refreshCreatedGames();
+  }, [refreshCreatedGames]);
 
   const {
     createFromTemplate,
@@ -99,7 +147,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <StudioContext.Provider value={{ studio, createdGames, addCreatedGame, openInStudio, sidebarCollapsed, setSidebarCollapsed }}>
+    <StudioContext.Provider
+      value={{
+        studio,
+        createdGames,
+        addCreatedGame,
+        removeCreatedGame,
+        refreshCreatedGames,
+        openInStudio,
+        sidebarCollapsed,
+        setSidebarCollapsed,
+      }}
+    >
       {children}
     </StudioContext.Provider>
   );

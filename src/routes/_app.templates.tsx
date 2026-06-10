@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/studio/PageHeader";
 import { ArrowUpRight } from "lucide-react";
 import { gameTemplates } from "@/lib/templates";
 import { gradientClass } from "@/lib/games-data";
-import { gradientForId, templateEmoji, engineOf, templateThumbnails } from "@/lib/studio-meta";
+import { gradientForId, templateEmoji, engineOf, getThumbnailUrl } from "@/lib/studio-meta";
 import { useStudioContext } from "@/context/StudioContext";
 
 export const Route = createFileRoute("/_app/templates")({
@@ -54,10 +54,10 @@ function Templates() {
             style={{ animationDelay: `${i * 50}ms`, opacity: 0 }}
           >
             <div className={`relative flex aspect-[16/12] items-center justify-center overflow-hidden bg-gradient-to-br ${gradientClass[gradientForId(t.id)]}`}>
-              {templateThumbnails[t.id] ? (
+              {getThumbnailUrl(t.id) ? (
                 <>
                   <img
-                    src={templateThumbnails[t.id]}
+                    src={getThumbnailUrl(t.id)}
                     alt=""
                     className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
                     loading="lazy"
