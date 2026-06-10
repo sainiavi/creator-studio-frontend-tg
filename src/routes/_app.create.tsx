@@ -32,6 +32,10 @@ type ChatMessage = {
 type ChatStage = "game" | "vibe" | "concept" | "ready";
 
 const conceptByGame: Record<string, string[]> = {
+  chess: [
+    "Royal Gambit: A calm 1-on-1 chess match against a thoughtful AI on a clean neon board.",
+    "Knight's Duel: Sharp tactical chess with highlighted legal moves and quick AI replies.",
+  ],
   soccer: [
     "World Cup Rush: A fast arcade soccer match with quick goals, dramatic saves, and bright stadium energy.",
     "Street Header: A playful head-soccer duel in a neon street arena with bouncy physics.",
@@ -56,6 +60,7 @@ const conceptByGame: Record<string, string[]> = {
 
 function gameKind(text: string) {
   const value = text.toLowerCase();
+  if (/(chess|checkmate|chessboard)/.test(value)) return "chess";
   if (/(soccer|football|world cup)/.test(value)) return "soccer";
   if (/(runner|running|run|parkour|jump)/.test(value)) return "runner";
   if (/(racing|racer|race|car|driv)/.test(value)) return "racing";
@@ -175,7 +180,7 @@ function Create() {
           <label className="label-mono mb-4 flex items-center gap-2 text-xs text-primary">
             <Wand2 className="size-5.5" /> Create with chat
           </label>
-          <div className="flex min-h-[560px] flex-col rounded-2xl border border-border/60 bg-background/50 p-5">
+          <div className="flex min-h-[440px] flex-col rounded-2xl border border-border/60 bg-background/50 p-5">
             <div className="flex-1 space-y-6 overflow-auto pr-1">
               {messages.map((message, index) => (
                 <div
@@ -233,11 +238,11 @@ function Create() {
               </button>
             </div>
           </div>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
             <button
               onClick={() => build("hybrid")}
               disabled={phase === "building"}
-              className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-gradient-to-r from-primary to-[oklch(0.65_0.25_295)] py-3 sm:py-4.5 text-sm sm:text-base font-bold uppercase tracking-wider text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+              className="flex w-full sm:w-64 items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-gradient-to-r from-primary to-[oklch(0.65_0.25_295)] py-2.5 sm:py-3 text-sm sm:text-base font-bold uppercase tracking-wider text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
             >
               {phase === "building" ? (
                 <><Loader2 className="size-4 sm:size-5 animate-spin" /> Building…</>
@@ -248,7 +253,7 @@ function Create() {
             <button
               onClick={() => build("pure-agent")}
               disabled={phase === "building"}
-              className="flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-primary/60 py-3 sm:py-4.5 text-sm sm:text-base font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
+              className="flex w-full sm:w-64 items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-primary/60 py-2.5 sm:py-3 text-sm sm:text-base font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
             >
               <Bot className="size-4 sm:size-5" /> Pure Agent Strategy
             </button>
@@ -282,7 +287,7 @@ function Create() {
 
             {phase === "done" && (
               <div className="mt-6 rounded-xl border border-primary/40 bg-gradient-to-br from-[oklch(0.72_0.27_340)] to-[oklch(0.65_0.25_295)] p-5">
-                <p className="label-mono text-[10px] text-white/80">Build ready</p>
+                <p className="label-mono text-[10px] text-white/80">{studio.status}</p>
                 <h4 className="mt-1 font-display text-xl font-black text-white">{studio.generatedPackage.title} 🎮</h4>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button

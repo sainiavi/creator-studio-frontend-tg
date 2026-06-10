@@ -255,6 +255,12 @@ function PlayFeed() {
   const { setSidebarCollapsed, studio } = useStudioContext();
   const isSimpleAgentGame = gameId === "simple-agent-game";
   const isNeonSudoku = gameId === "neon-sudoku";
+  const generatedPackageMatches =
+    Boolean(studio.generatedPackage?.id) &&
+    (studio.generatedPackage?.id === gameId ||
+     studio.generatedPackage?.templateId === gameId ||
+     (gameId === "pure-agent" && studio.generatedPackage?.templateId === "pure-agent"));
+
   const index = Math.max(
     0,
     gameTemplates.findIndex((t: any) => t.id === gameId),
@@ -278,7 +284,21 @@ function PlayFeed() {
           mechanic: "Click the glowing target as many times as possible in 20 seconds.",
           controls: "Mouse, touch, or R to restart.",
         }
-      : baseTemplate;
+      : generatedPackageMatches && studio.generatedPackage
+        ? {
+            id: studio.generatedPackage.templateId || "pure-agent",
+            name: studio.generatedPackage.title || "AI Custom Game",
+            category: studio.generatedPackage.category || "Casual",
+            mechanic: studio.generatedPackage.gameplay?.mechanic || "custom gameplay mechanics",
+            controls: studio.generatedPackage.gameplay?.controls || "controls",
+            engine: studio.generatedPackage.build?.renderer === "unity"
+              ? "unity"
+              : studio.generatedPackage.build?.renderer === "construct"
+                ? "construct"
+                : "threejs"
+          }
+        : baseTemplate;
+
   const game = isNeonSudoku
     ? {
         ...templateToGame(baseTemplate, index),
@@ -293,7 +313,19 @@ function PlayFeed() {
           category: template.category,
           emoji: "🎯",
         }
-      : templateToGame(template, index);
+      : generatedPackageMatches && studio.generatedPackage
+        ? {
+            title: studio.generatedPackage.title,
+            category: studio.generatedPackage.category,
+            plays: "1.2K",
+            emoji: "🎮",
+            gradient: "from-purple-900 to-indigo-950",
+            creator: "0G AI Agent",
+            thumbnailUrl: (studio.generatedPackage as any).thumbnailUrl || "/thumbnails/chess-cover.png",
+            templateId: studio.generatedPackage.templateId,
+          }
+        : templateToGame(template, index);
+
   const engine = engineOf(template);
   const gameTags = Array.from(
     new Set([
@@ -303,9 +335,6 @@ function PlayFeed() {
     ]),
   );
   const profile = creatorProfiles[index % creatorProfiles.length];
-  const generatedPackageMatches =
-    studio.generatedPackage?.templateId === template.id &&
-    Boolean(studio.generatedPackage?.id);
   const pkg = generatedPackageMatches
     ? studio.generatedPackage
     : localPackage(template, {

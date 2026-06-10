@@ -97,3 +97,38 @@ export async function fetchShareCount(gameId: string) {
   const { data } = await api.get(`/social/shares/${gameId}`);
   return data as { count: number };
 }
+
+export type UserActivity = {
+  _id: string;
+  userId: string;
+  gameId: string | null;
+  gameTitle: string | null;
+  activityType: "like" | "favorite" | "share" | "comment" | "create" | "play";
+  details: string;
+  timestamp: string;
+};
+
+export async function fetchUserActivities(userId: string): Promise<UserActivity[]> {
+  const { data } = await api.get(`/social/activity/user/${userId}`);
+  return data as UserActivity[];
+}
+
+export type UserFavoritesResponse = {
+  favorites: Array<{ gameId: string; userId: string; createdAt: string }>;
+  count: number;
+};
+
+export type UserLikesResponse = {
+  likes: Array<{ gameId: string; userId: string; createdAt: string }>;
+  count: number;
+};
+
+export async function fetchUserFavorites(userId: string): Promise<UserFavoritesResponse> {
+  const { data } = await api.get(`/social/favorites/user/${userId}`);
+  return data as UserFavoritesResponse;
+}
+
+export async function fetchUserLikes(userId: string): Promise<UserLikesResponse> {
+  const { data } = await api.get(`/social/likes/user/${userId}`);
+  return data as UserLikesResponse;
+}

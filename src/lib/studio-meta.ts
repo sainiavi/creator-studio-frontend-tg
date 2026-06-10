@@ -278,7 +278,7 @@ export const templateThumbnails: Record<string, string> = {
   "offline-breakingthebank": "/thumbnails/flappy-cover.png",
   "offline-bubbleshooter": "/thumbnails/flappy-cover.png",
   "offline-candycrush": "/thumbnails/flappy-cover.png",
-  "offline-chess": "/thumbnails/flappy-cover.png",
+  "offline-chess": "/thumbnails/chess-cover.png",
   "offline-choppyorc": "/thumbnails/flappy-cover.png",
   "offline-circloo": "/thumbnails/flappy-cover.png",
   "offline-circloo2": "/thumbnails/flappy-cover.png",
@@ -347,6 +347,7 @@ export const templateThumbnails: Record<string, string> = {
 
   "neon-sudoku": "/thumbnails/neon-sudoku-cover.png",
   "simple-agent-game": "/thumbnails/simple-agent-game-cover.png",
+  chess: "/thumbnails/chess-cover.png",
   flappy: "/thumbnails/flappy-cover.png",
   match3: "/thumbnails/match3-cover.png",
   clicker: "/thumbnails/clicker-cover.png",

@@ -71,6 +71,9 @@ const activity = [
   { icon: Bot, color: "text-neon-cyan", text: "RacerBot v2 deployed", time: "4h" },
   { icon: Play, color: "text-neon-violet", text: "PixelKnight played AI Arena", time: "6h" },
   { icon: TrendingUp, color: "text-neon-pink", text: "Cyber Runner reached 1K plays", time: "1d" },
+  { icon: Zap, color: "text-neon-violet", text: "Sudoku Master unlocked 'Speed Demon' badge", time: "2d" },
+  { icon: Gamepad2, color: "text-neon-green", text: "New high score on Space Shooter: 24.5K pts", time: "3d" },
+  { icon: Rocket, color: "text-neon-pink", text: "Bubble Reef published to IPFS", time: "4d" },
 ];
 
 const preferredCategories = ["Action", "Arcade", "Racing", "Puzzle"];
@@ -216,14 +219,14 @@ function Home() {
 
       <div className="grid gap-3 p-3 xl:grid-cols-[minmax(0,1fr)_310px]">
         <main className="min-w-0 space-y-3">
-          <section className="relative min-h-[320px] overflow-hidden rounded-lg border border-border/60 bg-card">
+          <section className="relative min-h-[380px] overflow-hidden rounded-lg border border-border/60 bg-card">
             <img
               src="/thumbnails/cyber-runner-cover.png"
               alt=""
               className="absolute inset-0 h-full w-full object-cover opacity-55"
             />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,oklch(0.12_0.025_282)_0%,oklch(0.12_0.025_282/0.94)_46%,oklch(0.12_0.025_282/0.36)_100%)]" />
-            <div className="relative z-10 flex min-h-[320px] max-w-[620px] flex-col justify-center p-6 lg:p-8">
+            <div className="relative z-10 flex min-h-[380px] max-w-[620px] flex-col justify-center p-6 lg:p-8">
               <p className="label-mono mb-2 text-[10px] text-neon-cyan">AI game creation suite</p>
               <h1 className="max-w-lg font-display text-3xl font-black leading-tight sm:text-4xl">
                 CREATE ANY GAME <span className="text-gradient">WITH AI</span>
@@ -259,7 +262,7 @@ function Home() {
           </section>
 
           {visibleShelves.slice(0, 3).map((shelf) => (
-            <GameShelf key={shelf.title} title={shelf.title} games={shelf.games} />
+            <GameShelf key={shelf.title} title={shelf.title} games={shelf.games} cardsPerRow={4} />
           ))}
         </main>
 
@@ -276,12 +279,12 @@ function Home() {
               />
               <Metric label="AI Agents" value="18" icon={Bot} color="text-neon-pink" />
             </div>
-            <div className="mt-2 flex items-end justify-between rounded-md bg-background/50 p-3">
+            <div className="mt-2 flex items-end justify-between rounded-md bg-background/50 p-4">
               <div>
-                <p className="text-[10px] text-muted-foreground">Active Players</p>
-                <strong className="mt-1 block text-xl">4.3K</strong>
+                <p className="text-xs text-muted-foreground">Active Players</p>
+                <strong className="mt-1 block text-2xl">4.3K</strong>
               </div>
-              <svg viewBox="0 0 120 38" className="h-10 w-32" aria-hidden="true">
+              <svg viewBox="0 0 120 38" className="h-12 w-36" aria-hidden="true">
                 <polyline
                   points="0,31 18,22 35,25 52,14 70,20 87,10 103,15 120,6"
                   fill="none"
@@ -292,7 +295,7 @@ function Home() {
             </div>
           </Panel>
 
-          <Panel title="My Projects" action="View all">
+          <Panel title="My Projects" action="View all" onActionClick={() => navigate({ to: "/profile" })}>
             <div className="divide-y divide-border/40">
               {featured.slice(0, 4).map((game, index) => (
                 <button
@@ -301,16 +304,16 @@ function Home() {
                     game.templateId &&
                     navigate({ to: "/play/$gameId", params: { gameId: game.templateId } })
                   }
-                  className="flex w-full items-center gap-3 py-3 text-left hover:bg-white/[0.02]"
+                  className="flex w-full items-center gap-4 py-4 text-left hover:bg-white/[0.02]"
                 >
-                  <img src={game.thumbnailUrl} alt="" className="size-10 rounded object-cover" />
+                  <img src={game.thumbnailUrl} alt="" className="size-12 rounded-lg object-cover" />
                   <span className="min-w-0 flex-1">
-                    <strong className="block truncate text-xs">{game.title}</strong>
-                    <span className="text-[10px] text-muted-foreground">
+                    <strong className="block truncate text-sm">{game.title}</strong>
+                    <span className="text-xs text-muted-foreground">
                       Updated {index + 1}h ago
                     </span>
                   </span>
-                  <span className="text-[9px] text-neon-green">
+                  <span className="text-xs text-neon-green">
                     {index % 2 ? "Building" : "Published"}
                   </span>
                 </button>
@@ -318,7 +321,7 @@ function Home() {
             </div>
             <button
               onClick={() => navigate({ to: "/create" })}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-primary py-2.5 text-xs font-bold text-primary-foreground"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-md bg-primary py-3 text-sm font-bold text-primary-foreground"
             >
               <Sparkles className="size-4" /> Create New Game
             </button>
@@ -327,10 +330,10 @@ function Home() {
           <Panel title="Recent Activity">
             <div className="divide-y divide-border/40">
               {activity.map(({ icon: Icon, color, text, time }) => (
-                <div key={text} className="flex items-center gap-3 py-3">
-                  <Icon className={`size-4 shrink-0 ${color}`} />
-                  <p className="min-w-0 flex-1 text-[11px] text-muted-foreground">{text}</p>
-                  <span className="text-[9px] text-muted-foreground/60">{time}</span>
+                <div key={text} className="flex items-center gap-3 py-4">
+                  <Icon className={`size-5 shrink-0 ${color}`} />
+                  <p className="min-w-0 flex-1 text-xs text-muted-foreground">{text}</p>
+                  <span className="text-[10px] text-muted-foreground/60">{time}</span>
                 </div>
               ))}
             </div>
@@ -369,7 +372,7 @@ function Feature({
   );
 }
 
-function GameShelf({ title, games }: { title: string; games: Game[] }) {
+function GameShelf({ title, games, cardsPerRow }: { title: string; games: Game[]; cardsPerRow?: number }) {
   const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -419,6 +422,10 @@ function GameShelf({ title, games }: { title: string; games: Game[] }) {
     ...placeholderSlots.map((slot) => ({ type: "placeholder" as const, slot })),
   ];
 
+  const basisClass = cardsPerRow === 4
+    ? "min-w-0 shrink-0 grow-0 basis-[72%] sm:basis-[40%] md:basis-[31%] lg:basis-[calc(25%-6px)] 2xl:basis-[calc(25%-6px)]"
+    : "min-w-0 shrink-0 grow-0 basis-[72%] sm:basis-[40%] md:basis-[31%] lg:basis-[calc(20%-7px)] 2xl:basis-[calc(16.666%-7px)]";
+
   return (
     <>
       <section className="rounded-lg border border-border/60 bg-card/55 p-3">
@@ -459,7 +466,7 @@ function GameShelf({ title, games }: { title: string; games: Game[] }) {
                     ? `${item.game.title}-${index}`
                     : `${title}-placeholder-${item.slot}`
                 }
-                className="min-w-0 shrink-0 grow-0 basis-[72%] sm:basis-[40%] md:basis-[31%] lg:basis-[calc(20%-7px)] 2xl:basis-[calc(16.666%-7px)]"
+                className={basisClass}
               >
                 {item.type === "game" ? (
                   <GameTile game={item.game} onOpen={() => openGame(item.game)} />
@@ -525,7 +532,7 @@ function GameShelf({ title, games }: { title: string; games: Game[] }) {
 function PlaceholderTile() {
   return (
     <div className="w-full min-w-0 overflow-hidden rounded-md border border-dashed border-border/70 bg-background/25 text-left">
-      <div className="relative aspect-[16/9] overflow-hidden bg-[linear-gradient(135deg,oklch(0.2_0.035_282),oklch(0.12_0.02_282))]">
+      <div className="relative aspect-square overflow-hidden bg-[linear-gradient(135deg,oklch(0.2_0.035_282),oklch(0.12_0.02_282))]">
         <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(90deg,transparent,oklch(0.72_0.27_340/0.18),transparent)]" />
         <div className="absolute inset-4 rounded border border-border/50" />
       </div>
@@ -565,7 +572,7 @@ function GameTile({ game, onOpen }: { game: Game; onOpen: () => void }) {
       }}
       className="group w-full min-w-0 overflow-hidden rounded-md border border-border/50 bg-background/40 text-left transition hover:border-primary/50"
     >
-      <div className="relative aspect-[16/9] overflow-hidden">
+      <div className="relative aspect-square overflow-hidden">
         <img
           src={game.thumbnailUrl}
           alt=""
@@ -588,20 +595,22 @@ function GameTile({ game, onOpen }: { game: Game; onOpen: () => void }) {
 function Panel({
   title,
   action,
+  onActionClick,
   children,
 }: {
   title: string;
   action?: string;
+  onActionClick?: () => void;
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-border/60 bg-card/70 p-3">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-bold">{title}</h2>
+    <section className="rounded-lg border border-border/60 bg-card/70 p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-base font-bold">{title}</h2>
         {action && (
-          <button className="flex items-center text-[9px] text-primary">
+          <button onClick={onActionClick} className="flex items-center text-xs text-primary">
             {action}
-            <ArrowRight className="ml-1 size-3" />
+            <ArrowRight className="ml-1.5 size-4" />
           </button>
         )}
       </div>
@@ -622,12 +631,12 @@ function Metric({
   color: string;
 }) {
   return (
-    <div className="rounded-md bg-background/50 p-3">
+    <div className="rounded-md bg-background/50 p-4">
       <div className="flex items-center justify-between">
-        <span className="text-[9px] text-muted-foreground">{label}</span>
-        <Icon className={`size-4 ${color}`} />
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <Icon className={`size-5 ${color}`} />
       </div>
-      <strong className="mt-2 block text-lg">{value}</strong>
+      <strong className="mt-2.5 block text-2xl">{value}</strong>
     </div>
   );
 }

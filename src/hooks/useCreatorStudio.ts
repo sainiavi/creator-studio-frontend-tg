@@ -1,15 +1,25 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { gameTemplates, themePresets } from "../lib/templates";
 import { api } from "../lib/api";
 import { engineOf } from "../lib/studio-meta";
 
 const defaultPrompt = "cyberpunk doge samurai fighting AI robots in a neon arena";
 
-function templateForPrompt(prompt) {
+function getAnonymousUserId(): string {
+  const key = "kult_anon_uid";
+  let uid = localStorage.getItem(key);
+  if (!uid) {
+    uid = `anon_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(key, uid);
+  }
+  return uid;
+}
+
+function templateForPrompt(prompt: string) {
   const text = prompt.toLowerCase();
-  const match = (ids, terms) =>
-    terms.some((term) => text.includes(term))
-      ? gameTemplates.find((template) => ids.includes(template.id))
+  const match = (ids: string[], terms: string[]) =>
+    terms.some((term: string) => text.includes(term))
+      ? gameTemplates.find((template: any) => ids.includes(template.id))
       : null;
 
   return (
@@ -28,7 +38,7 @@ function templateForPrompt(prompt) {
 function recentCreationContext() {
   try {
     const games = JSON.parse(localStorage.getItem("kult-created-games") ?? "[]");
-    return games.slice(0, 12).map((game) => ({
+    return games.slice(0, 12).map((game: any) => ({
       id: game.id,
       title: game.title,
       templateId: game.templateId,
@@ -41,8 +51,8 @@ function recentCreationContext() {
   }
 }
 
-export function localPackage(template, options) {
-  const theme = themePresets[options.theme] ?? themePresets.neon;
+export function localPackage(template: any, options: any) {
+  const theme = themePresets[options.theme as keyof typeof themePresets] ?? themePresets.neon;
   const tuning = template.difficulty[options.difficulty] ?? template.difficulty.normal;
   const slug = `${template.id}-${options.theme}-${Date.now().toString(36)}`;
 
@@ -128,6 +138,7 @@ function localTemplateExport() {
 }
 
 export function useCreatorStudio() {
+  const generationRef = useRef(0);
   const [engine, setEngine] = useState("threejs");
   const [selectedId, setSelectedId] = useState("flappy");
   const [prompt, setPrompt] = useState(defaultPrompt);
@@ -137,10 +148,10 @@ export function useCreatorStudio() {
   const [extra, setExtra] = useState("none");
   const [status, setStatus] = useState("Ready");
   const [packageMode, setPackageMode] = useState("Tier 1");
-  const [agentStack, setAgentStack] = useState(null);
+  const [agentStack, setAgentStack] = useState<any>(null);
   const [agentStatus, setAgentStatus] = useState("Agents idle");
-  const [orchestrationPlan, setOrchestrationPlan] = useState(null);
-  const [assetResult, setAssetResult] = useState(null);
+  const [orchestrationPlan, setOrchestrationPlan] = useState<any>(null);
+  const [assetResult, setAssetResult] = useState<any>(null);
   const [generatedPackage, setGeneratedPackage] = useState(() =>
     localPackage(gameTemplates[0], {
       prompt: defaultPrompt,
@@ -215,6 +226,7 @@ export function useCreatorStudio() {
     try {
       const response = await api.post("/games/create", {
         templateId: selectedTemplate.id,
+        userId: getAnonymousUserId(),
         ...options,
       });
       setGeneratedPackage(response.data.game);
@@ -229,61 +241,120 @@ export function useCreatorStudio() {
     async (strategy = "hybrid", promptOverride = "") => {
       const effectivePrompt = promptOverride || prompt;
       const effectiveOptions = { ...options, prompt: effectivePrompt };
+      const token = ++generationRef.current;
       setStatus("Generating from prompt");
       setPackageMode(strategy === "pure-agent" ? "Pure Agent" : "Prompt");
-      setAgentStatus(`Running ${strategy === "pure-agent" ? "pure agent" : "hybrid"} pipeline`);
-      const promptTemplate = templateForPrompt(effectivePrompt) ?? selectedTemplate;
+      setAgentStatus(`Routing ${strategy === "pure-agent" ? "pure agent" : "hybrid"} request…`);
+      setOrchestrationPlan(null);
+      setAssetResult(null);
+      // A confident keyword match (e.g. "chess", "racing") — null for vague prompts.
+      const localMatch = templateForPrompt(effectivePrompt);
+      const promptTemplate = localMatch ?? selectedTemplate;
+      // Lock the matched template for hybrid so the routing agent can't drift to a different
+      // game. Pure-agent always goes to the backend (it designs from scratch, no template).
+      const lockTemplate = strategy !== "pure-agent" && Boolean(localMatch);
 
-      try {
-        const response = await api.post(
-          "/games/generate-from-prompt",
-          {
-            prompt: effectivePrompt,
-            context: {
-              preferredTemplateId: promptTemplate.id,
-              recentCreations: recentCreationContext(),
-              requestedStrategy: strategy,
+      // Phase 0 (instant): show a playable local build immediately so the preview is never blank.
+      setEngine(engineOf(promptTemplate));
+      setSelectedId(promptTemplate.id);
+      const localGame = localPackage(promptTemplate, effectiveOptions);
+      setGeneratedPackage(localGame);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let baseGame: any = localGame;
+
+      if (lockTemplate) {
+        // Clear intent — keep the matched template, skip the ~23s routing call entirely.
+        setPackageMode("Prompt");
+        setStatus("Playable template ready");
+        setAgentStatus(`Matched “${promptTemplate.name}” — generating AI build in the background…`);
+      } else {
+        // Phase 1 (fast): vague prompt — let the backend routing agent pick the closest template.
+        // No code/assets/plan, so it returns well under the ~100s gateway timeout.
+        try {
+          const response = await api.post(
+            "/games/generate-from-prompt",
+            {
+              prompt: effectivePrompt,
+              userId: getAnonymousUserId(),
+              context: {
+                preferredTemplateId: promptTemplate.id,
+                recentCreations: recentCreationContext(),
+                requestedStrategy: strategy,
+              },
+              theme,
+              difficulty,
+              customization,
+              extra,
+              includePlan: false,
+              includeCode: false,
+              includeAssets: false,
+              strategy,
             },
-            theme,
-            difficulty,
-            customization,
-            extra,
-            includePlan: true,
-            includeCode: true,
-            includeAssets: true,
-            strategy,
-          },
-          { timeout: 3900000 },
-        );
-
-        const result = response.data;
-        const generatedGame = {
-          ...result.game,
-          thumbnailUrl: result.game?.thumbnailUrl ?? "/thumbnails/simple-agent-game-cover.png",
-        };
-        setGeneratedPackage(generatedGame);
-        if (generatedGame?.templateId) {
-          const template = gameTemplates.find((t) => t.id === generatedGame.templateId);
-          if (template) setEngine(engineOf(template));
-          setSelectedId(generatedGame.templateId);
+            { timeout: 90000 },
+          );
+          const result = response.data;
+          baseGame = {
+            ...result.game,
+            thumbnailUrl: result.game?.thumbnailUrl ?? "/thumbnails/simple-agent-game-cover.png",
+          };
+          if (baseGame?.templateId) {
+            const template = gameTemplates.find((t) => t.id === baseGame.templateId);
+            if (template) setEngine(engineOf(template));
+            setSelectedId(baseGame.templateId);
+          }
+          setGeneratedPackage(baseGame);
+          setPackageMode("Prompt");
+          setStatus("Playable template ready");
+          setAgentStatus("Template ready — generating AI build in the background…");
+        } catch (error: any) {
+          // Routing failed (offline/timeout) — keep the instant local build, still playable.
+          baseGame = localGame;
+          setStatus("Generated locally");
+          setAgentStatus(
+            error.response?.data?.error ?? "Prompt pipeline unreachable — showing local template",
+          );
         }
-        if (result.plan) setOrchestrationPlan(result.plan);
-        if (result.assets) setAssetResult(result.assets);
-        setPackageMode(generatedGame?.tier === "prompt-agent" ? "Prompt + Agents" : "Prompt");
-        setAgentStatus(
-          result.warnings?.length ? result.warnings.join(" ") : "Prompt pipeline complete",
-        );
-        setStatus(result.refinement?.generatedCode ? "Game generated with code" : "Game generated");
-        return generatedGame;
-      } catch (error) {
-        setEngine(engineOf(promptTemplate));
-        setSelectedId(promptTemplate.id);
-        const game = localPackage(promptTemplate, effectiveOptions);
-        setGeneratedPackage(game);
-        setAgentStatus(error.response?.data?.error ?? "Prompt pipeline unavailable");
-        setStatus("Generated locally");
-        return game;
       }
+
+      // Phase 2 (background): ask the coding agent (seed-and-edit) for the real build and swap
+      // it in when ready. If it is slow or fails, the playable template stays in place.
+      void (async () => {
+        try {
+          const codeResponse = await api.post(
+            "/agents/code",
+            {
+              gamePackage: baseGame,
+              request: effectivePrompt,
+              refinementLevel: customization,
+            },
+            { timeout: 150000 },
+          );
+          if (generationRef.current !== token) return; // superseded by a newer generation
+          const refinement = codeResponse.data?.refinement;
+          if (refinement?.generatedCode) {
+            setGeneratedPackage((prev) => ({
+              ...(prev ?? baseGame),
+              tier: "ai-refinement",
+              refinement,
+            }));
+            setPackageMode("Prompt + Agents");
+            setStatus("Game generated with code");
+            setAgentStatus(`AI build ready · ${refinement.source ?? refinement.model ?? "agent"}`);
+          } else {
+            setAgentStatus("AI build returned no code — showing playable template");
+          }
+        } catch (error: any) {
+          if (generationRef.current !== token) return;
+          setAgentStatus(
+            error.response?.data?.error
+              ? `AI build failed: ${error.response.data.error} — showing playable template`
+              : "AI build timed out — showing playable template",
+          );
+        }
+      })();
+
+      return baseGame;
     },
     [customization, difficulty, extra, options, prompt, selectedTemplate, theme],
   );
@@ -309,7 +380,7 @@ export function useCreatorStudio() {
       }));
       setAgentStatus(`Code agent: ${refinement?.model ?? "deepseek-v4-pro"}`);
       setStatus(refinement?.generatedCode ? "AI code generated" : "AI prompt ready");
-    } catch (error) {
+    } catch (error: any) {
       setGeneratedPackage((prev) => ({
         ...prev,
         tier: "ai-refinement",
@@ -343,7 +414,7 @@ export function useCreatorStudio() {
       );
       setOrchestrationPlan(response.data.result);
       setAgentStatus(`Orchestrator: ${response.data.result?.model ?? "glm-5.1"}`);
-    } catch (error) {
+    } catch (error: any) {
       setOrchestrationPlan({
         error: error.response?.data?.error ?? "Orchestrator unavailable",
         content: "Use the selected template and local deterministic package.",
@@ -371,7 +442,7 @@ export function useCreatorStudio() {
       );
       setAssetResult(response.data.result);
       setAgentStatus(`Image agent: ${response.data.result?.model ?? "z-image"}`);
-    } catch (error) {
+    } catch (error: any) {
       setAssetResult({
         error: error.response?.data?.error ?? "Asset generation unavailable",
       });
