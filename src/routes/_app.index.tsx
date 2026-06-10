@@ -97,10 +97,29 @@ function uniqueGames(games: Game[]) {
 
 function Home() {
   const navigate = useNavigate();
-  const { studio } = useStudioContext();
+  const { studio, createdGames } = useStudioContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [prompt, setPrompt] = useState(
     "Create a cyberpunk racing game with AI drivers and neon city rewards.",
+  );
+
+  // The user's own creations (from this browser and from the backend) — without
+  // this, search only covered the static template showcase.
+  const myCreations: Game[] = useMemo(
+    () =>
+      createdGames
+        .filter((g: any) => g?.title)
+        .map((g: any, index: number) => ({
+          title: g.title,
+          category: g.category ?? "Game",
+          plays: "New",
+          emoji: "🎮",
+          gradient: index % 2 === 0 ? "violet" : "cyan",
+          creator: "you",
+          thumbnailUrl: g.thumbnailUrl ?? "/thumbnails/simple-agent-game-cover.png",
+          templateId: g.id ?? g.templateId,
+        })),
+    [createdGames],
   );
 
   const shelves = useMemo(() => {
@@ -151,6 +170,7 @@ function Home() {
     );
 
     return [
+      ...(myCreations.length > 0 ? [{ title: "My Creations", games: myCreations }] : []),
       { title: "Trending", games: trending },
       { title: "Latest", games: latest },
       { title: "Players' Choice", games: playersChoice },
@@ -160,7 +180,7 @@ function Home() {
         games: featured.filter((game) => game.category === category),
       })),
     ];
-  }, []);
+  }, [myCreations]);
 
   const visibleShelves = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();

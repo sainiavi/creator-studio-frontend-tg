@@ -252,7 +252,7 @@ function LeaderboardPanel({
 function PlayFeed() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
-  const { setSidebarCollapsed, studio } = useStudioContext();
+  const { setSidebarCollapsed, studio, createdGames } = useStudioContext();
   const isSimpleAgentGame = gameId === "simple-agent-game";
   const isNeonSudoku = gameId === "neon-sudoku";
   const generatedPackageMatches =
@@ -260,6 +260,12 @@ function PlayFeed() {
     (studio.generatedPackage?.id === gameId ||
      studio.generatedPackage?.templateId === gameId ||
      (gameId === "pure-agent" && studio.generatedPackage?.templateId === "pure-agent"));
+  // A created game opened by its own id (from My Creations / profile). Without
+  // this lookup, unknown ids silently fell back to gameTemplates[0] and played
+  // the wrong game instead of the creation's generated build.
+  const customGame = !generatedPackageMatches
+    ? createdGames.find((cg: any) => cg?.id === gameId)
+    : undefined;
 
   const index = Math.max(
     0,
@@ -297,7 +303,18 @@ function PlayFeed() {
                 ? "construct"
                 : "threejs"
           }
-        : baseTemplate;
+        : customGame
+          ? {
+              id: customGame.templateId || "pure-agent",
+              name: customGame.title || "AI Custom Game",
+              category: customGame.category || "Casual",
+              mechanic: customGame.gameplay?.mechanic || "custom gameplay mechanics",
+              controls: customGame.gameplay?.controls || "controls",
+              // Generated builds run on the canvas renderer regardless of the
+              // template family they were routed from.
+              engine: "threejs"
+            }
+          : baseTemplate;
 
   const game = isNeonSudoku
     ? {
@@ -324,7 +341,18 @@ function PlayFeed() {
             thumbnailUrl: (studio.generatedPackage as any).thumbnailUrl || "/thumbnails/chess-cover.png",
             templateId: studio.generatedPackage.templateId,
           }
-        : templateToGame(template, index);
+        : customGame
+          ? {
+              title: customGame.title,
+              category: customGame.category ?? "Game",
+              plays: "New",
+              emoji: "🎮",
+              gradient: "from-purple-900 to-indigo-950",
+              creator: "you",
+              thumbnailUrl: customGame.thumbnailUrl || "/thumbnails/chess-cover.png",
+              templateId: customGame.templateId,
+            }
+          : templateToGame(template, index);
 
   const engine = engineOf(template);
   const gameTags = Array.from(
@@ -337,7 +365,8 @@ function PlayFeed() {
   const profile = creatorProfiles[index % creatorProfiles.length];
   const pkg = generatedPackageMatches
     ? studio.generatedPackage
-    : localPackage(template, {
+    : customGame ??
+      localPackage(template, {
         prompt: `${template.name} playable feed session`,
         theme: "neon",
         difficulty: "normal",

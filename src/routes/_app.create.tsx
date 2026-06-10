@@ -79,6 +79,8 @@ function Create() {
   const { studio, addCreatedGame } = useStudioContext();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<"idle" | "building" | "done">("idle");
+  // Which strategy kicked off the current build — the loader belongs on that button.
+  const [buildingStrategy, setBuildingStrategy] = useState<"pure-agent" | "hybrid" | null>(null);
   const [step, setStep] = useState(0);
   const [createdTemplateId, setCreatedTemplateId] = useState<string | null>(null);
   const [chatStage, setChatStage] = useState<ChatStage>("game");
@@ -108,6 +110,7 @@ function Create() {
     const buildPrompt = promptOverride || studio.prompt;
     if (!buildPrompt.trim() || phase === "building") return;
     setPhase("building");
+    setBuildingStrategy(strategy);
     setCreatedTemplateId(null);
     runStepAnimation();
     try {
@@ -118,6 +121,7 @@ function Create() {
       if (timer.current) clearInterval(timer.current);
       setStep(steps.length - 1);
       setPhase("done");
+      setBuildingStrategy(null);
     }
   };
 
@@ -244,7 +248,7 @@ function Create() {
               disabled={phase === "building"}
               className="flex w-full sm:w-64 items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-gradient-to-r from-primary to-[oklch(0.65_0.25_295)] py-2.5 sm:py-3 text-sm sm:text-base font-bold uppercase tracking-wider text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
             >
-              {phase === "building" ? (
+              {buildingStrategy === "hybrid" ? (
                 <><Loader2 className="size-4 sm:size-5 animate-spin" /> Building…</>
               ) : (
                 <><Rocket className="size-4 sm:size-5" /> Hybrid</>
@@ -255,7 +259,11 @@ function Create() {
               disabled={phase === "building"}
               className="flex w-full sm:w-64 items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-primary/60 py-2.5 sm:py-3 text-sm sm:text-base font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10 disabled:opacity-60"
             >
-              <Bot className="size-4 sm:size-5" /> Pure Agent Strategy
+              {buildingStrategy === "pure-agent" ? (
+                <><Loader2 className="size-4 sm:size-5 animate-spin" /> Building…</>
+              ) : (
+                <><Bot className="size-4 sm:size-5" /> Pure Agent Strategy</>
+              )}
             </button>
           </div>
         </div>

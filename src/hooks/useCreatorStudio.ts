@@ -15,6 +15,35 @@ function getAnonymousUserId(): string {
   return uid;
 }
 
+// Posts a code-generation job and polls until it finishes. Long generations
+// (up to ~15 min for pure-agent) cannot survive a single HTTP request through
+// browsers and gateways, so the backend returns a jobId immediately and we
+// poll /agents/jobs/:id for the result.
+async function runCodeJob(
+  body: Record<string, unknown>,
+  maxWaitMs: number,
+  onProgress?: (elapsedSeconds: number) => void,
+  isCancelled?: () => boolean,
+) {
+  const response = await api.post("/agents/code", body, { timeout: 30000 });
+  const jobId = response.data?.jobId;
+  if (!jobId) throw new Error("No jobId returned for code generation");
+
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < maxWaitMs) {
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    if (isCancelled?.()) return null;
+    const poll = await api.get(`/agents/jobs/${jobId}`, { timeout: 15000 });
+    const job = poll.data;
+    if (job?.status === "complete") return job.result?.refinement ?? job.result;
+    if (job?.status === "failed") {
+      throw new Error(job.error?.message ?? "Code generation job failed");
+    }
+    onProgress?.(Math.round((Date.now() - startedAt) / 1000));
+  }
+  return null;
+}
+
 function templateForPrompt(prompt: string) {
   const text = prompt.toLowerCase();
   const match = (ids: string[], terms: string[]) =>
@@ -139,6 +168,14 @@ function localTemplateExport() {
 
 export function useCreatorStudio() {
   const generationRef = useRef(0);
+  // While a prompt generation programmatically changes engine/selection, the
+  // StudioContext "sync package to selection" effect must not run — it would
+  // overwrite the AI-designed package with a plain template package.
+  const templateSyncPausedUntil = useRef(0);
+  const pauseTemplateSync = useCallback((ms = 8000) => {
+    templateSyncPausedUntil.current = Date.now() + ms;
+  }, []);
+  const isTemplateSyncPaused = useCallback(() => Date.now() < templateSyncPausedUntil.current, []);
   const [engine, setEngine] = useState("threejs");
   const [selectedId, setSelectedId] = useState("flappy");
   const [prompt, setPrompt] = useState(defaultPrompt);
@@ -255,6 +292,7 @@ export function useCreatorStudio() {
       const lockTemplate = strategy !== "pure-agent" && Boolean(localMatch);
 
       // Phase 0 (instant): show a playable local build immediately so the preview is never blank.
+      pauseTemplateSync();
       setEngine(engineOf(promptTemplate));
       setSelectedId(promptTemplate.id);
       const localGame = localPackage(promptTemplate, effectiveOptions);
@@ -298,15 +336,24 @@ export function useCreatorStudio() {
             ...result.game,
             thumbnailUrl: result.game?.thumbnailUrl ?? "/thumbnails/simple-agent-game-cover.png",
           };
-          if (baseGame?.templateId) {
-            const template = gameTemplates.find((t) => t.id === baseGame.templateId);
-            if (template) setEngine(engineOf(template));
-            setSelectedId(baseGame.templateId);
+          // Only move the studio selection when the backend picked a real
+          // template. Pure-agent games have templateId "pure-agent", which is
+          // not in the template list — selecting it used to bounce the
+          // selection back to the default template and wipe the AI package.
+          const template = gameTemplates.find((t) => t.id === baseGame?.templateId);
+          if (template) {
+            pauseTemplateSync();
+            setEngine(engineOf(template));
+            setSelectedId(template.id);
           }
           setGeneratedPackage(baseGame);
-          setPackageMode("Prompt");
-          setStatus("Playable template ready");
-          setAgentStatus("Template ready — generating AI build in the background…");
+          setPackageMode(strategy === "pure-agent" ? "Pure Agent" : "Prompt");
+          setStatus(strategy === "pure-agent" ? "AI design ready" : "Playable template ready");
+          setAgentStatus(
+            strategy === "pure-agent"
+              ? "Custom game designed — generating AI build in the background…"
+              : "Template ready — generating AI build in the background…",
+          );
         } catch (error: any) {
           // Routing failed (offline/timeout) — keep the instant local build, still playable.
           baseGame = localGame;
@@ -317,21 +364,27 @@ export function useCreatorStudio() {
         }
       }
 
-      // Phase 2 (background): ask the coding agent (seed-and-edit) for the real build and swap
-      // it in when ready. If it is slow or fails, the playable template stays in place.
+      // Phase 2 (background): ask the coding agent for the real build and swap it in
+      // when ready. The backend returns a jobId immediately and we poll for the result,
+      // so generation can take 10-15 minutes without any HTTP timeout killing it.
+      // If it is slow or fails, the playable template stays in place.
       void (async () => {
         try {
-          const codeResponse = await api.post(
-            "/agents/code",
+          // Pure-agent writes a game from scratch (slow); hybrid edits a working seed.
+          const maxWaitMs = strategy === "pure-agent" ? 16 * 60 * 1000 : 8 * 60 * 1000;
+          const refinement = await runCodeJob(
             {
               gamePackage: baseGame,
               request: effectivePrompt,
               refinementLevel: customization,
+              strategy,
             },
-            { timeout: 150000 },
+            maxWaitMs,
+            (elapsed) => setAgentStatus(`AI build in progress… ${elapsed}s elapsed`),
+            () => generationRef.current !== token,
           );
+
           if (generationRef.current !== token) return; // superseded by a newer generation
-          const refinement = codeResponse.data?.refinement;
           if (refinement?.generatedCode) {
             setGeneratedPackage((prev) => ({
               ...(prev ?? baseGame),
@@ -363,16 +416,15 @@ export function useCreatorStudio() {
     setStatus("Preparing AI");
     setPackageMode("Tier 2");
     try {
-      const response = await api.post(
-        "/agents/code",
+      const refinement = await runCodeJob(
         {
           gamePackage: generatedPackage,
           request: prompt,
           refinementLevel: customization,
         },
-        { timeout: 120000 },
+        8 * 60 * 1000,
+        (elapsed) => setAgentStatus(`Code agent working… ${elapsed}s elapsed`),
       );
-      const refinement = response.data.refinement;
       setGeneratedPackage((prev) => ({
         ...prev,
         tier: "ai-refinement",
@@ -467,6 +519,7 @@ export function useCreatorStudio() {
     selectedTemplate,
     selectedId,
     setSelectedId,
+    isTemplateSyncPaused,
     prompt,
     setPrompt,
     theme,
