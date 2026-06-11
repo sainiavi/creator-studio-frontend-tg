@@ -348,7 +348,8 @@ function Home() {
               className="absolute inset-0 h-full w-full object-cover opacity-55"
             />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,oklch(0.12_0.025_282)_0%,oklch(0.12_0.025_282/0.94)_46%,oklch(0.12_0.025_282/0.36)_100%)]" />
-            <div className="relative z-10 flex min-h-[380px] max-w-[620px] flex-col justify-center p-6 lg:p-8">
+            <div className="relative z-10 flex min-h-[380px] items-end gap-6 p-6 lg:p-8">
+              <div className="flex min-w-0 max-w-[620px] flex-1 flex-col justify-center self-center">
               <p className="label-mono mb-2 text-[10px] text-neon-cyan">AI game creation suite</p>
               <h1 className="max-w-lg font-display text-3xl font-black leading-tight sm:text-4xl">
                 CREATE ANY GAME <span className="text-gradient">WITH AI</span>
@@ -374,12 +375,13 @@ function Home() {
                   </button>
                 </div>
               </div>
-            </div>
-            <div className="absolute bottom-5 right-5 z-10 hidden w-52 space-y-3 lg:block">
-              <Feature icon={Sparkles} title="1-Click Generate" copy="Prompt to playable game" />
-              <Feature icon={Bot} title="AI Agent Integration" copy="Intelligent NPCs" />
-              <Feature icon={Globe2} title="Deploy to Browser" copy="Play instantly, anywhere" />
-              <Feature icon={Rocket} title="Publish & Earn" copy="Share your creations" />
+              </div>
+              <div className="hidden w-52 shrink-0 space-y-3 lg:block">
+                <Feature icon={Sparkles} title="1-Click Generate" copy="Prompt to playable game" />
+                <Feature icon={Bot} title="AI Agent Integration" copy="Intelligent NPCs" />
+                <Feature icon={Globe2} title="Deploy to Browser" copy="Play instantly, anywhere" />
+                <Feature icon={Rocket} title="Publish & Earn" copy="Share your creations" />
+              </div>
             </div>
           </section>
 
