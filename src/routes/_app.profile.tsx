@@ -4,6 +4,8 @@ import { GameCard } from "@/components/studio/GameCard";
 import { type Game } from "@/lib/games-data";
 import { templateEmoji, gradientForId, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
 import { fetchCreatorStats, type CreatorStats } from "@/lib/api/social";
+import { getCurrentUserId, getCurrentUsername, getWalletAddress } from "@/lib/identity";
+import { api } from "@/lib/api";
 import { gameTemplates } from "@/lib/templates";
 import { useStudioContext } from "@/context/StudioContext";
 import {
@@ -172,6 +174,10 @@ function Profile() {
   const navigate = useNavigate();
   const { createdGames } = useStudioContext();
   const [activities, setActivities] = useState<UserActivity[]>([]);
+  // Real info (title, cover, views) for any game referenced by likes,
+  // favorites, or history — fetched from the backend, never guessed.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [gameInfo, setGameInfo] = useState<Record<string, any>>({});
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [likedGames, setLikedGames] = useState<Game[]>([]);
   const [favoriteGames, setFavoriteGames] = useState<Game[]>([]);
@@ -183,92 +189,119 @@ function Profile() {
     return getThumbnailUrl(id);
   }, []);
 
+  const formatViews = (views: number | undefined): string => {
+    if (!views) return "—";
+    return views >= 1000 ? `${(views / 1000).toFixed(1)}K` : String(views);
+  };
+
   const mapActivityToGame = useCallback((gameId: string, gameTitle: string): Game => {
-    // Check created games first
+    // 1) the user's own creations
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const customGame = createdGames.find((cg: any) => cg.id === gameId || cg.templateId === gameId);
     if (customGame) {
-      const isFallback = !customGame.thumbnailUrl || customGame.thumbnailUrl.startsWith("data:image/svg+xml");
       return {
         title: customGame.title,
         category: customGame.category ?? "Game",
-        plays: "—",
+        plays: formatViews(customGame.views),
         emoji: templateEmoji[customGame.templateId] ?? "🎮",
         gradient: gradientForId(customGame.templateId ?? customGame.id),
         creator: "you",
-        thumbnailUrl: isFallback ? getThumbnail(customGame.templateId, customGame.thumbnailUrl) : customGame.thumbnailUrl,
-        templateId: customGame.templateId || customGame.id,
+        thumbnailUrl: resolveGameThumbnail(customGame),
+        templateId: customGame.id ?? customGame.templateId,
       };
     }
 
-    // Try to guess template ID from title if gameId is a custom game ID
-    let resolvedId = gameId;
-    if (!gameId.startsWith("offline-") && gameTitle) {
-      const titleLower = gameTitle.toLowerCase();
-      const matchedTemplate = gameTemplates.find((t: any) => {
-        const nameLower = t.name.toLowerCase();
-        const idLower = t.id.toLowerCase().replace("offline-", "");
-        return titleLower.includes(nameLower) || titleLower.includes(idLower) || nameLower.includes(titleLower) || idLower.includes(titleLower);
-      });
-      if (matchedTemplate) {
-        resolvedId = matchedTemplate.id;
-      }
+    // 2) other creators' games — real record fetched from the backend
+    const remote = gameInfo[gameId];
+    if (remote) {
+      return {
+        title: remote.title,
+        category: remote.category ?? "Game",
+        plays: formatViews(remote.views),
+        emoji: templateEmoji[remote.templateId] ?? "🎮",
+        gradient: gradientForId(remote.templateId ?? remote.id),
+        creator: remote.creatorId?.startsWith("0x")
+          ? `${remote.creatorId.slice(0, 6)}…${remote.creatorId.slice(-4)}`
+          : "community",
+        thumbnailUrl: resolveGameThumbnail(remote),
+        templateId: remote.id,
+      };
     }
 
-    // Check templates next
-    const template = gameTemplates.find((t: any) => t.id === resolvedId);
+    // 3) platform templates (gameId IS the template id)
+    const template = gameTemplates.find((t: any) => t.id === gameId);
+    if (template) {
+      return {
+        title: template.name,
+        category: template.category ?? "Game",
+        plays: "—",
+        emoji: templateEmoji[gameId] ?? "🎮",
+        gradient: gradientForId(gameId),
+        creator: "studio",
+        thumbnailUrl: getThumbnail(gameId),
+        templateId: gameId,
+      };
+    }
+
+    // 4) deleted/unknown game — show only what was truthfully recorded
     return {
-      title: gameTitle || template?.name || "Untitled Game",
-      category: template?.category ?? "Game",
+      title: gameTitle || "Removed game",
+      category: "Game",
       plays: "—",
-      emoji: templateEmoji[resolvedId] ?? "🎮",
-      gradient: gradientForId(resolvedId),
-      creator: "creator",
-      thumbnailUrl: getThumbnail(resolvedId),
-      templateId: gameId, // Keep original gameId for navigation
+      emoji: "🎮",
+      gradient: gradientForId(gameId),
+      creator: "—",
+      thumbnailUrl: getThumbnail(gameId),
+      templateId: gameId,
     };
-  }, [createdGames, getThumbnail]);
+  }, [createdGames, gameInfo, getThumbnail]);
+
+  const [likedIds, setLikedIds] = useState<string[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const key = "kult_anon_uid";
-    const uid = localStorage.getItem(key);
-    if (!uid) {
-      setActivitiesLoading(false);
-      return;
-    }
-
-    // Fetch activities
-    fetchUserActivities(uid)
-      .then((data) => setActivities(data))
-      .catch(() => {});
-
-    // Fetch favorites
-    fetchUserFavorites(uid)
-      .then((data) => {
-        if (data && Array.isArray(data.favorites)) {
-          const mapped = data.favorites.map((f) => mapActivityToGame(f.gameId, ""));
-          setFavoriteGames(mapped);
-        }
-      })
-      .catch(() => {});
-
-    // Fetch likes
-    fetchUserLikes(uid)
-      .then((data) => {
-        if (data && Array.isArray(data.likes)) {
-          const mapped = data.likes.map((l) => mapActivityToGame(l.gameId, ""));
-          setLikedGames(mapped);
-        }
-      })
-      .catch(() => {});
+    const uid = getCurrentUserId();
 
     Promise.allSettled([
-      fetchUserActivities(uid),
-      fetchUserFavorites(uid),
-      fetchUserLikes(uid),
-    ]).finally(() => {
-      setActivitiesLoading(false);
-    });
-  }, [mapActivityToGame]);
+      fetchUserActivities(uid).then((data) => setActivities(data ?? [])),
+      fetchUserFavorites(uid).then((data) => {
+        if (data && Array.isArray(data.favorites)) setFavoriteIds(data.favorites.map((f) => f.gameId));
+      }),
+      fetchUserLikes(uid).then((data) => {
+        if (data && Array.isArray(data.likes)) setLikedIds(data.likes.map((l) => l.gameId));
+      }),
+    ]).finally(() => setActivitiesLoading(false));
+  }, []);
+
+  // Resolve REAL records for every game referenced by likes/favorites/history.
+  useEffect(() => {
+    const referenced = new Set<string>([...likedIds, ...favoriteIds]);
+    for (const act of activities) {
+      if (act.gameId) referenced.add(act.gameId);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const known = new Set<string>([
+      ...createdGames.map((g: any) => g?.id),
+      ...gameTemplates.map((t: any) => t.id),
+    ]);
+    const missing = [...referenced].filter((id) => id && !known.has(id));
+    if (missing.length === 0) return;
+    api
+      .get("/games/list", { params: { ids: missing.join(","), limit: 100 } })
+      .then((res) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const map: Record<string, any> = {};
+        for (const g of res.data?.games ?? []) map[g.id] = g;
+        setGameInfo(map);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [likedIds, favoriteIds, activities]);
+
+  useEffect(() => {
+    setLikedGames(likedIds.map((id) => mapActivityToGame(id, "")));
+    setFavoriteGames(favoriteIds.map((id) => mapActivityToGame(id, "")));
+  }, [likedIds, favoriteIds, mapActivityToGame]);
 
   const games: Game[] = createdGames
     .filter((g: any, i: number, all: any[]) => !g?.id || all.findIndex((x: any) => x?.id === g.id) === i)
@@ -298,15 +331,26 @@ function Profile() {
 
   const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
   useEffect(() => {
-    const uid = localStorage.getItem("kult_anon_uid");
-    if (!uid) return;
-    fetchCreatorStats(uid).then(setCreatorStats).catch(() => {});
+    fetchCreatorStats(getCurrentUserId()).then(setCreatorStats).catch(() => {});
   }, []);
 
   const formatStat = (value: number | undefined) => {
     const n = value ?? 0;
     return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
   };
+  const wallet = getWalletAddress();
+  const displayName = getCurrentUsername();
+  // Joined date from the earliest real record we have (creation or activity).
+  const timestamps: number[] = [
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...createdGames.map((g: any) => new Date(g?.createdAt ?? NaN).getTime()),
+    ...activities.map((a) => new Date(a.timestamp).getTime()),
+  ].filter((t) => Number.isFinite(t));
+  const joined =
+    timestamps.length > 0
+      ? new Date(Math.min(...timestamps)).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+      : null;
+
   const stats = [
     { label: "Games", value: String(createdGames.length) },
     { label: "Plays", value: formatStat(creatorStats?.plays) },
@@ -345,15 +389,18 @@ function Profile() {
               <div className="flex size-24 items-center justify-center rounded-2xl border-4 border-card bg-secondary text-5xl">🎮</div>
             </div>
             <h2 className="mt-4 font-display text-2xl font-black">
-              Guest Creator
+              {displayName}
             </h2>
-            <p className="mt-3 max-w-lg text-sm text-muted-foreground">
-              Indie game builder. Turning prompts into playable worlds, one neon idea at a time.
-            </p>
             <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5"><MapPin className="size-3.5" /> Tokyo</span>
-              <span className="flex items-center gap-1.5"><Link2 className="size-3.5" /> vex.games</span>
-              <span className="flex items-center gap-1.5"><Calendar className="size-3.5" /> Joined 2024</span>
+              <span className="flex items-center gap-1.5 font-mono">
+                <Link2 className="size-3.5" />
+                {wallet ?? "Not connected — local creator profile"}
+              </span>
+              {joined && (
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="size-3.5" /> Joined {joined}
+                </span>
+              )}
             </div>
             <div className="mt-6 grid grid-cols-4 gap-3">
               {stats.map((s) => (

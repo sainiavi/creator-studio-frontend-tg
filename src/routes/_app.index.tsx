@@ -166,10 +166,55 @@ function Home() {
     [createdGames],
   );
 
+  // Real view counts drive the Trending order: most viewed first.
+  const [viewsMap, setViewsMap] = useState<Record<string, number>>({});
+  const [communityGames, setCommunityGames] = useState<Game[]>([]);
+  useEffect(() => {
+    api
+      .get("/social/views-top", { params: { limit: 500 } })
+      .then((res) => {
+        const map: Record<string, number> = {};
+        for (const g of res.data?.games ?? []) map[g.gameId] = g.views;
+        setViewsMap(map);
+      })
+      .catch(() => {});
+    // Trending is platform-wide: every creator's games compete by views.
+    api
+      .get("/games/list", { params: { limit: 100 } })
+      .then((res) => {
+        const games: any[] = res.data?.games ?? [];
+        setCommunityGames(
+          games
+            .filter((g: any) => g?.title)
+            .map((g: any, index: number) => ({
+              title: g.title,
+              category: g.category ?? "Game",
+              plays: "New",
+              emoji: "🎮",
+              gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
+              creator: g.creatorId?.startsWith("0x")
+                ? `${g.creatorId.slice(0, 6)}…${g.creatorId.slice(-4)}`
+                : "community",
+              thumbnailUrl: resolveGameThumbnail(g),
+              templateId: g.id ?? g.templateId,
+            })),
+        );
+      })
+      .catch(() => {});
+  }, []);
+
   const shelves = useMemo(() => {
-    const trending = [...featured].sort(
-      (first, second) => numericPlays(second.plays) - numericPlays(first.plays),
-    );
+    const realViews = (game: Game) => viewsMap[game.templateId ?? ""] ?? 0;
+    const withRealPlays = (game: Game): Game => {
+      const v = realViews(game);
+      if (v <= 0) return game;
+      return { ...game, plays: v >= 1000 ? `${(v / 1000).toFixed(1)}K` : String(v) };
+    };
+    // Most-viewed first; untouched games keep their showcase order after them.
+    const trending = [...featured, ...myCreations, ...communityGames]
+      .filter((game, i, all) => all.findIndex((x) => x.templateId === game.templateId) === i)
+      .sort((first, second) => realViews(second) - realViews(first))
+      .map(withRealPlays);
     const latest = [...featured].sort((first, second) => {
       if (first.plays === "New" && second.plays !== "New") return -1;
       if (second.plays === "New" && first.plays !== "New") return 1;
@@ -224,7 +269,7 @@ function Home() {
         games: featured.filter((game) => game.category === category),
       })),
     ];
-  }, [myCreations]);
+  }, [myCreations, viewsMap, communityGames]);
 
   const visibleShelves = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();

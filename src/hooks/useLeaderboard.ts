@@ -1,33 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getCurrentUserId, getCurrentUsername } from "@/lib/identity";
 import {
   fetchLeaderboard,
   submitLeaderboardScore,
   type LeaderboardEntry,
 } from "@/lib/api/leaderboards";
 
-function getAnonymousUserId(): string {
-  const key = "kult_anon_uid";
-  let uid = localStorage.getItem(key);
-  if (!uid) {
-    uid = `anon_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    localStorage.setItem(key, uid);
-  }
-  return uid;
-}
 
-function getAnonymousUsername(): string {
-  const key = "kult_anon_username";
-  let name = localStorage.getItem(key);
-  if (!name) {
-    name = `Player${Math.floor(Math.random() * 9999)}`;
-    localStorage.setItem(key, name);
-  }
-  return name;
-}
 
 export function useLeaderboard(gameId: string) {
-  const userId = useRef(getAnonymousUserId()).current;
-  const username = useRef(getAnonymousUsername()).current;
+  const userId = useRef(getCurrentUserId()).current;
+  const username = useRef(getCurrentUsername()).current;
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 

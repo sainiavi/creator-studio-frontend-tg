@@ -10,7 +10,12 @@ const apiBase = rawBaseUrl.replace(/\/$/, "").endsWith("/api")
  * Returns the backend API URL for a thumbnail image.
  * Falls back to the static path from templateThumbnails if needed.
  */
+// Thumbnails are served from object storage when configured; the backend
+// endpoint (which redirects to storage) remains the fallback.
+const thumbnailsBase = (import.meta.env.VITE_THUMBNAILS_BASE ?? "").replace(/\/$/, "");
+
 export function getThumbnailUrl(templateId: string): string {
+  if (thumbnailsBase) return `${thumbnailsBase}/${encodeURIComponent(templateId)}`;
   return `${apiBase}/thumbnails/${encodeURIComponent(templateId)}`;
 }
 

@@ -16,15 +16,28 @@ export const api = axios.create({
 // once with a fresh token.
 
 const TOKEN_KEY = "kult-auth-token";
+const TOKEN_USER_KEY = "kult-auth-token-user";
 let tokenPromise: Promise<string | null> | null = null;
+
+function currentIdentity(): string | undefined {
+  // Wallet address is the production identity; anon id is the dev fallback.
+  for (const key of ["kult_wallet", "walletAddress", "wallet_address", "kult_wallet_address"]) {
+    const value = localStorage.getItem(key);
+    if (value && /^0x[a-fA-F0-9]{40}$/.test(value.trim())) return value.trim().toLowerCase();
+  }
+  return localStorage.getItem("kult_anon_uid") ?? undefined;
+}
 
 async function fetchToken(): Promise<string | null> {
   try {
-    const userId = localStorage.getItem("kult_anon_uid") ?? undefined;
+    const userId = currentIdentity();
     // Plain axios: must not run through the interceptor that awaits the token.
     const response = await axios.post(`${baseURL}/auth/token`, { userId }, { timeout: 10000 });
     const token: string | null = response.data?.token ?? null;
-    if (token) localStorage.setItem(TOKEN_KEY, token);
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(TOKEN_USER_KEY, userId ?? "");
+    }
     return token;
   } catch {
     return null; // backend offline or auth unconfigured — requests go out unauthenticated
@@ -33,7 +46,11 @@ async function fetchToken(): Promise<string | null> {
 
 function getToken(): Promise<string | null> {
   const cached = localStorage.getItem(TOKEN_KEY);
-  if (cached) return Promise.resolve(cached);
+  // A cached token only counts if it was issued for the CURRENT identity —
+  // switching wallets means switching users.
+  if (cached && localStorage.getItem(TOKEN_USER_KEY) === (currentIdentity() ?? "")) {
+    return Promise.resolve(cached);
+  }
   if (!tokenPromise) {
     tokenPromise = fetchToken().finally(() => {
       tokenPromise = null;

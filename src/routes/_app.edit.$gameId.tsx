@@ -16,6 +16,7 @@ import { api } from "@/lib/api";
 import { runCodeJob } from "@/hooks/useCreatorStudio";
 import { useStudioContext } from "@/context/StudioContext";
 import { GamePreview } from "@/components/studio/GamePreview";
+import { ownsGame } from "@/lib/identity";
 
 export const Route = createFileRoute("/_app/edit/$gameId")({
   head: () => ({
@@ -213,6 +214,8 @@ function GameEditor() {
   }
 
   const hasBuild = Boolean(game.refinement?.generatedCode);
+  // Wallet identity = user. Only the creator can change their game.
+  const isOwner = ownsGame(game.creatorId);
 
   return (
     <div className="flex h-[calc(100vh-0px)] flex-col">
@@ -220,11 +223,14 @@ function GameEditor() {
       <header className="flex flex-wrap items-center gap-3 border-b border-border/60 px-5 py-3">
         <input
           value={game.title ?? ""}
-          onChange={(e) => patchGame((g) => ({ ...g, title: e.target.value }))}
+          readOnly={!isOwner}
+          onChange={(e) => isOwner && patchGame((g) => ({ ...g, title: e.target.value }))}
           className="min-w-0 flex-1 bg-transparent font-display text-xl font-black outline-none focus:text-primary sm:max-w-md"
         />
         <span className="label-mono flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          {saving === "saved" && !dirty ? (
+          {!isOwner ? (
+            "View only — not your game"
+          ) : saving === "saved" && !dirty ? (
             <>
               Changes saved <Check className="size-3.5 text-neon-green" />
             </>
@@ -242,13 +248,14 @@ function GameEditor() {
         </button>
         <button
           onClick={() => void save(true)}
-          className="flex items-center gap-1.5 rounded-lg border border-primary/60 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary transition hover:bg-primary/10"
+          disabled={!isOwner}
+          className="flex items-center gap-1.5 rounded-lg border border-primary/60 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary transition hover:bg-primary/10 disabled:opacity-40"
         >
           <Rocket className="size-3.5" /> Publish
         </button>
         <button
           onClick={() => void save(false)}
-          disabled={!dirty || saving === "saving"}
+          disabled={!isOwner || !dirty || saving === "saving"}
           className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
         >
           {saving === "saving" ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />} Save Changes
@@ -296,13 +303,13 @@ function GameEditor() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") void sendWish(wish);
               }}
-              disabled={building || !hasBuild}
-              placeholder={hasBuild ? "Tap to wish… e.g. make enemies faster" : "No build yet for this game"}
+              disabled={building || !hasBuild || !isOwner}
+              placeholder={!isOwner ? "Only the creator can edit this game" : hasBuild ? "Tap to wish… e.g. make enemies faster" : "No build yet for this game"}
               className="min-w-0 flex-1 rounded-xl bg-secondary/60 px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
             />
             <button
               onClick={() => void sendWish(wish)}
-              disabled={building || !wish.trim()}
+              disabled={building || !wish.trim() || !isOwner}
               className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground disabled:opacity-50"
             >
               <Send className="size-4" />
@@ -406,7 +413,7 @@ function GameEditor() {
               />
               <button
                 onClick={applyCodeDraft}
-                disabled={codeDraft === (game.refinement?.generatedCode ?? "")}
+                disabled={!isOwner || codeDraft === (game.refinement?.generatedCode ?? "")}
                 className="mt-2 rounded-lg bg-primary px-3 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50"
               >
                 Apply code to preview

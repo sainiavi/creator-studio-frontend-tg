@@ -41,6 +41,7 @@ import { gradientClass } from "@/lib/games-data";
 import { gradientForId, templateToGame } from "@/lib/studio-meta";
 import { useSocial } from "@/hooks/useSocial";
 import { useFollow } from "@/hooks/useFollow";
+import { getCurrentUserId } from "@/lib/identity";
 import { recordView } from "@/lib/api/social";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useStudioContext } from "@/context/StudioContext";
@@ -422,7 +423,7 @@ function PlayFeed() {
   useEffect(() => {
     if (!gameId) return;
     const key = `kult-viewed-${gameId}`;
-    const uid = localStorage.getItem("kult_anon_uid") ?? "anon";
+    const uid = getCurrentUserId();
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, "1");
     recordView(gameId, uid)
@@ -719,6 +720,8 @@ function PlayFeed() {
         onToggle={() => social.setShareMenuOpen(!social.shareMenuOpen)}
         onShare={social.handleShare}
         template={template}
+        game={game}
+        gameId={gameId}
       />
       <ActionButton
         icon={<MessageCircle className="size-6" />}
@@ -787,13 +790,14 @@ function PlayFeed() {
         <div
           className={`absolute inset-0 bg-gradient-to-br ${gradientClass[gradientForId(template.id)]} opacity-30`}
         />
-        {getThumbnailUrl(template.id) && (
-          <img
-            src={getThumbnailUrl(template.id)}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-20 blur-2xl"
-          />
-        )}
+        <img
+          src={game?.thumbnailUrl || getThumbnailUrl(template.id)}
+          alt=""
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+          }}
+          className="absolute inset-0 h-full w-full object-cover opacity-20 blur-2xl"
+        />
         
         {/* Game Container Wrapper */}
         <div className={`absolute inset-0 pb-[60px] lg:pb-0 z-10 flex items-center justify-center pointer-events-none transition-all duration-500 ease-out ${leaderboardOpen ? "lg:pr-[420px]" : ""}`}>
@@ -1108,20 +1112,24 @@ function ShareButton({
   onToggle,
   onShare,
   template,
+  game,
+  gameId,
 }: {
   count: number;
   open: boolean;
   onToggle: () => void;
   onShare: (platform?: SharePlatform) => Promise<void>;
   template: any;
+  game?: any;
+  gameId?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
-  const url =
-    typeof window === "undefined"
-      ? `/play/${template.id}`
-      : `${window.location.origin}/play/${template.id}`;
+  // Link to THIS game (its real id), honoring the app's base path (/studio/).
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/?$/, "/");
+  const path = `${base}play/${gameId ?? template.id}`;
+  const url = typeof window === "undefined" ? path : `${window.location.origin}${path}`;
 
   const handleCopy = async () => {
     try {
@@ -1282,20 +1290,23 @@ function ShareButton({
 
               <div className="mb-6 flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
                 <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white/10 text-3xl shadow-inner">
-                  {getThumbnailUrl(template.id) ? (
-                    <img
-                      src={getThumbnailUrl(template.id)}
-                      alt={template.name}
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    templateEmoji[template.id] || "Game"
-                  )}
+                  <img
+                    src={game?.thumbnailUrl || getThumbnailUrl(gameId ?? template.id)}
+                    alt={game?.title ?? template.name}
+                    onError={(event) => {
+                      // missing cover: show the emoji tile instead of a broken icon
+                      event.currentTarget.style.display = "none";
+                      const fallback = event.currentTarget.nextElementSibling as HTMLElement | null;
+                      if (fallback) fallback.style.display = "block";
+                    }}
+                    className="size-full object-cover"
+                  />
+                  <span style={{ display: "none" }}>{templateEmoji[template.id] || "🎮"}</span>
                 </div>
                 <div className="min-w-0">
-                  <h4 className="truncate text-base font-black text-white">{template.name}</h4>
+                  <h4 className="truncate text-base font-black text-white">{game?.title ?? template.name}</h4>
                   <p className="truncate text-xs font-bold uppercase text-white/40">
-                    {template.category} - HTML5 Game
+                    {game?.category ?? template.category} - HTML5 Game
                   </p>
                 </div>
               </div>
@@ -1354,6 +1365,7 @@ function ShareButton({
     <div className="relative">
       <button
         onClick={onToggle}
+        data-testid="share-button"
         className="group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 lg:min-w-12"
       >
         <span
@@ -1554,6 +1566,8 @@ function DetailsModal({
 
   const title = generatedPackageMatches ? pkg.title : template.name;
   const description = generatedPackageMatches ? pkg.gameplay?.mechanic : template.mechanic;
+  // The game's own cover when it has one, else the template cover.
+  const thumbnailSrc = (pkg as any)?.thumbnailUrl || getThumbnailUrl(template.id);
 
   return (
     <>
@@ -1569,17 +1583,19 @@ function DetailsModal({
         <div className="flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {/* Thumbnail Image */}
           <div className="relative mb-6 w-full overflow-hidden rounded-2xl bg-white/5 aspect-[4/3] sm:aspect-video">
-            {getThumbnailUrl(template.id) ? (
-              <img
-                src={getThumbnailUrl(template.id)}
-                alt={title}
-                className="size-full object-cover"
-              />
-            ) : (
-              <div className="grid size-full place-items-center text-6xl">
-                {templateEmoji[template.id] || "🎮"}
-              </div>
-            )}
+            <img
+              src={thumbnailSrc}
+              alt={title}
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+                const fallback = event.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fallback) fallback.style.display = "grid";
+              }}
+              className="size-full object-cover"
+            />
+            <div style={{ display: "none" }} className="size-full place-items-center text-6xl">
+              {templateEmoji[template.id] || "🎮"}
+            </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
             
             <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-md">

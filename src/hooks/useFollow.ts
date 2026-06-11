@@ -1,19 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchFollowStatus, toggleFollowApi } from "@/lib/api/social";
+import { getCurrentUserId } from "@/lib/identity";
 
-function getAnonymousUserId(): string {
-  const key = "kult_anon_uid";
-  let uid = localStorage.getItem(key);
-  if (!uid) {
-    uid = `anon_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    localStorage.setItem(key, uid);
-  }
-  return uid;
-}
 
 /** Real follow state for a creator, persisted on the backend. */
 export function useFollow(creatorId: string | null | undefined) {
-  const userId = useRef(getAnonymousUserId()).current;
+  const userId = useRef(getCurrentUserId()).current;
   const [following, setFollowing] = useState(false);
   const [followers, setFollowers] = useState(0);
 

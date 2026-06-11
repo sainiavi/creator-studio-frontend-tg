@@ -24,6 +24,10 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
             <img
               src={game.thumbnailUrl}
               alt=""
+              onError={(event) => {
+                // missing cover: fall back to the gradient + emoji tile
+                event.currentTarget.style.display = "none";
+              }}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />

@@ -4,6 +4,7 @@ import { useCreatorStudio } from "@/hooks/useCreatorStudio";
 import { api } from "@/lib/api";
 import { engineOf } from "@/lib/studio-meta";
 import { gameTemplates } from "@/lib/templates";
+import { getCurrentUserId, ownsGame } from "@/lib/identity";
 
 type Studio = ReturnType<typeof useCreatorStudio>;
 
@@ -48,10 +49,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     try {
       const stored = localStorage.getItem("kult-created-games");
       const parsed: any[] = stored ? JSON.parse(stored) : [];
-      // older sessions could persist the same game several times — keep the first copy
-      return parsed.filter(
-        (g, i) => !g?.id || parsed.findIndex((x) => x?.id === g.id) === i,
-      );
+      // dedupe + keep only the current user's games (wallet = user)
+      return parsed
+        .filter((g) => ownsGame(g?.creatorId))
+        .filter((g, i, all) => !g?.id || all.findIndex((x) => x?.id === g.id) === i);
     } catch {
       return [];
     }
@@ -80,13 +81,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   // generated build (the backend saves it when the code job completes).
   const refreshCreatedGames = useCallback(async () => {
     try {
-      const response = await api.get("/games/list", { timeout: 15000 });
+      // Only the current user's creations belong in My Creations.
+      const response = await api.get("/games/list", {
+        timeout: 15000,
+        params: { creatorId: getCurrentUserId() },
+      });
       const remote: any[] = response.data?.games ?? [];
       if (!remote.length) return;
       setCreatedGames((prev) => {
         const remoteById = new Map(remote.filter((g: any) => g?.id).map((g: any) => [g.id, g]));
-        let changed = false;
-        const upgraded = prev.map((g: any) => {
+        // The backend list is authoritative: cached entries from before creator
+        // attribution (no creatorId) that the server doesn't know are stale
+        // copies of other users' games — drop them.
+        const kept = prev.filter((g: any) => g?.creatorId || (g?.id && remoteById.has(g.id)));
+        let changed = kept.length !== prev.length;
+        const upgraded = kept.map((g: any) => {
           const r = remoteById.get(g?.id);
           if (!r) return g;
           if (r.refinement?.generatedCode && !g?.refinement?.generatedCode) {
@@ -96,7 +105,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           // The backend generates a real cover image in the background —
           // swap out the placeholder SVG when it has landed.
           const localIsPlaceholder =
-            !g?.thumbnailUrl || String(g.thumbnailUrl).startsWith("data:image/svg+xml");
+            !g?.thumbnailUrl ||
+            String(g.thumbnailUrl).startsWith("data:image/svg+xml") ||
+            String(g.thumbnailUrl).startsWith("/api/"); // backend-served — upgrade to the CDN URL
           const remoteIsReal =
             r.thumbnailUrl && !String(r.thumbnailUrl).startsWith("data:image/svg+xml");
           if (localIsPlaceholder && remoteIsReal) {
@@ -105,7 +116,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
           return g;
         });
-        const known = new Set(prev.map((g: any) => g?.id));
+        const known = new Set(kept.map((g: any) => g?.id));
         const added = remote.filter((g: any) => g?.id && !known.has(g.id));
         if (!changed && added.length === 0) return prev;
         const merged = [...upgraded, ...added];

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getCurrentUserId, getCurrentUsername } from "@/lib/identity";
 import {
   fetchSocialStats,
   toggleLike,
@@ -12,31 +13,7 @@ import {
   type SharePlatform,
 } from "@/lib/api/social";
 
-// Pseudo-anonymous user id persisted in localStorage
-function getAnonymousUserId(): string {
-  const key = "kult_anon_uid";
-  let uid = localStorage.getItem(key);
-  if (!uid) {
-    uid = `anon_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    localStorage.setItem(key, uid);
-  }
-  return uid;
-}
 
-function getAnonymousUsername(): string {
-  const key = "kult_anon_username";
-  let name = localStorage.getItem(key);
-  if (!name) {
-    const adjectives = ["Swift", "Neon", "Pixel", "Cosmic", "Turbo", "Hyper", "Retro", "Glitch"];
-    const nouns = ["Fox", "Owl", "Hawk", "Wolf", "Cat", "Panda", "Tiger", "Bear"];
-    name =
-      adjectives[Math.floor(Math.random() * adjectives.length)] +
-      nouns[Math.floor(Math.random() * nouns.length)] +
-      Math.floor(Math.random() * 999);
-    localStorage.setItem(key, name);
-  }
-  return name;
-}
 
 export type UseSocialReturn = {
   // Stats
@@ -74,8 +51,8 @@ export type UseSocialReturn = {
 };
 
 export function useSocial(gameId: string): UseSocialReturn {
-  const userId = useRef(getAnonymousUserId()).current;
-  const username = useRef(getAnonymousUsername()).current;
+  const userId = useRef(getCurrentUserId()).current;
+  const username = useRef(getCurrentUsername()).current;
 
   const [stats, setStats] = useState<SocialStats | null>(null);
   const [loading, setLoading] = useState(true);

@@ -2,18 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { gameTemplates, themePresets } from "../lib/templates";
 import { api } from "../lib/api";
 import { engineOf } from "../lib/studio-meta";
+import { getCurrentUserId } from "@/lib/identity";
 
 const defaultPrompt = "cyberpunk doge samurai fighting AI robots in a neon arena";
 
-function getAnonymousUserId(): string {
-  const key = "kult_anon_uid";
-  let uid = localStorage.getItem(key);
-  if (!uid) {
-    uid = `anon_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    localStorage.setItem(key, uid);
-  }
-  return uid;
-}
 
 // Posts a code-generation job and polls until it finishes. Long generations
 // (up to ~15 min for pure-agent) cannot survive a single HTTP request through
@@ -276,7 +268,7 @@ export function useCreatorStudio() {
     try {
       const response = await api.post("/games/create", {
         templateId: selectedTemplate.id,
-        userId: getAnonymousUserId(),
+        userId: getCurrentUserId(),
         ...options,
       });
       setGeneratedPackage(response.data.game);
@@ -327,7 +319,7 @@ export function useCreatorStudio() {
             "/games/generate-from-prompt",
             {
               prompt: effectivePrompt,
-              userId: getAnonymousUserId(),
+              userId: getCurrentUserId(),
               context: {
                 preferredTemplateId: promptTemplate.id,
                 recentCreations: recentCreationContext(),

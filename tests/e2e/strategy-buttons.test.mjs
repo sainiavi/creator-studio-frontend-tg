@@ -10,8 +10,8 @@ async function clickAndInspect(browser, which) {
   await page.goto(`${FRONTEND}/create`, { waitUntil: "networkidle" }).catch(() => {});
   await page.waitForTimeout(800);
 
-  const hybridBtn = page.locator("button", { hasText: /Hybrid|Building/ }).first();
-  const pureBtn = page.locator("button", { hasText: /Pure Agent|Building/ }).last();
+  const hybridBtn = page.locator("button", { hasText: "HYBRID MODE" }).first();
+  const pureBtn = page.locator("button", { hasText: "PURE AGENT STRATEGY" }).first();
   await (which === "hybrid" ? hybridBtn : pureBtn).click();
   await page.waitForTimeout(600);
 
