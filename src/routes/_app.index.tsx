@@ -17,6 +17,7 @@ import {
   CircleDollarSign,
   Gamepad2,
   Globe2,
+  Pencil,
   Play,
   Rocket,
   Search,
@@ -120,7 +121,7 @@ function Home() {
           const mapped = games.map((g: any, index: number) => ({
             title: g.title,
             category: g.category ?? "Game",
-            plays: "New",
+            plays: g.views ? (g.views >= 1000 ? `${(g.views / 1000).toFixed(1)}K` : String(g.views)) : "New",
             emoji: "🎮",
             gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
             creator: g.creator ?? "you",
@@ -154,7 +155,7 @@ function Home() {
         .map((g: any, index: number) => ({
           title: g.title,
           category: g.category ?? "Game",
-          plays: "New",
+          plays: g.views ? (g.views >= 1000 ? `${(g.views / 1000).toFixed(1)}K` : String(g.views)) : "New",
           emoji: "🎮",
           gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
           creator: "you",
@@ -348,6 +349,11 @@ function Home() {
                   ? (game) => { if (game.templateId) void removeCreatedGame(game.templateId); }
                   : undefined
               }
+              onEditGame={
+                shelf.title === "My Creations"
+                  ? (game) => { if (game.templateId) navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } }); }
+                  : undefined
+              }
             />
           ))}
         </main>
@@ -437,6 +443,11 @@ function Home() {
                   ? (game) => { if (game.templateId) void removeCreatedGame(game.templateId); }
                   : undefined
               }
+              onEditGame={
+                shelf.title === "My Creations"
+                  ? (game) => { if (game.templateId) navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } }); }
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -467,7 +478,7 @@ function Feature({
   );
 }
 
-function GameShelf({ title, games, cardsPerRow, onDeleteGame }: { title: string; games: Game[]; cardsPerRow?: number; onDeleteGame?: (game: Game) => void }) {
+function GameShelf({ title, games, cardsPerRow, onDeleteGame, onEditGame }: { title: string; games: Game[]; cardsPerRow?: number; onDeleteGame?: (game: Game) => void; onEditGame?: (game: Game) => void }) {
   const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -568,6 +579,7 @@ function GameShelf({ title, games, cardsPerRow, onDeleteGame }: { title: string;
                     game={item.game}
                     onOpen={() => openGame(item.game)}
                     onDelete={onDeleteGame ? () => onDeleteGame(item.game) : undefined}
+                    onEdit={onEditGame ? () => onEditGame(item.game) : undefined}
                   />
                 ) : (
                   <PlaceholderTile />
@@ -615,6 +627,7 @@ function GameShelf({ title, games, cardsPerRow, onDeleteGame }: { title: string;
                       game={item.game}
                       onOpen={() => openGame(item.game)}
                       onDelete={onDeleteGame ? () => onDeleteGame(item.game) : undefined}
+                      onEdit={onEditGame ? () => onEditGame(item.game) : undefined}
                     />
                   ) : (
                     <PlaceholderTile key={`${title}-grid-placeholder-${item.slot}`} />
@@ -664,7 +677,7 @@ const FALLBACK_COVER =
     </svg>`,
   );
 
-function GameTile({ game, onOpen, onDelete }: { game: Game; onOpen: () => void; onDelete?: () => void }) {
+function GameTile({ game, onOpen, onDelete, onEdit }: { game: Game; onOpen: () => void; onDelete?: () => void; onEdit?: () => void }) {
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
   return (
@@ -703,6 +716,20 @@ function GameTile({ game, onOpen, onDelete }: { game: Game; onOpen: () => void; 
           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent" />
+        {onEdit && (
+          <button
+            title={`Edit ${game.title}`}
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerUp={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit();
+            }}
+            className="absolute left-1.5 top-1.5 z-10 grid size-6 place-items-center rounded-md bg-black/60 text-white/80 opacity-0 transition group-hover:opacity-100 hover:bg-primary hover:text-primary-foreground"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        )}
         {onDelete && (
           <button
             title={`Delete ${game.title}`}

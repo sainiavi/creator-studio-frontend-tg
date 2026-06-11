@@ -44,6 +44,61 @@ function buildSrcDoc(code: string, pkg: AnyPackage): string {
 <body>
 <canvas id="game"></canvas>
 <script type="module">
+// Surface runtime errors to the host app (the editor turns them into
+// one-click "fix this" requests for the agent).
+function reportGameError(message, stack) {
+  try {
+    window.parent.postMessage({ __kultGameError: { message: String(message), stack: String(stack || "") } }, "*");
+  } catch {}
+}
+// --- Leaderboard score bridge -----------------------------------------------
+// Games call window.reportScore(score) when a run ends. Builds that predate
+// this API are covered by a HUD watcher: it reads "Score: N" style text the
+// game draws each frame and submits the best value when game-over text shows.
+(function () {
+  let best = 0;
+  let explicit = false;
+  let lastSentAt = 0;
+  function send(score) {
+    const value = Math.max(0, Math.floor(Number(score) || 0));
+    try { window.parent.postMessage({ __kultGameScore: value }, "*"); } catch {}
+  }
+  window.reportScore = function (score) {
+    explicit = true;
+    send(score);
+  };
+  const scoreRe = /(?:score|pts|points)\\s*[:\\-]?\\s*([0-9][0-9,]*)/i;
+  const overRe = /game\\s*over|you\\s*win|you\\s*lose|you\\s*died|crashed|squashed|board\\s*cleared|out\\s*of\\s*moves|quiz\\s*complete|wins|you\\s*fell/i;
+  function scan(text) {
+    if (explicit) return;
+    const s = String(text);
+    const m = s.match(scoreRe);
+    if (m) {
+      const v = parseInt(m[1].replace(/,/g, ""), 10);
+      if (Number.isFinite(v)) best = Math.max(best, v);
+    }
+    if (overRe.test(s) && Date.now() - lastSentAt > 5000) {
+      lastSentAt = Date.now();
+      send(best);
+    }
+  }
+  const origFill = CanvasRenderingContext2D.prototype.fillText;
+  CanvasRenderingContext2D.prototype.fillText = function (text, x, y, maxWidth) {
+    scan(text);
+    return maxWidth === undefined ? origFill.call(this, text, x, y) : origFill.call(this, text, x, y, maxWidth);
+  };
+  const origStroke = CanvasRenderingContext2D.prototype.strokeText;
+  CanvasRenderingContext2D.prototype.strokeText = function (text, x, y, maxWidth) {
+    scan(text);
+    return maxWidth === undefined ? origStroke.call(this, text, x, y) : origStroke.call(this, text, x, y, maxWidth);
+  };
+})();
+window.addEventListener("error", (event) => {
+  reportGameError(event.message || event.error, event.error && event.error.stack);
+});
+window.addEventListener("unhandledrejection", (event) => {
+  reportGameError(event.reason && event.reason.message || event.reason, event.reason && event.reason.stack);
+});
 try {
 ${moduleBody}
 } catch (error) {
@@ -54,6 +109,7 @@ ${moduleBody}
     ctx.fillStyle = "#ff6b81"; ctx.font = "16px system-ui, sans-serif"; ctx.textAlign = "center";
     ctx.fillText("Generated build failed to run: " + (error && error.message), (c.width || 960) / 2, (c.height || 540) / 2);
   }
+  reportGameError(error && error.message, error && error.stack);
   console.error("Generated game runtime error", error);
 }
 <\/script>
@@ -61,22 +117,33 @@ ${moduleBody}
 </html>`;
 }
 
-export function GeneratedGameFrame({ gamePackage }: { gamePackage: AnyPackage }) {
+export function GeneratedGameFrame({
+  gamePackage,
+  onScoreSubmit,
+}: {
+  gamePackage: AnyPackage;
+  onScoreSubmit?: (score: number) => void;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Scores posted by the sandboxed game (reportScore API or HUD watcher).
+  useEffect(() => {
+    if (!onScoreSubmit) return;
+    function onMessage(event: MessageEvent) {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      const score = event.data?.__kultGameScore;
+      if (typeof score === "number" && Number.isFinite(score) && score >= 0) {
+        onScoreSubmit?.(Math.floor(score));
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [onScoreSubmit]);
 
   const code = gamePackage?.refinement?.generatedCode ?? "";
   const srcDoc = useMemo(() => buildSrcDoc(code, gamePackage), [code, gamePackage]);
-
-  const source = gamePackage?.refinement?.source;
-  const badge =
-    source === "seed-edit"
-      ? "AI-edited build"
-      : source === "seed-fallback"
-        ? "Reference build"
-        : source === "agent"
-          ? "AI-generated build"
-          : "Generated build";
 
   useEffect(() => {
     function onChange() {
@@ -97,6 +164,7 @@ export function GeneratedGameFrame({ gamePackage }: { gamePackage: AnyPackage })
   return (
     <div className="three-preview-wrap" ref={wrapRef}>
       <iframe
+        ref={iframeRef}
         title={`${gamePackage?.templateName ?? "Generated"} game`}
         className="three-preview"
         // Isolated origin: the agent's code cannot touch the parent app.
@@ -105,7 +173,6 @@ export function GeneratedGameFrame({ gamePackage }: { gamePackage: AnyPackage })
         style={{ width: "100%", height: "100%", border: "none", display: "block" }}
         allow="autoplay; fullscreen; gamepad"
       />
-      <span className="generated-badge">{badge}</span>
       <button
         type="button"
         className="fullscreen-button"

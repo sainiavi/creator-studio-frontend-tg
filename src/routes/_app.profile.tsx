@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/studio/PageHeader";
 import { GameCard } from "@/components/studio/GameCard";
 import { type Game } from "@/lib/games-data";
 import { templateEmoji, gradientForId, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
+import { fetchCreatorStats, type CreatorStats } from "@/lib/api/social";
 import { gameTemplates } from "@/lib/templates";
 import { useStudioContext } from "@/context/StudioContext";
 import {
@@ -274,7 +275,7 @@ function Profile() {
     .map((g: any) => ({
       title: g.title,
       category: g.category ?? "Game",
-      plays: "—",
+      plays: g.views ? (g.views >= 1000 ? `${(g.views / 1000).toFixed(1)}K` : String(g.views)) : "New",
       emoji: templateEmoji[g.templateId] ?? "🎮",
       gradient: gradientForId(g.templateId ?? g.id),
       creator: "you",
@@ -295,11 +296,22 @@ function Profile() {
     mapActivityToGame(gameId, title)
   );
 
+  const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
+  useEffect(() => {
+    const uid = localStorage.getItem("kult_anon_uid");
+    if (!uid) return;
+    fetchCreatorStats(uid).then(setCreatorStats).catch(() => {});
+  }, []);
+
+  const formatStat = (value: number | undefined) => {
+    const n = value ?? 0;
+    return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
+  };
   const stats = [
     { label: "Games", value: String(createdGames.length) },
-    { label: "Plays", value: "1.6M" },
-    { label: "Followers", value: "12.4K" },
-    { label: "Likes", value: "98K" },
+    { label: "Plays", value: formatStat(creatorStats?.plays) },
+    { label: "Followers", value: formatStat(creatorStats?.followers) },
+    { label: "Likes", value: formatStat(creatorStats?.likes) },
   ];
 
   const filteredActivities = activities.filter((activity) => {

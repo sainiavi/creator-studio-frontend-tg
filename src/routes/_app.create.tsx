@@ -299,6 +299,17 @@ function Create() {
                 <h4 className="mt-1 font-display text-xl font-black text-white">{studio.generatedPackage.title} 🎮</h4>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
+                    onClick={() =>
+                      navigate({
+                        to: "/edit/$gameId",
+                        params: { gameId: studio.generatedPackage.id ?? "latest" },
+                      })
+                    }
+                    className="flex items-center gap-2 rounded-lg bg-black/40 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white"
+                  >
+                    <Wand2 className="size-4" /> Edit Game
+                  </button>
+                  <button
                     onClick={() => navigate({ to: "/studio" })}
                     className="flex items-center gap-2 rounded-lg bg-black/40 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white"
                   >

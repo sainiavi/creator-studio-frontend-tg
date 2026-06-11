@@ -26,7 +26,7 @@ const PROGRESS_STAGE_LABELS: Record<string, string> = {
   "fixing-syntax": "Fixing syntax",
 };
 
-async function runCodeJob(
+export async function runCodeJob(
   body: Record<string, unknown>,
   maxWaitMs: number,
   onProgress?: (statusText: string) => void,

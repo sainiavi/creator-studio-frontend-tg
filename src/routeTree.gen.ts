@@ -18,6 +18,7 @@ import { Route as AppMoreRouteImport } from './routes/_app.more'
 import { Route as AppLeaderboardRouteImport } from './routes/_app.leaderboard'
 import { Route as AppCreateRouteImport } from './routes/_app.create'
 import { Route as AppPlayGameIdRouteImport } from './routes/_app.play.$gameId'
+import { Route as AppEditGameIdRouteImport } from './routes/_app.edit.$gameId'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -63,26 +64,33 @@ const AppPlayGameIdRoute = AppPlayGameIdRouteImport.update({
   path: '/play/$gameId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEditGameIdRoute = AppEditGameIdRouteImport.update({
+  id: '/edit/$gameId',
+  path: '/edit/$gameId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/create': typeof AppCreateRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/more': typeof AppMoreRoute
-  '/play/$gameId': typeof AppPlayGameIdRoute
   '/profile': typeof AppProfileRoute
   '/studio': typeof AppStudioRoute
   '/templates': typeof AppTemplatesRoute
+  '/edit/$gameId': typeof AppEditGameIdRoute
+  '/play/$gameId': typeof AppPlayGameIdRoute
 }
 export interface FileRoutesByTo {
   '/create': typeof AppCreateRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/more': typeof AppMoreRoute
-  '/play/$gameId': typeof AppPlayGameIdRoute
   '/profile': typeof AppProfileRoute
   '/studio': typeof AppStudioRoute
   '/templates': typeof AppTemplatesRoute
   '/': typeof AppIndexRoute
+  '/edit/$gameId': typeof AppEditGameIdRoute
+  '/play/$gameId': typeof AppPlayGameIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -90,11 +98,12 @@ export interface FileRoutesById {
   '/_app/create': typeof AppCreateRoute
   '/_app/leaderboard': typeof AppLeaderboardRoute
   '/_app/more': typeof AppMoreRoute
-  '/_app/play/$gameId': typeof AppPlayGameIdRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/studio': typeof AppStudioRoute
   '/_app/templates': typeof AppTemplatesRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/edit/$gameId': typeof AppEditGameIdRoute
+  '/_app/play/$gameId': typeof AppPlayGameIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -103,31 +112,34 @@ export interface FileRouteTypes {
     | '/create'
     | '/leaderboard'
     | '/more'
-    | '/play/$gameId'
     | '/profile'
     | '/studio'
     | '/templates'
+    | '/edit/$gameId'
+    | '/play/$gameId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/create'
     | '/leaderboard'
     | '/more'
-    | '/play/$gameId'
     | '/profile'
     | '/studio'
     | '/templates'
     | '/'
+    | '/edit/$gameId'
+    | '/play/$gameId'
   id:
     | '__root__'
     | '/_app'
     | '/_app/create'
     | '/_app/leaderboard'
     | '/_app/more'
-    | '/_app/play/$gameId'
     | '/_app/profile'
     | '/_app/studio'
     | '/_app/templates'
     | '/_app/'
+    | '/_app/edit/$gameId'
+    | '/_app/play/$gameId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -178,13 +190,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMoreRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/play/$gameId': {
-      id: '/_app/play/$gameId'
-      path: '/play/$gameId'
-      fullPath: '/play/$gameId'
-      preLoaderRoute: typeof AppPlayGameIdRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/leaderboard': {
       id: '/_app/leaderboard'
       path: '/leaderboard'
@@ -199,6 +204,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCreateRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/play/$gameId': {
+      id: '/_app/play/$gameId'
+      path: '/play/$gameId'
+      fullPath: '/play/$gameId'
+      preLoaderRoute: typeof AppPlayGameIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/edit/$gameId': {
+      id: '/_app/edit/$gameId'
+      path: '/edit/$gameId'
+      fullPath: '/edit/$gameId'
+      preLoaderRoute: typeof AppEditGameIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -206,22 +225,24 @@ interface AppRouteChildren {
   AppCreateRoute: typeof AppCreateRoute
   AppLeaderboardRoute: typeof AppLeaderboardRoute
   AppMoreRoute: typeof AppMoreRoute
-  AppPlayGameIdRoute: typeof AppPlayGameIdRoute
   AppProfileRoute: typeof AppProfileRoute
   AppStudioRoute: typeof AppStudioRoute
   AppTemplatesRoute: typeof AppTemplatesRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppEditGameIdRoute: typeof AppEditGameIdRoute
+  AppPlayGameIdRoute: typeof AppPlayGameIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppCreateRoute: AppCreateRoute,
   AppLeaderboardRoute: AppLeaderboardRoute,
   AppMoreRoute: AppMoreRoute,
-  AppPlayGameIdRoute: AppPlayGameIdRoute,
   AppProfileRoute: AppProfileRoute,
   AppStudioRoute: AppStudioRoute,
   AppTemplatesRoute: AppTemplatesRoute,
   AppIndexRoute: AppIndexRoute,
+  AppEditGameIdRoute: AppEditGameIdRoute,
+  AppPlayGameIdRoute: AppPlayGameIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -232,10 +253,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

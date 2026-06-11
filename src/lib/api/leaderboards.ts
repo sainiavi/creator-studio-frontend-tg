@@ -15,7 +15,7 @@ export type Leaderboard = {
   entries: LeaderboardEntry[];
 };
 
-export async function fetchLeaderboard(gameId: string, limit = 50) {
+export async function fetchLeaderboard(gameId: string, limit = 500) {
   const { data } = await api.get(`/leaderboards/${gameId}`, { params: { limit } });
   return data as Leaderboard;
 }

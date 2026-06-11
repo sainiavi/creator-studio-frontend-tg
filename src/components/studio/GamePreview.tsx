@@ -24,7 +24,7 @@ export function GamePreview({
 }) {
   const generatedCode = gamePackage?.refinement?.generatedCode;
   if (typeof generatedCode === "string" && generatedCode.trim().length > 0) {
-    return <GeneratedGameFrame gamePackage={gamePackage} />;
+    return <GeneratedGameFrame gamePackage={gamePackage} onScoreSubmit={onScoreSubmit} />;
   }
   if (gamePackage?.templateId === "pure-agent") {
     return (

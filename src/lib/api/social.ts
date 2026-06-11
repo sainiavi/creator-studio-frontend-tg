@@ -5,6 +5,7 @@ export type SocialStats = {
   comments: { count: number };
   favorites: { favorited: boolean; count: number };
   shares: { count: number };
+  views?: { count: number };
 };
 
 export type Comment = {
@@ -131,4 +132,41 @@ export async function fetchUserFavorites(userId: string): Promise<UserFavoritesR
 export async function fetchUserLikes(userId: string): Promise<UserLikesResponse> {
   const { data } = await api.get(`/social/likes/user/${userId}`);
   return data as UserLikesResponse;
+}
+
+
+// ─── Views (plays) ───────────────────────────────────────────────────────────
+
+export async function recordView(gameId: string, userId: string) {
+  const { data } = await api.post(`/social/views/${encodeURIComponent(gameId)}`, { userId });
+  return data as { gameId: string; views: number };
+}
+
+// ─── Follows ─────────────────────────────────────────────────────────────────
+
+export type FollowStatus = { creatorId: string; following: boolean; followers: number };
+
+export async function fetchFollowStatus(creatorId: string, userId: string) {
+  const { data } = await api.get(`/social/follows/${encodeURIComponent(creatorId)}`, {
+    params: { userId },
+  });
+  return data as FollowStatus;
+}
+
+export async function toggleFollowApi(creatorId: string, userId: string) {
+  const { data } = await api.post(`/social/follows/toggle`, { creatorId, userId });
+  return data as FollowStatus;
+}
+
+export type CreatorStats = {
+  creatorId: string;
+  games: number;
+  plays: number;
+  likes: number;
+  followers: number;
+};
+
+export async function fetchCreatorStats(creatorId: string) {
+  const { data } = await api.get(`/social/creator-stats/${encodeURIComponent(creatorId)}`);
+  return data as CreatorStats;
 }

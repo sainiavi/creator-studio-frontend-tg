@@ -40,6 +40,8 @@ import { localPackage } from "@/hooks/useCreatorStudio";
 import { gradientClass } from "@/lib/games-data";
 import { gradientForId, templateToGame } from "@/lib/studio-meta";
 import { useSocial } from "@/hooks/useSocial";
+import { useFollow } from "@/hooks/useFollow";
+import { recordView } from "@/lib/api/social";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
@@ -406,7 +408,28 @@ function PlayFeed() {
         extra: "none",
       });
   const social = useSocial(gameId);
-  const [isFollowing, setIsFollowing] = useState(false);
+  // Real follow state: target the game's creator (template games fall back to
+  // a stable pseudo-creator id derived from the displayed creator name).
+  const creatorId =
+    (pkg as any)?.creatorId ?? (customGame as any)?.creatorId ?? `creator:${game.creator ?? "studio"}`;
+  const follow = useFollow(creatorId);
+  const isFollowing = follow.following;
+  const setIsFollowing = (_next?: boolean) => {
+    void follow.toggle();
+  };
+  // Count a real play once per game per browser session.
+  const [viewCount, setViewCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!gameId) return;
+    const key = `kult-viewed-${gameId}`;
+    const uid = localStorage.getItem("kult_anon_uid") ?? "anon";
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    recordView(gameId, uid)
+      .then((r) => setViewCount(r.views))
+      .catch(() => {});
+  }, [gameId]);
+  if (viewCount != null) game.plays = viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}K` : String(viewCount);
   const isMobile = useIsMobile();
   const leaderboard = useLeaderboard(gameId);
   const { submitScore } = leaderboard;
