@@ -11,7 +11,11 @@ import {
   Grid3x3,
   ChevronsLeft,
   ChevronsRight,
+  ArrowLeft,
 } from "lucide-react";
+
+export const BROWSER_URL =
+  import.meta.env.VITE_BROWSER_URL ?? "https://kult-browser-rust-l2lwg.ondigitalocean.app/";
 
 const nav = [
   { to: "/", label: "Home", icon: Home },
@@ -76,6 +80,18 @@ export function Sidebar() {
             )}
           </Link>
         ))}
+
+        {/* External: back to the KULT browser app */}
+        <a
+          href={BROWSER_URL}
+          className={`group flex items-center rounded-xl text-sm font-semibold text-muted-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-foreground ${
+            collapsed ? "justify-center px-0 py-3" : "gap-4 px-4 py-3"
+          }`}
+          title={collapsed ? "Back To Browser" : undefined}
+        >
+          <ArrowLeft className="size-5 shrink-0 transition-colors group-hover:text-primary" />
+          {!collapsed && <span className="label-mono text-xs">Back To Browser</span>}
+        </a>
       </nav>
 
       {/* Collapse toggle */}
