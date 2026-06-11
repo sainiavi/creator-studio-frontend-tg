@@ -26,7 +26,7 @@ export function UnityPreview({ templateId }: { templateId: string }) {
     <div className="unity-preview-wrap" ref={wrapRef}>
       <iframe
         title="Unity game preview"
-        src={unityGameUrls[templateId] || "/templates/unity-karting/index.html"}
+        src={unityGameUrls[templateId] || unityGameUrls["unity-karting"]}
         width="100%"
         height="100%"
         style={{ border: "none" }}

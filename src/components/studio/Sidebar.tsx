@@ -84,13 +84,16 @@ export function Sidebar() {
         {/* External: back to the KULT browser app */}
         <a
           href={BROWSER_URL}
-          className={`group flex items-center rounded-xl text-sm font-semibold text-muted-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-foreground ${
-            collapsed ? "justify-center px-0 py-3" : "gap-4 px-4 py-3"
+          className={`mt-2 flex items-center justify-center rounded-2xl bg-gradient-to-b from-[#9d4dff] to-[#7a2ef0] text-white shadow-[0_4px_18px_rgba(140,59,255,0.35)] transition-all hover:from-[#a95fff] hover:to-[#8a3eff] ${
+            collapsed ? "px-0 py-3" : "px-4 py-3"
           }`}
-          title={collapsed ? "Back To Browser" : undefined}
+          title="Back To Browser"
         >
-          <ArrowLeft className="size-5 shrink-0 transition-colors group-hover:text-primary" />
-          {!collapsed && <span className="label-mono text-xs">Back To Browser</span>}
+          {collapsed ? (
+            <ArrowLeft className="size-5 shrink-0" />
+          ) : (
+            <span className="label-mono text-xs font-bold tracking-wider">BACK TO BROWSER</span>
+          )}
         </a>
       </nav>
 

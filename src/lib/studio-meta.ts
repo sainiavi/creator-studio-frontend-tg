@@ -124,8 +124,15 @@ export const templateEmoji: Record<string, string> = {
   "stake-mines": "💣",
 };
 
+// Public-folder game builds live under the app base (e.g. /studio/templates/…).
+// Root-absolute /templates/ paths escape the base in production and fall
+// through to the host app's router, which 404s inside the game iframe.
+const appBase = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+const withAppBase = (urls: Record<string, string>): Record<string, string> =>
+  Object.fromEntries(Object.entries(urls).map(([id, url]) => [id, `${appBase}${url}`]));
+
 // Standalone Unity WebGL build entry points (served from /public/templates).
-export const unityGameUrls: Record<string, string> = {
+export const unityGameUrls: Record<string, string> = withAppBase({
   "unity-karting": "/templates/unity-karting/index.html",
   "unity-fps": "/templates/unity-fps/index.html",
   "unity-platformer": "/templates/unity-platformer/demo-api/unity/index.html",
@@ -139,10 +146,10 @@ export const unityGameUrls: Record<string, string> = {
   "unity-solitaire": "/templates/unity-solitaire/index.html",
   "unity-flappybird": "/templates/unity-flappybird/index.html",
   "unity-runner": "/templates/unity-runner/index.html",
-};
+});
 
 // Standalone Construct/HTML5 game entry points (served from /public/templates).
-export const constructGameUrls: Record<string, string> = {
+export const constructGameUrls: Record<string, string> = withAppBase({
   "offline-12minibattles": "/templates/offline-12minibattles/index.html",
   "offline-1on1soccer": "/templates/offline-1on1soccer/index.html",
   "offline-1on1tennis": "/templates/offline-1on1tennis/index.html",
@@ -288,7 +295,7 @@ export const constructGameUrls: Record<string, string> = {
   "race-kings": "/templates/race-kings/index.html",
   "spin-wheel-royale": "/templates/spin-wheel-royale/index.html",
   "stake-mines": "/templates/stake-mines/index.html",
-};
+});
 
 export const templateThumbnails: Record<string, string> = {};
 

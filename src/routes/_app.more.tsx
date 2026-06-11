@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/studio/PageHeader";
-import { Settings, Bell, Shield, HelpCircle, Palette, Users, FileText, LogIn, ChevronRight, ArrowLeft } from "lucide-react";
+import { Settings, Bell, Shield, HelpCircle, Palette, Users, FileText, LogIn, ChevronRight } from "lucide-react";
 import { BROWSER_URL } from "@/components/studio/Sidebar";
 
 export const Route = createFileRoute("/_app/more")({
@@ -60,12 +60,10 @@ function More() {
 
         <a
           href={BROWSER_URL}
-          className="animate-float-up flex items-center gap-4 rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-card transition-colors hover:bg-secondary"
+          className="animate-float-up flex items-center justify-center rounded-2xl bg-gradient-to-b from-[#9d4dff] to-[#7a2ef0] px-5 py-4 shadow-[0_4px_18px_rgba(140,59,255,0.35)] transition-all hover:from-[#a95fff] hover:to-[#8a3eff]"
           style={{ animationDelay: "320ms", opacity: 0 }}
         >
-          <ArrowLeft className="size-5 text-primary" />
-          <span className="flex-1 text-sm font-semibold">Back To Browser</span>
-          <ChevronRight className="size-4 text-muted-foreground" />
+          <span className="label-mono text-xs font-bold tracking-wider text-white">BACK TO BROWSER</span>
         </a>
       </div>
     </div>
