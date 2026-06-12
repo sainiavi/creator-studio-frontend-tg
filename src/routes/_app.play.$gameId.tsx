@@ -48,6 +48,7 @@ import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
 import type { LeaderboardEntry } from "@/lib/api/leaderboards";
 import type { SharePlatform } from "@/lib/api/social";
+import { qualifyReferral } from "@/lib/api/referral";
 
 export const Route = createFileRoute("/_app/play/$gameId")({
   head: ({ params }) => {
@@ -455,9 +456,11 @@ function PlayFeed() {
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [isGameActive, setIsGameActive] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
+  const playStartedAt = useRef(Date.now());
 
   useEffect(() => {
     setIsGameActive(false);
+    playStartedAt.current = Date.now();
   }, [gameId]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const feedTabs = [
@@ -493,9 +496,17 @@ function PlayFeed() {
 
   const handleScoreSubmit = useCallback(
     async (score: number) => {
-      await submitScore(score);
+      await submitScore(score).catch(() => {});
+      const durationSeconds = Math.floor((Date.now() - playStartedAt.current) / 1000);
+      const qualificationKey = `kult-referral-qualified-${getCurrentUserId()}`;
+      if (durationSeconds > 30 && !localStorage.getItem(qualificationKey)) {
+        const result = await qualifyReferral(gameId, durationSeconds).catch(() => null);
+        if (result?.qualified || result?.status === "held") {
+          localStorage.setItem(qualificationKey, "1");
+        }
+      }
     },
-    [submitScore],
+    [gameId, submitScore],
   );
 
   const [dragY, setDragY] = useState(0);

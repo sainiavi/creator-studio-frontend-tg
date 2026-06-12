@@ -11,6 +11,9 @@ import { useStudioContext } from "@/context/StudioContext";
 import {
   MapPin,
   Link2,
+  Copy,
+  Gift,
+  Check,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -30,6 +33,7 @@ import {
   fetchUserLikes,
   type UserActivity,
 } from "@/lib/api/social";
+import { fetchReferralSummary, type ReferralSummary } from "@/lib/api/referral";
 
 export const Route = createFileRoute("/_app/profile")({
   head: () => ({
@@ -183,6 +187,8 @@ function Profile() {
   const [favoriteGames, setFavoriteGames] = useState<Game[]>([]);
   const [showAllActivities, setShowAllActivities] = useState(false);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
+  const [referral, setReferral] = useState<ReferralSummary | null>(null);
+  const [referralCopied, setReferralCopied] = useState(false);
 
   const getThumbnail = useCallback((id: string | undefined, fallbackUrl?: string) => {
     if (!id) return fallbackUrl;
@@ -332,6 +338,7 @@ function Profile() {
   const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
   useEffect(() => {
     fetchCreatorStats(getCurrentUserId()).then(setCreatorStats).catch(() => {});
+    fetchReferralSummary().then(setReferral).catch(() => {});
   }, []);
 
   const formatStat = (value: number | undefined) => {
@@ -410,6 +417,51 @@ function Profile() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        <div className="mt-8 overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card to-card p-6 shadow-card">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <span className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
+                <Gift className="size-4" /> Referral rewards
+              </span>
+              <h3 className="mt-2 font-display text-2xl font-black">Invite players. Earn 50 KP.</h3>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+                Your friend receives 100 KP after completing their first authenticated game session
+                longer than 30 seconds.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-border/60 bg-background/45 px-5 py-3 text-center">
+                <p className="font-display text-xl font-black">{referral?.count ?? 0}</p>
+                <p className="label-mono text-[8px] text-muted-foreground">Rewarded referrals</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-background/45 px-5 py-3 text-center">
+                <p className="font-display text-xl font-black text-primary">{referral?.kpEarned ?? 0} KP</p>
+                <p className="label-mono text-[8px] text-muted-foreground">Referral earnings</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-5 flex gap-2 rounded-xl border border-border/60 bg-background/50 p-2 pl-4">
+            <input
+              readOnly
+              value={referral?.link ?? "Loading your permanent referral link..."}
+              className="min-w-0 flex-1 bg-transparent font-mono text-xs outline-none"
+            />
+            <button
+              disabled={!referral}
+              onClick={async () => {
+                if (!referral) return;
+                await navigator.clipboard.writeText(referral.link);
+                setReferralCopied(true);
+                setTimeout(() => setReferralCopied(false), 1800);
+              }}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
+            >
+              {referralCopied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+              {referralCopied ? "Copied" : "Copy link"}
+            </button>
           </div>
         </div>
 
