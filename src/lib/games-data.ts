@@ -8,6 +8,7 @@ export type Game = {
   thumbnailUrl?: string;
   /** When set, the card opens this real template in the Studio. */
   templateId?: string;
+  playUrl?: string;
   prompt?: string;
 };
 

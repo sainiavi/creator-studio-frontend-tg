@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { type Game } from "@/lib/games-data";
 import { GameCard } from "./GameCard";
 
-export function GameRow({ title, games }: { title: string; games: Game[] }) {
+export function GameRow({
+  title,
+  games,
+  viewAllTo,
+}: {
+  title: string;
+  games: Game[];
+  viewAllTo?: string;
+}) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     loop: true,
@@ -67,28 +75,39 @@ export function GameRow({ title, games }: { title: string; games: Game[] }) {
   }, [emblaApi]);
 
   return (
-    <section className="px-6 py-6 lg:px-10">
-      <div className="mb-5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="font-display text-2xl font-black tracking-tight lg:text-3xl">
+    <section className="px-6 pb-12 lg:px-10 lg:pb-16">
+      <div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="font-display text-3xl font-black uppercase tracking-tight text-white lg:text-5xl">
             {title}
           </h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={scrollPrev}
             disabled={!canScrollPrev}
-            className="flex size-9 items-center justify-center rounded-full border border-border/60 bg-card text-foreground transition-all hover:border-primary/50 hover:bg-primary/10 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="grid size-12 place-items-center rounded-lg border border-neon-violet/70 bg-[#1b072e]/50 text-[#d87cff] transition hover:bg-neon-violet/20 disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Previous games"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeft className="size-5" />
           </button>
           <button
             onClick={scrollNext}
             disabled={!canScrollNext}
-            className="flex size-9 items-center justify-center rounded-full border border-border/60 bg-card text-foreground transition-all hover:border-primary/50 hover:bg-primary/10 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="grid size-12 place-items-center rounded-lg border border-neon-violet/70 bg-[#1b072e]/50 text-[#d87cff] transition hover:bg-neon-violet/20 disabled:cursor-not-allowed disabled:opacity-30"
+            aria-label="Next games"
           >
-            <ChevronRight className="size-4" />
+            <ChevronRight className="size-5" />
           </button>
+          {viewAllTo && (
+            <a
+              href={viewAllTo}
+              className="label-mono flex h-12 items-center gap-3 rounded-lg border border-neon-violet/70 bg-[#1b072e]/50 px-5 text-[10px] font-bold text-[#d87cff] transition hover:bg-neon-violet/20"
+            >
+              View All
+              <ArrowUpRight className="size-4" />
+            </a>
+          )}
         </div>
       </div>
       <div className="overflow-hidden cursor-grab active:cursor-grabbing select-none overscroll-x-contain" ref={emblaRef}>

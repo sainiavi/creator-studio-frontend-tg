@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Sparkles, Rocket, Bot, Loader2, Check, Play, Send, ArrowRight, BriefcaseBusiness, MessageSquareMore, Code2, Image as ImageIcon, Gamepad2, Wand2 } from "lucide-react";
 import { useStudioContext } from "@/context/StudioContext";
 
@@ -77,13 +77,8 @@ function conceptFor(game: string, vibe: string) {
 }
 
 function Create() {
-  const { studio, addCreatedGame } = useStudioContext();
+  const { studio, addCreatedGame, removeCreatedGame } = useStudioContext();
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<"idle" | "building" | "done">("idle");
-  // Which strategy kicked off the current build — the loader belongs on that button.
-  const [buildingStrategy, setBuildingStrategy] = useState<"pure-agent" | "hybrid" | null>(null);
-  const [step, setStep] = useState(0);
-  const [createdTemplateId, setCreatedTemplateId] = useState<string | null>(null);
   const [chatStage, setChatStage] = useState<ChatStage>("game");
   const [chatInput, setChatInput] = useState("");
   const [gameRequest, setGameRequest] = useState("");
@@ -92,38 +87,39 @@ function Create() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "assistant", text: "Hey there! What kind of game do you want to create?" },
   ]);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const runStepAnimation = () => {
-    setStep(0);
-    let s = 0;
-    timer.current = setInterval(() => {
-      s += 1;
-      if (s >= steps.length - 1) {
-        if (timer.current) clearInterval(timer.current);
-      } else {
-        setStep(s);
-      }
-    }, 900);
-  };
+  // The build itself lives in studio state + localStorage (kult-active-build),
+  // so it survives navigating away and full page refreshes. This page only
+  // renders whatever build is active until the user cancels/dismisses it.
+  const activeBuild = studio.activeBuild;
+  const phase: "idle" | "building" | "done" | "failed" = activeBuild ? activeBuild.phase : "idle";
+  const buildingStrategy = phase === "building" ? activeBuild!.strategy : null;
+  const builtGame = activeBuild?.game ?? null;
+  // Re-render once a second while building so the elapsed time and step list move
+  // even between 5s job polls.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (phase !== "building") return;
+    const interval = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, [phase]);
+  const elapsedSec = activeBuild ? Math.max(0, Math.floor((Date.now() - activeBuild.startedAt) / 1000)) : 0;
+  const step =
+    phase === "building" ? Math.min(steps.length - 1, Math.floor(elapsedSec / 2)) : steps.length - 1;
 
   const build = async (strategy: "pure-agent" | "hybrid", promptOverride = "") => {
     const buildPrompt = promptOverride || studio.prompt;
     if (!buildPrompt.trim() || phase === "building") return;
-    setPhase("building");
-    setBuildingStrategy(strategy);
-    setCreatedTemplateId(null);
-    runStepAnimation();
-    try {
-      const game = await studio.generateFromPrompt(strategy, buildPrompt);
-      setCreatedTemplateId(game?.templateId ?? null);
-      addCreatedGame(game ?? studio.generatedPackage);
-    } finally {
-      if (timer.current) clearInterval(timer.current);
-      setStep(steps.length - 1);
-      setPhase("done");
-      setBuildingStrategy(null);
-    }
+    const game = await studio.generateFromPrompt(strategy, buildPrompt);
+    addCreatedGame(game ?? studio.generatedPackage);
+  };
+
+  // Cancel a running build: stop polling, drop the persisted record, and delete
+  // the already-saved game entry so nothing half-built lingers in My Creations.
+  const cancelBuild = () => {
+    const gameId = activeBuild?.game?.id;
+    studio.cancelActiveBuild();
+    if (phase === "building" && gameId) void removeCreatedGame(gameId);
   };
 
   const sendChat = (text = chatInput) => {
@@ -376,12 +372,37 @@ function Create() {
 
         {phase !== "idle" && (
           <div className="animate-float-up mt-6 rounded-2xl border border-border/60 bg-card p-6 shadow-card">
-            <h3 className="font-display text-lg font-bold">Build Console</h3>
-            <p className="label-mono mt-1 text-[10px] text-muted-foreground">{studio.agentStatus}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-display text-lg font-bold">
+                  Build Console
+                  {builtGame?.title ? <span className="text-muted-foreground"> · {builtGame.title}</span> : null}
+                </h3>
+                <p className="label-mono mt-1 text-[10px] text-muted-foreground">
+                  {activeBuild?.statusText ?? studio.agentStatus}
+                  {phase === "building" ? ` · ${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s` : ""}
+                </p>
+              </div>
+              {phase === "building" ? (
+                <button
+                  onClick={cancelBuild}
+                  className="shrink-0 rounded-lg border border-destructive/50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-destructive transition hover:bg-destructive/10"
+                >
+                  Cancel build
+                </button>
+              ) : (
+                <button
+                  onClick={cancelBuild}
+                  className="shrink-0 rounded-lg border border-border/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground transition hover:bg-secondary"
+                >
+                  Dismiss
+                </button>
+              )}
+            </div>
             <ul className="mt-4 space-y-3">
               {steps.map((s, i) => {
                 const active = phase === "building" && i === step;
-                const complete = phase === "done" || i < step;
+                const complete = phase === "done" || phase === "failed" || i < step;
                 return (
                   <li key={s} className="flex items-center gap-3 text-sm">
                     <span className="flex size-6 items-center justify-center rounded-full border border-border/70">
@@ -399,16 +420,25 @@ function Create() {
               })}
             </ul>
 
+            {phase === "failed" && (
+              <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+                {activeBuild?.statusText ?? "The AI build failed."}
+                {builtGame?.id ? " The playable template version is still in My Creations." : null}
+              </div>
+            )}
+
             {phase === "done" && (
               <div className="mt-6 rounded-xl border border-primary/40 bg-gradient-to-br from-[oklch(0.72_0.27_340)] to-[oklch(0.65_0.25_295)] p-5">
-                <p className="label-mono text-[10px] text-white/80">{studio.status}</p>
-                <h4 className="mt-1 font-display text-xl font-black text-white">{studio.generatedPackage.title} 🎮</h4>
+                <p className="label-mono text-[10px] text-white/80">{activeBuild?.statusText ?? studio.status}</p>
+                <h4 className="mt-1 font-display text-xl font-black text-white">
+                  {builtGame?.title ?? studio.generatedPackage.title} 🎮
+                </h4>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
                     onClick={() =>
                       navigate({
                         to: "/edit/$gameId",
-                        params: { gameId: studio.generatedPackage.id ?? "latest" },
+                        params: { gameId: builtGame?.id ?? studio.generatedPackage.id ?? "latest" },
                       })
                     }
                     className="flex items-center gap-2 rounded-lg bg-black/40 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white"
@@ -425,7 +455,15 @@ function Create() {
                     <Rocket className="size-4" /> Publish
                   </button>
                   <button
-                    onClick={() => navigate({ to: "/play/$gameId", params: { gameId: createdTemplateId || studio.generatedPackage.templateId || "flappy" } })}
+                    onClick={() =>
+                      navigate({
+                        to: "/play/$gameId",
+                        params: {
+                          gameId:
+                            builtGame?.id ?? builtGame?.templateId ?? studio.generatedPackage.templateId ?? "flappy",
+                        },
+                      })
+                    }
                     className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-black"
                   >
                     <Play className="size-4" /> Play

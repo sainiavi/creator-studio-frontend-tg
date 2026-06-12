@@ -81,24 +81,10 @@ export function Sidebar() {
           </Link>
         ))}
 
-        {/* External: back to the KULT browser app */}
-        <a
-          href={BROWSER_URL}
-          className={`mt-2 flex items-center justify-center rounded-2xl bg-gradient-to-b from-[#9d4dff] to-[#7a2ef0] text-white shadow-[0_4px_18px_rgba(140,59,255,0.35)] transition-all hover:from-[#a95fff] hover:to-[#8a3eff] ${
-            collapsed ? "px-0 py-3" : "px-4 py-3"
-          }`}
-          title="Back To Browser"
-        >
-          {collapsed ? (
-            <ArrowLeft className="size-5 shrink-0" />
-          ) : (
-            <span className="label-mono text-xs font-bold tracking-wider">BACK TO BROWSER</span>
-          )}
-        </a>
       </nav>
 
       {/* Collapse toggle */}
-      <div className={`mt-4 flex ${collapsed ? "justify-center" : "justify-end px-2"}`}>
+      <div className={`flex ${collapsed ? "justify-center" : "justify-end px-2"}`}>
         <button
           onClick={() => setSidebarCollapsed(!collapsed)}
           className="flex size-8 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar-accent/50 text-muted-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-foreground hover:border-primary/40"
@@ -112,12 +98,20 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Version */}
-      {!collapsed && (
-        <div className="label-mono mt-3 px-2 text-[10px] text-muted-foreground/60">
-          v1.0 · Kult Build Console
-        </div>
-      )}
+      {/* External: back to the KULT browser app */}
+      <a
+        href={BROWSER_URL}
+        className={`mt-3 flex items-center justify-center rounded-2xl bg-gradient-to-b from-[#9d4dff] to-[#7a2ef0] text-white shadow-[0_4px_18px_rgba(140,59,255,0.35)] transition-all hover:from-[#a95fff] hover:to-[#8a3eff] ${
+          collapsed ? "px-0 py-3" : "px-4 py-3"
+        }`}
+        title="Back To Browser"
+      >
+        {collapsed ? (
+          <ArrowLeft className="size-5 shrink-0" />
+        ) : (
+          <span className="label-mono text-xs font-bold tracking-wider">BACK TO BROWSER</span>
+        )}
+      </a>
     </aside>
   );
 }

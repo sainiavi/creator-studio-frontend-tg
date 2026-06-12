@@ -18,17 +18,15 @@ const PROGRESS_STAGE_LABELS: Record<string, string> = {
   "fixing-syntax": "Fixing syntax",
 };
 
-export async function runCodeJob(
-  body: Record<string, unknown>,
+// Polls an existing code job until it finishes. Separated from runCodeJob so a
+// build can be resumed after a page refresh from just its persisted jobId.
+export async function pollCodeJob(
+  jobId: string,
+  startedAt: number,
   maxWaitMs: number,
   onProgress?: (statusText: string) => void,
   isCancelled?: () => boolean,
 ) {
-  const response = await api.post("/agents/code", body, { timeout: 30000 });
-  const jobId = response.data?.jobId;
-  if (!jobId) throw new Error("No jobId returned for code generation");
-
-  const startedAt = Date.now();
   while (Date.now() - startedAt < maxWaitMs) {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     if (isCancelled?.()) return null;
@@ -47,6 +45,53 @@ export async function runCodeJob(
     onProgress?.(`${stage}…${chars} (${elapsed}s)`);
   }
   return null;
+}
+
+export async function runCodeJob(
+  body: Record<string, unknown>,
+  maxWaitMs: number,
+  onProgress?: (statusText: string) => void,
+  isCancelled?: () => boolean,
+  onJobId?: (jobId: string) => void,
+) {
+  const response = await api.post("/agents/code", body, { timeout: 30000 });
+  const jobId = response.data?.jobId;
+  if (!jobId) throw new Error("No jobId returned for code generation");
+  onJobId?.(jobId);
+  return pollCodeJob(jobId, Date.now(), maxWaitMs, onProgress, isCancelled);
+}
+
+// --- Persistent build state -------------------------------------------------
+// The active generation is recorded in localStorage so it survives both
+// navigation and a full page refresh. The backend job keeps running either
+// way (jobs are mirrored in Mongo); on reload we resume polling by jobId.
+const ACTIVE_BUILD_KEY = "kult-active-build";
+
+export type ActiveBuild = {
+  strategy: "hybrid" | "pure-agent";
+  prompt: string;
+  startedAt: number;
+  maxWaitMs: number;
+  phase: "building" | "done" | "failed";
+  jobId?: string;
+  statusText?: string;
+  game?: { id?: string; templateId?: string; title?: string } | null;
+};
+
+function readActiveBuild(): ActiveBuild | null {
+  try {
+    const raw = localStorage.getItem(ACTIVE_BUILD_KEY);
+    if (!raw) return null;
+    const build = JSON.parse(raw) as ActiveBuild;
+    // A "building" record older than its own deadline can never finish.
+    if (build?.phase === "building" && Date.now() - build.startedAt > build.maxWaitMs + 60_000) {
+      localStorage.removeItem(ACTIVE_BUILD_KEY);
+      return null;
+    }
+    return build;
+  } catch {
+    return null;
+  }
 }
 
 function templateForPrompt(prompt: string) {
@@ -203,6 +248,85 @@ export function useCreatorStudio() {
       extra: "none",
     }),
   );
+  const [activeBuild, setActiveBuild] = useState<ActiveBuild | null>(() => readActiveBuild());
+
+  const updateActiveBuild = useCallback((patch: Partial<ActiveBuild> | null) => {
+    setActiveBuild((prev) => {
+      const next = patch === null ? null : ({ ...(prev as ActiveBuild), ...patch } as ActiveBuild);
+      try {
+        if (next === null) localStorage.removeItem(ACTIVE_BUILD_KEY);
+        else localStorage.setItem(ACTIVE_BUILD_KEY, JSON.stringify(next));
+      } catch {
+        // localStorage full/unavailable — in-memory state still works for this session.
+      }
+      return next;
+    });
+  }, []);
+
+  // Cancels the in-progress build (stops polling) or dismisses a finished one.
+  const cancelActiveBuild = useCallback(() => {
+    generationRef.current += 1; // invalidates every active polling loop
+    if (activeBuild?.phase === "building") setAgentStatus("Build cancelled");
+    updateActiveBuild(null);
+  }, [activeBuild, updateActiveBuild]);
+
+  // Resume polling after a page refresh: the backend job kept running, we just
+  // lost the in-memory poller. Done/failed records simply render as-is.
+  useEffect(() => {
+    const build = readActiveBuild();
+    if (!build || build.phase !== "building") return;
+    if (!build.jobId) {
+      // Refresh happened before the job was registered — nothing to poll.
+      updateActiveBuild({
+        phase: "failed",
+        statusText: "Build was interrupted before the job started — please run it again.",
+      });
+      return;
+    }
+    const token = ++generationRef.current;
+    setStatus("Generating from prompt");
+    setPackageMode(build.strategy === "pure-agent" ? "Pure Agent" : "Prompt");
+    setAgentStatus(build.statusText ?? "Resuming build…");
+    void (async () => {
+      try {
+        const refinement = await pollCodeJob(
+          build.jobId!,
+          build.startedAt,
+          build.maxWaitMs,
+          (statusText) => {
+            setAgentStatus(statusText);
+            updateActiveBuild({ statusText });
+          },
+          () => generationRef.current !== token,
+        );
+        if (generationRef.current !== token) return;
+        if (refinement?.generatedCode) {
+          setGeneratedPackage((prev) => ({
+            ...(prev ?? {}),
+            ...(build.game ?? {}),
+            tier: "ai-refinement",
+            refinement,
+          }));
+          setPackageMode("Prompt + Agents");
+          setStatus("Game generated with code");
+          setAgentStatus(`AI build ready · ${refinement.source ?? refinement.model ?? "agent"}`);
+          updateActiveBuild({ phase: "done", statusText: "AI build ready" });
+        } else {
+          updateActiveBuild({
+            phase: "done",
+            statusText: "AI build returned no code — the playable template version was saved.",
+          });
+        }
+      } catch (error: any) {
+        if (generationRef.current !== token) return;
+        const message = error?.response?.data?.error ?? error?.message ?? "AI build failed";
+        setAgentStatus(`AI build failed: ${message}`);
+        updateActiveBuild({ phase: "failed", statusText: message });
+      }
+    })();
+    // Run once on mount: this recovers the poller that the refresh destroyed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -284,6 +408,18 @@ export function useCreatorStudio() {
       const effectivePrompt = promptOverride || prompt;
       const effectiveOptions = { ...options, prompt: effectivePrompt };
       const token = ++generationRef.current;
+      // Pure-agent writes a game from scratch (slow); hybrid edits a working seed.
+      const maxWaitMs = strategy === "pure-agent" ? 16 * 60 * 1000 : 8 * 60 * 1000;
+      updateActiveBuild({
+        strategy: strategy === "pure-agent" ? "pure-agent" : "hybrid",
+        prompt: effectivePrompt,
+        startedAt: Date.now(),
+        maxWaitMs,
+        phase: "building",
+        jobId: undefined,
+        statusText: "Starting build…",
+        game: null,
+      });
       setStatus("Generating from prompt");
       setPackageMode(strategy === "pure-agent" ? "Pure Agent" : "Prompt");
       setAgentStatus(`Routing ${strategy === "pure-agent" ? "pure agent" : "hybrid"} request…`);
@@ -369,14 +505,20 @@ export function useCreatorStudio() {
         }
       }
 
+      // The playable base game is known — record it so the create page can show
+      // and link the build even after navigation or a refresh.
+      if (generationRef.current === token) {
+        updateActiveBuild({
+          game: { id: baseGame?.id, templateId: baseGame?.templateId, title: baseGame?.title },
+        });
+      }
+
       // Phase 2 (background): ask the coding agent for the real build and swap it in
       // when ready. The backend returns a jobId immediately and we poll for the result,
       // so generation can take 10-15 minutes without any HTTP timeout killing it.
       // If it is slow or fails, the playable template stays in place.
       void (async () => {
         try {
-          // Pure-agent writes a game from scratch (slow); hybrid edits a working seed.
-          const maxWaitMs = strategy === "pure-agent" ? 16 * 60 * 1000 : 8 * 60 * 1000;
           const refinement = await runCodeJob(
             {
               gamePackage: baseGame,
@@ -385,8 +527,15 @@ export function useCreatorStudio() {
               strategy,
             },
             maxWaitMs,
-            (statusText) => setAgentStatus(statusText),
+            (statusText) => {
+              if (generationRef.current !== token) return;
+              setAgentStatus(statusText);
+              updateActiveBuild({ statusText });
+            },
             () => generationRef.current !== token,
+            (jobId) => {
+              if (generationRef.current === token) updateActiveBuild({ jobId });
+            },
           );
 
           if (generationRef.current !== token) return; // superseded by a newer generation
@@ -399,22 +548,27 @@ export function useCreatorStudio() {
             setPackageMode("Prompt + Agents");
             setStatus("Game generated with code");
             setAgentStatus(`AI build ready · ${refinement.source ?? refinement.model ?? "agent"}`);
+            updateActiveBuild({ phase: "done", statusText: "AI build ready" });
           } else {
             setAgentStatus("AI build returned no code — showing playable template");
+            updateActiveBuild({
+              phase: "done",
+              statusText: "AI build returned no code — the playable template version was saved.",
+            });
           }
         } catch (error: any) {
           if (generationRef.current !== token) return;
-          setAgentStatus(
-            error.response?.data?.error
-              ? `AI build failed: ${error.response.data.error} — showing playable template`
-              : "AI build timed out — showing playable template",
-          );
+          const message = error.response?.data?.error
+            ? `AI build failed: ${error.response.data.error} — showing playable template`
+            : "AI build timed out — showing playable template";
+          setAgentStatus(message);
+          updateActiveBuild({ phase: "failed", statusText: message });
         }
       })();
 
       return baseGame;
     },
-    [customization, difficulty, extra, options, prompt, selectedTemplate, theme],
+    [customization, difficulty, extra, options, prompt, selectedTemplate, theme, updateActiveBuild],
   );
 
   const refineWithAi = useCallback(async () => {
@@ -542,6 +696,8 @@ export function useCreatorStudio() {
     assetResult,
     packageMode,
     generatedPackage,
+    activeBuild,
+    cancelActiveBuild,
     createFromTemplate,
     generateFromPrompt,
     refineWithAi,

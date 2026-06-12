@@ -5,6 +5,10 @@ import { useNavigate } from "@tanstack/react-router";
 export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
   const navigate = useNavigate();
   const open = () => {
+    if (game.playUrl) {
+      window.location.href = game.playUrl;
+      return;
+    }
     if (game.templateId) navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
   };
 
@@ -12,7 +16,7 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
     <article
       onClick={open}
       className={`animate-float-up group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-neon ${
-        game.templateId ? "cursor-pointer" : ""
+        game.templateId || game.playUrl ? "cursor-pointer" : ""
       }`}
       style={{ animationDelay: `${index * 60}ms`, opacity: 0 }}
     >
