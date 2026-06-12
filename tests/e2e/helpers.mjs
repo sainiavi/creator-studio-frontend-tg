@@ -32,11 +32,19 @@ export async function paintedSamples(frameOrPage) {
   });
 }
 
-/** Finds the iframe (or page itself) that contains the #game canvas. */
-export async function gameFrame(page) {
-  for (const frame of page.frames()) {
-    if ((await frame.locator("#game").count().catch(() => 0)) > 0) return frame;
-  }
+/**
+ * Finds the iframe (or page itself) that contains the #game canvas.
+ * The frame mounts only after React renders and the game record loads, so
+ * poll instead of sampling page.frames() once right after domcontentloaded.
+ */
+export async function gameFrame(page, timeoutMs = 15000) {
+  const deadline = Date.now() + timeoutMs;
+  do {
+    for (const frame of page.frames()) {
+      if ((await frame.locator("#game").count().catch(() => 0)) > 0) return frame;
+    }
+    await page.waitForTimeout(250);
+  } while (Date.now() < deadline);
   return null;
 }
 

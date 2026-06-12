@@ -107,8 +107,13 @@ function Create() {
   const step =
     phase === "building" ? Math.min(steps.length - 1, Math.floor(elapsedSec / 2)) : steps.length - 1;
 
+  // What the user told the chat so far ("create a snake game. Chill vibes").
+  // The strategy buttons must build THAT, not the stale studio.prompt default —
+  // chat only writes studio.prompt at the final "Ok, create it!" step.
+  const chatPrompt = [gameRequest, vibeRequest].filter(Boolean).join(". ");
+
   const build = async (strategy: "pure-agent" | "hybrid", promptOverride = "") => {
-    const buildPrompt = promptOverride || studio.prompt;
+    const buildPrompt = promptOverride || chatPrompt || studio.prompt;
     if (!buildPrompt.trim() || phase === "building") return;
     const game = await studio.generateFromPrompt(strategy, buildPrompt);
     addCreatedGame(game ?? studio.generatedPackage);
@@ -423,11 +428,15 @@ function Create() {
             {phase === "failed" && (
               <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
                 {activeBuild?.statusText ?? "The AI build failed."}
-                {builtGame?.id ? (
+                {builtGame?.id && activeBuild?.strategy !== "pure-agent" ? (
                   <span className="mt-1 block text-destructive/80">
                     The playable template version is still in My Creations — run the build again to retry the AI version.
                   </span>
-                ) : null}
+                ) : (
+                  <span className="mt-1 block text-destructive/80">
+                    Run the build again from this page to retry.
+                  </span>
+                )}
               </div>
             )}
 

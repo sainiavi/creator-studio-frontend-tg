@@ -37,7 +37,10 @@ function buildSrcDoc(code: string, pkg: AnyPackage): string {
 <style>
   html, body { margin: 0; height: 100%; background: #070a12; }
   body { display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  #game { width: 100%; height: auto; max-height: 100%; aspect-ratio: 16 / 9; display: block; touch-action: none; }
+  /* The fit script below sizes the canvas: every game keeps ITS OWN aspect
+     ratio (square boards must not be stretched to 16:9) and is scaled as large
+     as the frame allows, centered by the flex body. */
+  #game { display: block; touch-action: none; }
   * { box-sizing: border-box; }
 </style>
 </head>
@@ -51,6 +54,26 @@ function reportGameError(message, stack) {
     window.parent.postMessage({ __kultGameError: { message: String(message), stack: String(stack || "") } }, "*");
   } catch {}
 }
+// --- Canvas fit ---------------------------------------------------------------
+// Scales the canvas (up or down) to the largest size that fits the frame while
+// preserving the game's own aspect ratio. The element box always equals the
+// painted bitmap, so pointer math that scales by getBoundingClientRect stays
+// correct. Re-fits when the game resizes its canvas or the frame changes size.
+(function () {
+  const c = document.querySelector("#game");
+  function fit() {
+    if (!c || !c.width || !c.height || !innerWidth || !innerHeight) return;
+    const s = Math.min(innerWidth / c.width, innerHeight / c.height);
+    c.style.width = Math.round(c.width * s) + "px";
+    c.style.height = Math.round(c.height * s) + "px";
+  }
+  try {
+    new MutationObserver(fit).observe(c, { attributes: true, attributeFilter: ["width", "height"] });
+  } catch {}
+  addEventListener("resize", fit);
+  setInterval(fit, 1000);
+  fit();
+})();
 // --- Leaderboard score bridge -----------------------------------------------
 // Games call window.reportScore(score) when a run ends. Builds that predate
 // this API are covered by a HUD watcher: it reads "Score: N" style text the

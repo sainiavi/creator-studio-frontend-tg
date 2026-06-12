@@ -13,6 +13,7 @@ import {
   Rocket,
   Save,
   Send,
+  Settings as SettingsIcon,
   Sparkles,
   Wand2,
   X,
@@ -56,6 +57,10 @@ function GameEditor() {
   const [publishError, setPublishError] = useState("");
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<"settings" | "code">("settings");
+  // Mobile shows one panel at a time, switched by the bottom control bar
+  // (Wish = agent chat, Preview = the game, gear = game settings). Desktop
+  // shows all three columns and ignores this.
+  const [mobilePanel, setMobilePanel] = useState<"preview" | "wish" | "settings">("preview");
   const [codeDraft, setCodeDraft] = useState("");
   const [replayKey, setReplayKey] = useState(0);
   const [lastError, setLastError] = useState<GameError | null>(null);
@@ -349,9 +354,13 @@ function GameEditor() {
         )}
       </div>
 
-      <div className="grid flex-1 gap-4 overflow-hidden p-4 lg:grid-cols-[340px_minmax(0,1fr)_320px]">
+      {/* Side columns shrink on smaller desktops so the game preview stays the
+          widest column; they only take their full width on large screens. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 lg:grid lg:gap-4 lg:p-4 lg:grid-cols-[230px_minmax(0,1fr)_230px] xl:grid-cols-[290px_minmax(0,1fr)_280px] 2xl:grid-cols-[340px_minmax(0,1fr)_320px]">
         {/* Chat / wishes */}
-        <section className="flex min-h-[320px] flex-col rounded-2xl border border-border/60 bg-card/60">
+        <section
+          className={`${mobilePanel === "wish" ? "flex" : "hidden"} min-h-0 flex-1 flex-col rounded-2xl border border-border/60 bg-card/60 lg:flex lg:min-h-[320px] lg:flex-none`}
+        >
           <p className="label-mono flex items-center gap-2 border-b border-border/50 px-4 py-3 text-[10px] text-primary">
             <Wand2 className="size-4" /> Wish it — the agent edits your game
           </p>
@@ -405,13 +414,15 @@ function GameEditor() {
         </section>
 
         {/* Live preview */}
-        <section className="flex min-h-[380px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-black/40">
+        <section
+          className={`${mobilePanel === "preview" ? "flex" : "hidden"} min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/60 bg-black/40 lg:flex lg:min-h-[380px] lg:flex-none`}
+        >
           <div className="relative flex-1">
-            <div className="absolute inset-0" key={replayKey}>
+            <div className="editor-game-frame absolute inset-0" key={replayKey}>
               <GamePreview gamePackage={game} />
             </div>
           </div>
-          <div className="flex items-center justify-between border-t border-border/50 px-4 py-2.5">
+          <div className="hidden items-center justify-between border-t border-border/50 px-4 py-2.5 lg:flex">
             <button
               onClick={() => setReplayKey((k) => k + 1)}
               className="flex items-center gap-1.5 rounded-lg border border-border/70 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition hover:border-primary/60 hover:text-foreground"
@@ -426,7 +437,9 @@ function GameEditor() {
         </section>
 
         {/* Settings / code */}
-        <section className="flex min-h-[320px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/60">
+        <section
+          className={`${mobilePanel === "settings" ? "flex" : "hidden"} min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/60 lg:flex lg:min-h-[320px] lg:flex-none`}
+        >
           <div className="flex border-b border-border/50">
             {(["settings", "code"] as const).map((t) => (
               <button
@@ -508,6 +521,51 @@ function GameEditor() {
             </div>
           )}
         </section>
+      </div>
+
+      {/* Mobile control bar: replay · Wish/Preview pill · game settings.
+          Sits above the app's fixed bottom nav (mb-14 clears it). */}
+      <div className="mb-14 flex items-center gap-3 border-t border-border/60 bg-background/95 px-4 py-3 lg:hidden">
+        <button
+          onClick={() => {
+            setReplayKey((k) => k + 1);
+            setMobilePanel("preview");
+          }}
+          aria-label="Replay game"
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-secondary/70 text-foreground transition active:scale-95"
+        >
+          <RotateCcw className="size-5" />
+        </button>
+        <div className="flex min-w-0 flex-1 rounded-full bg-secondary/70 p-1">
+          <button
+            onClick={() => setMobilePanel("wish")}
+            className={`flex-1 rounded-full py-2.5 text-sm font-bold transition ${
+              mobilePanel === "wish" ? "bg-white text-black" : "text-foreground"
+            }`}
+          >
+            Wish
+          </button>
+          <button
+            onClick={() => setMobilePanel("preview")}
+            className={`flex-1 rounded-full py-2.5 text-sm font-bold transition ${
+              mobilePanel === "preview" ? "bg-white text-black" : "text-foreground"
+            }`}
+          >
+            Preview
+          </button>
+        </div>
+        <button
+          onClick={() => {
+            setTab("settings");
+            setMobilePanel("settings");
+          }}
+          aria-label="Game settings"
+          className={`grid size-11 shrink-0 place-items-center rounded-full transition active:scale-95 ${
+            mobilePanel === "settings" ? "bg-white text-black" : "bg-secondary/70 text-foreground"
+          }`}
+        >
+          <SettingsIcon className="size-5" />
+        </button>
       </div>
 
       {publishDialogOpen && (

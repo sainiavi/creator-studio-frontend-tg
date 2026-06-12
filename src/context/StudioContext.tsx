@@ -40,6 +40,17 @@ function persistCreatedGames(games: any[]) {
   }
 }
 
+// Dead draft: a pure-agent game whose build never delivered code. A real
+// build resolves within ~16 minutes; anything older without code is junk
+// from an interrupted build and must never show in My Creations.
+const DEAD_DRAFT_MS = 20 * 60 * 1000;
+function isDeadDraft(game: any) {
+  if (game?.templateId !== "pure-agent") return false;
+  if (game?.refinement?.generatedCode || game?.hasBuild) return false;
+  const born = Date.parse(String(game?.createdAt ?? "")) || 0;
+  return born > 0 && Date.now() - born > DEAD_DRAFT_MS;
+}
+
 export function StudioProvider({ children }: { children: ReactNode }) {
   const studio = useCreatorStudio();
   const navigate = useNavigate();
@@ -52,6 +63,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // dedupe + keep only the current user's games (wallet = user)
       return parsed
         .filter((g) => ownsGame(g?.creatorId))
+        .filter((g) => !isDeadDraft(g))
         .filter((g, i, all) => !g?.id || all.findIndex((x) => x?.id === g.id) === i);
     } catch {
       return [];
@@ -75,6 +87,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // A failed pure-agent build leaves a dead draft behind — no code and no
+  // template to play. Delete it right away so it never lands in My Creations.
+  const failedBuild = studio.activeBuild?.phase === "failed" ? studio.activeBuild : null;
+  useEffect(() => {
+    if (failedBuild?.strategy === "pure-agent" && failedBuild.game?.id) {
+      void removeCreatedGame(failedBuild.game.id);
+    }
+  }, [failedBuild?.strategy, failedBuild?.game?.id, removeCreatedGame]);
+
   // localStorage only knows about games generated in this browser. Merge in
   // everything the backend persisted so creations show up on any client.
   // When both sides have the same game, prefer the copy that carries the
@@ -93,7 +114,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         // The backend list is authoritative: cached entries from before creator
         // attribution (no creatorId) that the server doesn't know are stale
         // copies of other users' games — drop them.
-        const kept = prev.filter((g: any) => g?.creatorId || (g?.id && remoteById.has(g.id)));
+        const kept = prev.filter(
+          (g: any) => !isDeadDraft(g) && (g?.creatorId || (g?.id && remoteById.has(g.id))),
+        );
         let changed = kept.length !== prev.length;
         const upgraded = kept.map((g: any) => {
           const r = remoteById.get(g?.id);

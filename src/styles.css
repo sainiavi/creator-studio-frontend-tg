@@ -387,6 +387,20 @@ kbd {
   height: 100vh;
 }
 
+/* The desktop creator bar (h-[76px], lg:flex) overlays the bottom of the
+   fullscreen frame. Games scale to fill their frame, so the surface must stop
+   above the bar or the bottom of the playfield hides behind it. */
+@media (min-width: 1024px) {
+  .feed-game-frame:fullscreen .three-preview-wrap,
+  .feed-game-frame:fullscreen .unity-preview-wrap,
+  .feed-game-frame:fullscreen .html5-preview-wrap,
+  .feed-game-frame:fullscreen .three-preview,
+  .feed-game-frame:fullscreen .three-preview canvas,
+  .feed-game-frame:fullscreen iframe {
+    height: calc(100vh - 76px);
+  }
+}
+
 .feed-game-frame .fullscreen-button:not(.fullscreen-button--play-page) {
   display: none;
 }
@@ -402,4 +416,15 @@ kbd {
 
 .feed-game-frame--leaderboard-open:not(:fullscreen) .fullscreen-button--play-page {
   right: 92px;
+}
+
+/* Editor live preview: the game surface fills the whole panel (the frame
+   centers and letterboxes each game inside), instead of a 16:9 strip pinned
+   to the top with dead space below. */
+.editor-game-frame .three-preview-wrap,
+.editor-game-frame .unity-preview-wrap,
+.editor-game-frame .html5-preview-wrap {
+  aspect-ratio: auto;
+  height: 100%;
+  width: 100%;
 }

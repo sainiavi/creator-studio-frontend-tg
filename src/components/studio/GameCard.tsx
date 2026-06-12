@@ -1,8 +1,17 @@
-import { Play, ArrowUpRight, Zap } from "lucide-react";
+import { Play, ArrowUpRight, Pencil, Zap } from "lucide-react";
 import { type Game, gradientClass } from "@/lib/games-data";
 import { useNavigate } from "@tanstack/react-router";
 
-export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
+export function GameCard({
+  game,
+  index = 0,
+  onEdit,
+}: {
+  game: Game;
+  index?: number;
+  /** Shown as a pencil button on the cover — pass only for the viewer's own games. */
+  onEdit?: (game: Game) => void;
+}) {
   const navigate = useNavigate();
   const open = () => {
     if (game.playUrl) {
@@ -41,6 +50,20 @@ export function GameCard({ game, index = 0 }: { game: Game; index?: number }) {
         <span className="absolute left-3 top-3 label-mono rounded-md bg-black/35 px-2.5 py-1 text-[10px] text-white backdrop-blur">
           {game.category}
         </span>
+        {onEdit && (
+          <button
+            type="button"
+            title="Edit game"
+            aria-label="Edit game"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(game);
+            }}
+            className="absolute right-3 top-3 z-10 grid size-8 place-items-center rounded-lg bg-black/55 text-white backdrop-blur transition hover:bg-primary hover:text-primary-foreground"
+          >
+            <Pencil className="size-3.5" />
+          </button>
+        )}
         {!game.thumbnailUrl && (
           <div className="flex size-32 items-center justify-center overflow-hidden rounded-3xl bg-white/15 text-6xl shadow-inner backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
             {game.emoji}

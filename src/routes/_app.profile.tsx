@@ -78,9 +78,11 @@ interface GameRowProps {
   title: string;
   games: Game[];
   emptyMessage: React.ReactNode;
+  /** Adds an edit (pencil) button to each card — used by My Games only. */
+  onEditGame?: (game: Game) => void;
 }
 
-function GameRow({ title, games, emptyMessage }: GameRowProps) {
+function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
   const [showAll, setShowAll] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
@@ -149,7 +151,7 @@ function GameRow({ title, games, emptyMessage }: GameRowProps) {
         showAll ? (
           <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {games.map((g, i) => (
-              <GameCard key={g.title + i} game={g} index={i} />
+              <GameCard key={g.title + i} game={g} index={i} onEdit={onEditGame} />
             ))}
           </div>
         ) : (
@@ -157,7 +159,7 @@ function GameRow({ title, games, emptyMessage }: GameRowProps) {
             <div className="flex touch-pan-y gap-4">
               {games.map((g, i) => (
                 <div key={g.title + i} className="flex-[0_0_240px] sm:flex-[0_0_280px] min-w-0">
-                  <GameCard game={g} index={i} />
+                  <GameCard game={g} index={i} onEdit={onEditGame} />
                 </div>
               ))}
             </div>
@@ -469,6 +471,9 @@ function Profile() {
         <GameRow
           title="My Games"
           games={games}
+          onEditGame={(g) => {
+            if (g.templateId) navigate({ to: "/edit/$gameId", params: { gameId: g.templateId } });
+          }}
           emptyMessage={
             <>
               No games yet. Head to <span className="text-primary font-bold">Create</span> to generate your first playable build.
