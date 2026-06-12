@@ -558,8 +558,11 @@ export function useCreatorStudio() {
           }
         } catch (error: any) {
           if (generationRef.current !== token) return;
-          const message = error.response?.data?.error
-            ? `AI build failed: ${error.response.data.error} — showing playable template`
+          // Surface the real failure (e.g. "interrupted by a server restart",
+          // "insufficient balance") instead of calling everything a timeout.
+          const detail = error.response?.data?.error ?? error?.message;
+          const message = detail
+            ? `AI build failed: ${detail} — showing playable template`
             : "AI build timed out — showing playable template";
           setAgentStatus(message);
           updateActiveBuild({ phase: "failed", statusText: message });

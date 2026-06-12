@@ -423,7 +423,11 @@ function Create() {
             {phase === "failed" && (
               <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
                 {activeBuild?.statusText ?? "The AI build failed."}
-                {builtGame?.id ? " The playable template version is still in My Creations." : null}
+                {builtGame?.id ? (
+                  <span className="mt-1 block text-destructive/80">
+                    The playable template version is still in My Creations — run the build again to retry the AI version.
+                  </span>
+                ) : null}
               </div>
             )}
 
