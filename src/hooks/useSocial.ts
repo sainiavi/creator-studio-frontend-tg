@@ -202,7 +202,8 @@ export function useSocial(gameId: string): UseSocialReturn {
 
   const handleShare = useCallback(
     async (platform: SharePlatform = "link") => {
-      const url = `${window.location.origin}/play/${gameId}`;
+      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/?$/, "/");
+      const url = `${window.location.origin}${base}play/${gameId}`;
 
       if (platform === "link") {
         try {

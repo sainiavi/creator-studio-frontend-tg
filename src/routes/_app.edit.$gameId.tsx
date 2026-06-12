@@ -3,7 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bug,
   Check,
+  Copy,
+  ExternalLink,
+  Globe2,
   Loader2,
+  Lock,
   Play,
   RotateCcw,
   Rocket,
@@ -11,6 +15,7 @@ import {
   Send,
   Sparkles,
   Wand2,
+  X,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { runCodeJob } from "@/hooks/useCreatorStudio";
@@ -46,6 +51,10 @@ function GameEditor() {
   const [buildStatus, setBuildStatus] = useState("");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
+  const [publishing, setPublishing] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [publishError, setPublishError] = useState("");
+  const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<"settings" | "code">("settings");
   const [codeDraft, setCodeDraft] = useState("");
   const [replayKey, setReplayKey] = useState(0);
@@ -60,9 +69,9 @@ function GameEditor() {
       return;
     }
     api
-      .get(`/games/list?q=${encodeURIComponent(gameId)}&limit=1`)
+      .get(`/games/${encodeURIComponent(gameId)}/manage`)
       .then((res) => {
-        const found = res.data?.games?.[0];
+        const found = res.data?.game;
         if (found?.id === gameId) setGame(found);
         else if (local) setGame(local);
       })
@@ -125,22 +134,61 @@ function GameEditor() {
     setReplayKey((k) => k + 1);
   };
 
-  const save = async (publish = false) => {
-    if (!game) return;
+  const save = async () => {
+    if (!game) return false;
     setSaving("saving");
     try {
-      const payload = publish
-        ? { ...game, publish: { ...(game.publish ?? {}), published: true, publishedAt: new Date().toISOString() } }
-        : game;
-      await api.put(`/games/${encodeURIComponent(gameId)}`, { gamePackage: payload }, { timeout: 30000 });
-      setGame(payload);
-      addCreatedGame(payload);
+      await api.put(`/games/${encodeURIComponent(gameId)}`, { gamePackage: game }, { timeout: 30000 });
+      setGame(game);
+      addCreatedGame(game);
       setDirty(false);
       setSaving("saved");
       void refreshCreatedGames();
+      return true;
     } catch {
       setSaving("idle");
       setMessages((m) => [...m, { role: "assistant", text: "Could not save — is the backend running?" }]);
+      return false;
+    }
+  };
+
+  const publish = async () => {
+    if (!game || publishing) return;
+    setPublishing(true);
+    setPublishError("");
+    try {
+      if (dirty && !(await save())) {
+        throw new Error("Save the latest changes before publishing.");
+      }
+      const response = await api.post(`/games/${encodeURIComponent(gameId)}/publish`);
+      const publishedGame = response.data?.game ?? game;
+      setGame(publishedGame);
+      addCreatedGame(publishedGame);
+      setPublishDialogOpen(true);
+      void refreshCreatedGames();
+    } catch (error: any) {
+      setPublishError(error?.response?.data?.error ?? error?.message ?? "Could not publish this game.");
+      setPublishDialogOpen(true);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const unpublish = async () => {
+    if (!game || publishing) return;
+    setPublishing(true);
+    setPublishError("");
+    try {
+      const response = await api.delete(`/games/${encodeURIComponent(gameId)}/publish`);
+      const draftGame = response.data?.game ?? game;
+      setGame(draftGame);
+      addCreatedGame(draftGame);
+      setPublishDialogOpen(false);
+      void refreshCreatedGames();
+    } catch (error: any) {
+      setPublishError(error?.response?.data?.error ?? "Could not unpublish this game.");
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -216,6 +264,18 @@ function GameEditor() {
   const hasBuild = Boolean(game.refinement?.generatedCode);
   // Wallet identity = user. Only the creator can change their game.
   const isOwner = ownsGame(game.creatorId);
+  const isPublished = game.publish?.published === true;
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/?$/, "/");
+  const publicUrl =
+    typeof window === "undefined"
+      ? `${base}play/${gameId}`
+      : `${window.location.origin}${base}play/${gameId}`;
+
+  const copyPublicUrl = async () => {
+    await navigator.clipboard.writeText(publicUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
 
   return (
     <div className="flex h-[calc(100vh-0px)] flex-col">
@@ -247,20 +307,47 @@ function GameEditor() {
           <Play className="size-3.5" /> Play
         </button>
         <button
-          onClick={() => void save(true)}
-          disabled={!isOwner}
+          onClick={() => (isPublished ? setPublishDialogOpen(true) : void publish())}
+          disabled={!isOwner || publishing}
           className="flex items-center gap-1.5 rounded-lg border border-primary/60 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary transition hover:bg-primary/10 disabled:opacity-40"
         >
-          <Rocket className="size-3.5" /> Publish
+          {publishing ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : isPublished ? (
+            <Globe2 className="size-3.5" />
+          ) : (
+            <Rocket className="size-3.5" />
+          )}
+          {isPublished ? "Published" : "Publish"}
         </button>
         <button
-          onClick={() => void save(false)}
+          onClick={() => void save()}
           disabled={!isOwner || !dirty || saving === "saving"}
           className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
         >
           {saving === "saving" ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />} Save Changes
         </button>
       </header>
+
+      <div
+        className={`flex items-center justify-between gap-3 border-b px-5 py-2 text-xs ${
+          isPublished
+            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+            : "border-amber-500/20 bg-amber-500/10 text-amber-200"
+        }`}
+      >
+        <span className="flex items-center gap-2">
+          {isPublished ? <Globe2 className="size-4" /> : <Lock className="size-4" />}
+          {isPublished
+            ? "Public: anyone with the link can play this version."
+            : "Draft: only you can access this game until it is published."}
+        </span>
+        {isPublished && (
+          <button onClick={() => void copyPublicUrl()} className="flex items-center gap-1.5 font-bold">
+            <Copy className="size-3.5" /> {copied ? "Copied" : "Copy link"}
+          </button>
+        )}
+      </div>
 
       <div className="grid flex-1 gap-4 overflow-hidden p-4 lg:grid-cols-[340px_minmax(0,1fr)_320px]">
         {/* Chat / wishes */}
@@ -422,6 +509,69 @@ function GameEditor() {
           )}
         </section>
       </div>
+
+      {publishDialogOpen && (
+        <div
+          className="fixed inset-0 z-[100] grid place-items-center bg-black/75 p-4 backdrop-blur-sm"
+          onClick={() => setPublishDialogOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-lg rounded-2xl border border-border/70 bg-card p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              onClick={() => setPublishDialogOpen(false)}
+              className="absolute right-4 top-4 grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary"
+            >
+              <X className="size-4" />
+            </button>
+            <div className="grid size-12 place-items-center rounded-2xl bg-primary/15 text-primary">
+              {publishError ? <Lock className="size-6" /> : <Globe2 className="size-6" />}
+            </div>
+            <h2 className="mt-4 font-display text-2xl font-black">
+              {publishError ? "Game is not published" : "Your game is live"}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {publishError ||
+                "Anyone with this URL can open the game and play the saved build without signing in."}
+            </p>
+            {!publishError && (
+              <>
+                <div className="mt-5 flex gap-2 rounded-xl border border-border/60 bg-background/60 p-2 pl-3">
+                  <input
+                    readOnly
+                    value={publicUrl}
+                    className="min-w-0 flex-1 bg-transparent font-mono text-xs outline-none"
+                  />
+                  <button
+                    onClick={() => void copyPublicUrl()}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"
+                  >
+                    <Copy className="size-3.5" /> {copied ? "Copied" : "Copy"}
+                  </button>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 rounded-lg border border-border/70 px-3 py-2 text-xs font-bold"
+                  >
+                    <ExternalLink className="size-3.5" /> Open public page
+                  </a>
+                  <button
+                    onClick={() => void unpublish()}
+                    disabled={publishing}
+                    className="flex items-center gap-1.5 rounded-lg border border-red-500/40 px-3 py-2 text-xs font-bold text-red-300 disabled:opacity-50"
+                  >
+                    <Lock className="size-3.5" /> Unpublish
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

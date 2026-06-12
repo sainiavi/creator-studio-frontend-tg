@@ -256,7 +256,7 @@ function LeaderboardPanel({
 function PlayFeed() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
-  const { setSidebarCollapsed, studio, createdGames, addCreatedGame, refreshCreatedGames } = useStudioContext();
+  const { setSidebarCollapsed, studio, createdGames, refreshCreatedGames } = useStudioContext();
   const isSimpleAgentGame = gameId === "simple-agent-game";
   const isNeonSudoku = gameId === "neon-sudoku";
   const generatedPackageMatches =
@@ -267,28 +267,43 @@ function PlayFeed() {
   // A created game opened by its own id (from My Creations / profile). Without
   // this lookup, unknown ids silently fell back to gameTemplates[0] and played
   // the wrong game instead of the creation's generated build.
-  const customGame = !generatedPackageMatches
+  const localCustomGame = !generatedPackageMatches
     ? createdGames.find((cg: any) => cg?.id === gameId)
     : undefined;
+  const [publicGame, setPublicGame] = useState<any>(null);
+  const [publicLoadState, setPublicLoadState] = useState<"idle" | "loading" | "loaded" | "not-found">(
+    "idle",
+  );
+  const customGame = localCustomGame ?? (publicGame?.id === gameId ? publicGame : undefined);
 
-  // If the game is not found locally, fetch it from the backend by ID
+  // Shared links resolve through the public-by-ID endpoint. It returns only
+  // explicitly published games, so drafts cannot be opened by guessing an id.
   useEffect(() => {
-    if (!gameId || isSimpleAgentGame || isNeonSudoku || generatedPackageMatches || customGame) {
+    const isTemplate = gameTemplates.some((template: any) => template.id === gameId);
+    if (!gameId || isSimpleAgentGame || isNeonSudoku || isTemplate || generatedPackageMatches || localCustomGame) {
+      setPublicLoadState("idle");
       return;
     }
-
+    let cancelled = false;
+    setPublicGame(null);
+    setPublicLoadState("loading");
     api
-      .get(`/games/list?q=${encodeURIComponent(gameId)}&limit=1`)
+      .get(`/games/${encodeURIComponent(gameId)}`)
       .then((res) => {
-        const found = res.data?.games?.[0];
-        if (found && found.id === gameId) {
-          addCreatedGame(found);
-        }
+        if (cancelled) return;
+        const found = res.data?.game;
+        if (found?.id === gameId) {
+          setPublicGame(found);
+          setPublicLoadState("loaded");
+        } else setPublicLoadState("not-found");
       })
       .catch(() => {
-        // fail silently
+        if (!cancelled) setPublicLoadState("not-found");
       });
-  }, [gameId, isSimpleAgentGame, isNeonSudoku, generatedPackageMatches, customGame, addCreatedGame]);
+    return () => {
+      cancelled = true;
+    };
+  }, [gameId, isSimpleAgentGame, isNeonSudoku, generatedPackageMatches, localCustomGame]);
 
   // The AI build finishes minutes after the game record exists. While this
   // created game has no code yet, poll the backend so the finished build
@@ -408,6 +423,8 @@ function PlayFeed() {
         customization: "light",
         extra: "none",
       });
+  const isCustomCreation = Boolean(generatedPackageMatches || customGame);
+  const isShareable = !isCustomCreation || pkg?.publish?.published === true;
   const social = useSocial(gameId);
   // Real follow state: target the game's creator (template games fall back to
   // a stable pseudo-creator id derived from the displayed creator name).
@@ -722,6 +739,7 @@ function PlayFeed() {
         template={template}
         game={game}
         gameId={gameId}
+        disabled={!isShareable}
       />
       <ActionButton
         icon={<MessageCircle className="size-6" />}
@@ -749,8 +767,58 @@ function PlayFeed() {
     </>
   );
 
+  const isKnownGame =
+    isSimpleAgentGame ||
+    isNeonSudoku ||
+    generatedPackageMatches ||
+    Boolean(customGame) ||
+    gameTemplates.some((candidate: any) => candidate.id === gameId);
+
+  if (!isKnownGame && (publicLoadState === "idle" || publicLoadState === "loading")) {
+    return (
+      <div className="grid h-[100dvh] place-items-center bg-black text-white">
+        <div className="text-center">
+          <Loader2 className="mx-auto size-8 animate-spin text-primary" />
+          <p className="mt-4 text-sm font-bold">Loading published game...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isKnownGame && publicLoadState === "not-found") {
+    return (
+      <div className="grid h-[100dvh] place-items-center bg-black px-6 text-white">
+        <div className="max-w-md text-center">
+          <MessageSquareWarning className="mx-auto size-12 text-white/40" />
+          <h1 className="mt-5 font-display text-3xl font-black">Game unavailable</h1>
+          <p className="mt-3 text-sm leading-6 text-white/55">
+            This link does not exist, or the creator has not published the game yet.
+          </p>
+          <Link
+            to="/"
+            className="mt-6 inline-flex rounded-xl bg-white px-5 py-3 text-xs font-black uppercase tracking-wider text-black"
+          >
+            Browse games
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-[calc(100dvh-56px)] lg:h-[100dvh] w-full bg-black overflow-hidden touch-none text-white">
+      {isCustomCreation && !isShareable && (
+        <div className="absolute left-1/2 top-3 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-full border border-amber-300/25 bg-black/80 px-4 py-2 text-xs font-bold text-amber-200 backdrop-blur">
+          Draft preview
+          <Link
+            to="/edit/$gameId"
+            params={{ gameId }}
+            className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase text-black"
+          >
+            Publish
+          </Link>
+        </div>
+      )}
       {/* Navigation Arrows for Desktop (Moved to right) */}
       <div className={`absolute right-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col gap-4 transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
         <button
@@ -905,7 +973,11 @@ function PlayFeed() {
             <button onClick={social.handleFavorite}>
               <Bookmark size={20} className={social.favorited ? "fill-yellow-400 text-yellow-400" : ""} />
             </button>
-            <button onClick={() => social.setShareMenuOpen(true)}>
+            <button
+              onClick={() => isShareable && social.setShareMenuOpen(true)}
+              disabled={!isShareable}
+              className="disabled:opacity-35"
+            >
               <Send size={20} />
             </button>
             <button onClick={() => setLeaderboardOpen(true)}>
@@ -1114,6 +1186,7 @@ function ShareButton({
   template,
   game,
   gameId,
+  disabled = false,
 }: {
   count: number;
   open: boolean;
@@ -1122,6 +1195,7 @@ function ShareButton({
   template: any;
   game?: any;
   gameId?: string;
+  disabled?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -1364,9 +1438,11 @@ function ShareButton({
   return (
     <div className="relative">
       <button
-        onClick={onToggle}
+        onClick={() => !disabled && onToggle()}
+        disabled={disabled}
+        title={disabled ? "Publish this game before sharing it" : "Share game"}
         data-testid="share-button"
-        className="group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 lg:min-w-12"
+        className="group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 disabled:cursor-not-allowed disabled:opacity-35 lg:min-w-12"
       >
         <span
           className={`grid size-11 place-items-center rounded-full transition lg:size-10 ${

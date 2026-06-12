@@ -35,9 +35,32 @@ export async function run() {
   });
   assert(authed.status === 201, `authed create succeeds (got ${authed.status})`);
 
-  // cleanup the created game
   const created = authed.body?.game;
   if (created?.id) {
+    const draftPublic = await fetchJson(`${BACKEND}/api/games/${created.id}`);
+    assert(draftPublic.status === 404, "draft is not publicly readable");
+
+    const managed = await fetchJson(`${BACKEND}/api/games/${created.id}/manage`, {
+      headers: { Authorization: `Bearer ${tokenResponse.body.token}` }
+    });
+    assert(managed.status === 200 && managed.body?.game?.id === created.id, "creator can read draft");
+
+    const published = await fetchJson(`${BACKEND}/api/games/${created.id}/publish`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${tokenResponse.body.token}` }
+    });
+    assert(published.status === 200 && published.body?.game?.publish?.published, "creator can publish");
+
+    const publicGame = await fetchJson(`${BACKEND}/api/games/${created.id}`);
+    assert(publicGame.status === 200 && publicGame.body?.game?.id === created.id, "published game is public");
+
+    const unpublished = await fetchJson(`${BACKEND}/api/games/${created.id}/publish`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${tokenResponse.body.token}` }
+    });
+    assert(unpublished.status === 200 && !unpublished.body?.game?.publish?.published, "creator can unpublish");
+
+    // cleanup the created game
     await fetchJson(`${BACKEND}/api/games/${created.id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${tokenResponse.body.token}` }
