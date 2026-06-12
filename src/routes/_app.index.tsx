@@ -169,6 +169,8 @@ function Home() {
   // Real view counts drive the Trending order: most viewed first.
   const [viewsMap, setViewsMap] = useState<Record<string, number>>({});
   const [communityGames, setCommunityGames] = useState<Game[]>([]);
+  // Real published games, newest first — drives the Latest shelf.
+  const [latestGames, setLatestGames] = useState<Game[]>([]);
   useEffect(() => {
     api
       .get("/social/views-top", { params: { limit: 500 } })
@@ -182,22 +184,27 @@ function Home() {
     api
       .get("/games/list", { params: { limit: 100 } })
       .then((res) => {
-        const games: any[] = res.data?.games ?? [];
-        setCommunityGames(
-          games
-            .filter((g: any) => g?.title)
-            .map((g: any, index: number) => ({
-              title: g.title,
-              category: g.category ?? "Game",
-              plays: "New",
-              emoji: "🎮",
-              gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
-              creator: g.creatorId?.startsWith("0x")
-                ? `${g.creatorId.slice(0, 6)}…${g.creatorId.slice(-4)}`
-                : "community",
-              thumbnailUrl: resolveGameThumbnail(g),
-              templateId: g.id ?? g.templateId,
-            })),
+        const games: any[] = (res.data?.games ?? []).filter((g: any) => g?.title);
+        const toGame = (g: any, index: number): Game => ({
+          title: g.title,
+          category: g.category ?? "Game",
+          plays: "New",
+          emoji: "🎮",
+          gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
+          creator: g.creatorId?.startsWith("0x")
+            ? `${g.creatorId.slice(0, 6)}…${g.creatorId.slice(-4)}`
+            : "community",
+          thumbnailUrl: resolveGameThumbnail(g),
+          templateId: g.id ?? g.templateId,
+        });
+        setCommunityGames(games.map(toGame));
+        setLatestGames(
+          [...games]
+            .sort(
+              (a: any, b: any) =>
+                (Date.parse(b?.createdAt ?? "") || 0) - (Date.parse(a?.createdAt ?? "") || 0),
+            )
+            .map(toGame),
         );
       })
       .catch(() => {});
@@ -215,11 +222,9 @@ function Home() {
       .filter((game, i, all) => all.findIndex((x) => x.templateId === game.templateId) === i)
       .sort((first, second) => realViews(second) - realViews(first))
       .map(withRealPlays);
-    const latest = [...featured].sort((first, second) => {
-      if (first.plays === "New" && second.plays !== "New") return -1;
-      if (second.plays === "New" && first.plays !== "New") return 1;
-      return featured.indexOf(second) - featured.indexOf(first);
-    });
+    // Newest real games first (actual createdAt order from the backend);
+    // showcase templates only pad the shelf after them.
+    const latest = uniqueGames([...latestGames, ...featured]).map(withRealPlays);
     const playersChoice = uniqueGames([
       ...preferredCategories.flatMap((category) =>
         trending.filter((game) => game.category === category),
@@ -269,7 +274,7 @@ function Home() {
         games: featured.filter((game) => game.category === category),
       })),
     ];
-  }, [myCreations, viewsMap, communityGames]);
+  }, [myCreations, viewsMap, communityGames, latestGames]);
 
   const visibleShelves = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
