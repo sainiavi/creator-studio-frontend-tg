@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/studio/PageHeader";
-import { BROWSER_URL } from "@/components/studio/Sidebar";
 import { GameRow } from "@/components/studio/GameRow";
 import { type Game } from "@/lib/games-data";
 import arenaVideo from "@/assets/IMG_9260.MOV";
@@ -274,15 +273,6 @@ function More() {
         viewAllTo="https://kult-browser-rust-l2lwg.ondigitalocean.app/games"
       />
 
-      <div className="mx-auto max-w-2xl px-6 pb-10 lg:px-10">
-        <a
-          href={BROWSER_URL}
-          className="animate-float-up flex items-center justify-center rounded-2xl bg-gradient-to-b from-[#9d4dff] to-[#7a2ef0] px-5 py-4 shadow-[0_4px_18px_rgba(140,59,255,0.35)] transition-all hover:from-[#a95fff] hover:to-[#8a3eff]"
-          style={{ opacity: 0 }}
-        >
-          <span className="label-mono text-xs font-bold tracking-wider text-white">BACK TO BROWSER</span>
-        </a>
-      </div>
     </div>
   );
 }

@@ -445,12 +445,6 @@ function Create() {
                   >
                     <Wand2 className="size-4" /> Edit Game
                   </button>
-                  <button
-                    onClick={() => navigate({ to: "/studio" })}
-                    className="flex items-center gap-2 rounded-lg bg-black/40 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white"
-                  >
-                    <Sparkles className="size-4" /> Open in Studio
-                  </button>
                   <button className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-black">
                     <Rocket className="size-4" /> Publish
                   </button>

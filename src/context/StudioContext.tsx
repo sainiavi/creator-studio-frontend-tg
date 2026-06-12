@@ -150,11 +150,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     createFromTemplate();
   }, [createFromTemplate, customization, difficulty, extra, isTemplateSyncPaused, selectedId, theme]);
 
+  // The standalone Studio section was removed — "Use Template" now selects the
+  // template and opens it directly on its play page.
   const openInStudio = (templateId: string) => {
     const template = gameTemplates.find((t: any) => t.id === templateId);
     if (template) studio.setEngine(engineOf(template));
     studio.setSelectedId(templateId);
-    navigate({ to: "/studio" });
+    navigate({ to: "/play/$gameId", params: { gameId: templateId } });
   };
 
   return (

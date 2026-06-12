@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppTemplatesRouteImport } from './routes/_app.templates'
-import { Route as AppStudioRouteImport } from './routes/_app.studio'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppMoreRouteImport } from './routes/_app.more'
 import { Route as AppLeaderboardRouteImport } from './routes/_app.leaderboard'
@@ -32,11 +31,6 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppTemplatesRoute = AppTemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppStudioRoute = AppStudioRouteImport.update({
-  id: '/studio',
-  path: '/studio',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
@@ -76,7 +70,6 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof AppLeaderboardRoute
   '/more': typeof AppMoreRoute
   '/profile': typeof AppProfileRoute
-  '/studio': typeof AppStudioRoute
   '/templates': typeof AppTemplatesRoute
   '/edit/$gameId': typeof AppEditGameIdRoute
   '/play/$gameId': typeof AppPlayGameIdRoute
@@ -86,7 +79,6 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof AppLeaderboardRoute
   '/more': typeof AppMoreRoute
   '/profile': typeof AppProfileRoute
-  '/studio': typeof AppStudioRoute
   '/templates': typeof AppTemplatesRoute
   '/': typeof AppIndexRoute
   '/edit/$gameId': typeof AppEditGameIdRoute
@@ -99,7 +91,6 @@ export interface FileRoutesById {
   '/_app/leaderboard': typeof AppLeaderboardRoute
   '/_app/more': typeof AppMoreRoute
   '/_app/profile': typeof AppProfileRoute
-  '/_app/studio': typeof AppStudioRoute
   '/_app/templates': typeof AppTemplatesRoute
   '/_app/': typeof AppIndexRoute
   '/_app/edit/$gameId': typeof AppEditGameIdRoute
@@ -113,7 +104,6 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/more'
     | '/profile'
-    | '/studio'
     | '/templates'
     | '/edit/$gameId'
     | '/play/$gameId'
@@ -123,7 +113,6 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/more'
     | '/profile'
-    | '/studio'
     | '/templates'
     | '/'
     | '/edit/$gameId'
@@ -135,7 +124,6 @@ export interface FileRouteTypes {
     | '/_app/leaderboard'
     | '/_app/more'
     | '/_app/profile'
-    | '/_app/studio'
     | '/_app/templates'
     | '/_app/'
     | '/_app/edit/$gameId'
@@ -167,13 +155,6 @@ declare module '@tanstack/react-router' {
       path: '/templates'
       fullPath: '/templates'
       preLoaderRoute: typeof AppTemplatesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/studio': {
-      id: '/_app/studio'
-      path: '/studio'
-      fullPath: '/studio'
-      preLoaderRoute: typeof AppStudioRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/profile': {
@@ -226,7 +207,6 @@ interface AppRouteChildren {
   AppLeaderboardRoute: typeof AppLeaderboardRoute
   AppMoreRoute: typeof AppMoreRoute
   AppProfileRoute: typeof AppProfileRoute
-  AppStudioRoute: typeof AppStudioRoute
   AppTemplatesRoute: typeof AppTemplatesRoute
   AppIndexRoute: typeof AppIndexRoute
   AppEditGameIdRoute: typeof AppEditGameIdRoute
@@ -238,7 +218,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeaderboardRoute: AppLeaderboardRoute,
   AppMoreRoute: AppMoreRoute,
   AppProfileRoute: AppProfileRoute,
-  AppStudioRoute: AppStudioRoute,
   AppTemplatesRoute: AppTemplatesRoute,
   AppIndexRoute: AppIndexRoute,
   AppEditGameIdRoute: AppEditGameIdRoute,
