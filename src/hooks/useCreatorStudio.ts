@@ -16,6 +16,7 @@ const PROGRESS_STAGE_LABELS: Record<string, string> = {
   "editing-seed": "Customizing game code",
   "repairing": "Repairing build",
   "fixing-syntax": "Fixing syntax",
+  "fixing-runtime": "Testing & fixing the build",
 };
 
 // Polls an existing code job until it finishes. Separated from runCodeJob so a

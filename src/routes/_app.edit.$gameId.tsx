@@ -214,7 +214,9 @@ function GameEditor() {
           baseCode: game.refinement.generatedCode,
           refinementLevel: "medium",
         },
-        8 * 60 * 1000,
+        // Generous: a failed seed-edit now triggers a full pure-agent rebuild,
+        // so allow time for both passes before giving up.
+        14 * 60 * 1000,
         (status) => setBuildStatus(status),
         () => buildToken.current !== token,
       );

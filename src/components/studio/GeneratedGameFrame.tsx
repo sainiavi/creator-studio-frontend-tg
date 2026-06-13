@@ -82,6 +82,7 @@ function reportGameError(message, stack) {
   let best = 0;
   let explicit = false;
   let lastSentAt = 0;
+  let lastOverSeen = 0;
   function send(score) {
     const value = Math.max(0, Math.floor(Number(score) || 0));
     try { window.parent.postMessage({ __kultGameScore: value }, "*"); } catch {}
@@ -91,10 +92,16 @@ function reportGameError(message, stack) {
     send(score);
   };
   const scoreRe = /(?:score|pts|points)\\s*[:\\-]?\\s*([0-9][0-9,]*)/i;
-  const overRe = /game\\s*over|you\\s*win|you\\s*lose|you\\s*died|crashed|squashed|board\\s*cleared|out\\s*of\\s*moves|quiz\\s*complete|wins|you\\s*fell/i;
+  const overRe = /game\\s*over|you\\s*win|you\\s*lose|you\\s*died|crashed|squashed|board\\s*cleared|out\\s*of\\s*moves|quiz\\s*complete|wins|you\\s*fell|press\\s*r|tap\\s*to\\s*restart|play\\s*again/i;
   function scan(text) {
-    if (explicit) return;
     const s = String(text);
+    // Game-over detection feeds the touch bridge (tap = restart when over).
+    // Runs even with explicit scoring so restart-by-tap always works.
+    if (overRe.test(s)) {
+      window.__kultGameOver = true;
+      lastOverSeen = Date.now();
+    }
+    if (explicit) return;
     const m = s.match(scoreRe);
     if (m) {
       const v = parseInt(m[1].replace(/,/g, ""), 10);
@@ -105,6 +112,10 @@ function reportGameError(message, stack) {
       send(best);
     }
   }
+  // Once the game stops drawing its game-over text, it has resumed.
+  setInterval(function () {
+    if (window.__kultGameOver && Date.now() - lastOverSeen > 800) window.__kultGameOver = false;
+  }, 200);
   const origFill = CanvasRenderingContext2D.prototype.fillText;
   CanvasRenderingContext2D.prototype.fillText = function (text, x, y, maxWidth) {
     scan(text);
@@ -115,6 +126,74 @@ function reportGameError(message, stack) {
     scan(text);
     return maxWidth === undefined ? origStroke.call(this, text, x, y) : origStroke.call(this, text, x, y, maxWidth);
   };
+})();
+// --- Touch input bridge -----------------------------------------------------
+// Keyboard-only generated games (arrow keys to move, R/Space to restart) are
+// unplayable on phones — there is no keyboard. Translate touch gestures into
+// the keyboard events the game already listens for, so every game works on
+// mobile without changing its code: swipe -> arrow keys, tap -> action
+// (Space), and a tap while "GAME OVER" is showing -> restart (R/Enter/Space).
+(function () {
+  const canvas = document.querySelector("#game");
+  function makeKey(type, k, code, keyCode) {
+    const ev = new KeyboardEvent(type, { key: k, code: code, bubbles: true, cancelable: true });
+    // keyCode/which are legacy getters the init dict can't set; force them so
+    // games that check e.keyCode === 38 also respond.
+    try { Object.defineProperty(ev, "keyCode", { get: function () { return keyCode; } }); } catch (e) {}
+    try { Object.defineProperty(ev, "which", { get: function () { return keyCode; } }); } catch (e) {}
+    return ev;
+  }
+  function press(k, code, keyCode) {
+    [window, document, canvas].forEach(function (t) {
+      if (!t) return;
+      t.dispatchEvent(makeKey("keydown", k, code, keyCode));
+    });
+    setTimeout(function () {
+      [window, document, canvas].forEach(function (t) {
+        if (!t) return;
+        t.dispatchEvent(makeKey("keyup", k, code, keyCode));
+      });
+    }, 90);
+  }
+  const K = {
+    up: ["ArrowUp", "ArrowUp", 38],
+    down: ["ArrowDown", "ArrowDown", 40],
+    left: ["ArrowLeft", "ArrowLeft", 37],
+    right: ["ArrowRight", "ArrowRight", 39],
+    space: [" ", "Space", 32],
+    enter: ["Enter", "Enter", 13],
+    r: ["r", "KeyR", 82],
+  };
+  function tap(name) { press(K[name][0], K[name][1], K[name][2]); }
+  function restart() { tap("r"); tap("enter"); tap("space"); }
+
+  let sx = 0, sy = 0;
+  function begin(x, y) { sx = x; sy = y; }
+  function finish(x, y) {
+    const dx = x - sx, dy = y - sy;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+    if (adx < 24 && ady < 24) {
+      // A tap: restart when the run is over, otherwise a generic action.
+      if (window.__kultGameOver) restart(); else tap("space");
+      return;
+    }
+    if (adx > ady) tap(dx > 0 ? "right" : "left");
+    else tap(dy > 0 ? "down" : "up");
+  }
+  const handler = canvas || document;
+  handler.addEventListener("touchstart", function (e) {
+    const t = e.touches[0];
+    if (t) begin(t.clientX, t.clientY);
+  }, { passive: true });
+  handler.addEventListener("touchend", function (e) {
+    const t = e.changedTouches[0];
+    if (t) finish(t.clientX, t.clientY);
+  }, { passive: true });
+  // Mouse: only used to restart by clicking once the run is over. During play
+  // the keyboard works on desktop, and real clicks still reach pointer games.
+  handler.addEventListener("mouseup", function () {
+    if (window.__kultGameOver) restart();
+  });
 })();
 window.addEventListener("error", (event) => {
   reportGameError(event.message || event.error, event.error && event.error.stack);
