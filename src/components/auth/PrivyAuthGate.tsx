@@ -63,12 +63,22 @@ export function PrivyAuthGate({ children }: { children: ReactNode }) {
   const { wallets: evmWallets } = useWallets();
   const { createWallet } = useCreateWallet();
   const [tonCreating, setTonCreating] = useState(false);
+  const [slowInit, setSlowInit] = useState(false);
 
   const tonAddress = useMemo(
     () => firstTonAddress(user) ?? getTonWalletAddress(),
     [user],
   );
   const evmAddress = evmWallets[0]?.address ?? null;
+
+  useEffect(() => {
+    if (ready) {
+      setSlowInit(false);
+      return;
+    }
+    const timeout = window.setTimeout(() => setSlowInit(true), 8000);
+    return () => window.clearTimeout(timeout);
+  }, [ready]);
 
   useEffect(() => {
     if (!ready) return;
@@ -98,8 +108,18 @@ export function PrivyAuthGate({ children }: { children: ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background text-muted-foreground">
-        <Loader2 className="size-6 animate-spin" />
+      <div className="grid min-h-screen place-items-center bg-[#03070d] px-5 text-center text-white">
+        <div>
+          <Loader2 className="mx-auto size-6 animate-spin text-primary" />
+          {slowInit && (
+            <>
+              <h1 className="mt-5 font-display text-xl font-black">Starting Creator Studio</h1>
+              <p className="mt-2 max-w-xs text-sm leading-6 text-white/55">
+                Auth is taking longer than expected. Hard refresh this page if it stays here.
+              </p>
+            </>
+          )}
+        </div>
       </div>
     );
   }
