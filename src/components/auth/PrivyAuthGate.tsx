@@ -45,14 +45,21 @@ function AuthScreen({
         <p className="mt-2 text-center text-sm leading-6 text-white/55">
           Sign in with Telegram through Privy to create games and connect a TON wallet.
         </p>
-        <button
-          onClick={onLogin}
-          disabled={loading}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
-          {inTelegram ? "Continue in Telegram" : "Login with Telegram"}
-        </button>
+        {inTelegram ? (
+          <div className="mt-6 rounded-xl border border-amber-300/20 bg-amber-300/10 p-4 text-sm leading-6 text-amber-100">
+            Telegram auth did not complete. Check Privy Telegram credentials, enable seamless
+            auth, and set this exact Mini App domain in BotFather.
+          </div>
+        ) : (
+          <button
+            onClick={onLogin}
+            disabled={loading}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+            <span>Login with Telegram</span>
+          </button>
+        )}
       </div>
     </div>
   );
