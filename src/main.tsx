@@ -11,6 +11,19 @@ initTelegramMiniApp();
 const router = getRouter();
 const privyAppId = import.meta.env.VITE_PRIVY_APP_ID ?? "";
 
+function BootFallback() {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0 grid min-h-screen place-items-center bg-[#03070d] px-5 text-center text-white">
+      <div>
+        <h1 className="font-display text-xl font-black">Starting Creator Studio</h1>
+        <p className="mt-2 max-w-xs text-sm leading-6 text-white/55">
+          If this stays here, clear the browser cache and reload.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function MissingPrivyConfig() {
   return (
     <div className="grid min-h-screen place-items-center bg-[#03070d] px-4 text-white">
@@ -27,19 +40,22 @@ function MissingPrivyConfig() {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   privyAppId ? (
-    <PrivyProvider
-      appId={privyAppId}
-      config={{
-        loginMethods: ["telegram"],
-        appearance: {
-          theme: "dark",
-          accentColor: "#9a35ff",
-          logo: undefined,
-        },
-      }}
-    >
-      <RouterProvider router={router} />
-    </PrivyProvider>
+    <>
+      <BootFallback />
+      <PrivyProvider
+        appId={privyAppId}
+        config={{
+          loginMethods: ["telegram"],
+          appearance: {
+            theme: "dark",
+            accentColor: "#9a35ff",
+            logo: undefined,
+          },
+        }}
+      >
+        <RouterProvider router={router} />
+      </PrivyProvider>
+    </>
   ) : (
     <MissingPrivyConfig />
   ),
