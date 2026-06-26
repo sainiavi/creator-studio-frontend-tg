@@ -4,7 +4,7 @@ import { GameCard } from "@/components/studio/GameCard";
 import { type Game } from "@/lib/games-data";
 import { templateEmoji, gradientForId, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
 import { fetchCreatorStats, type CreatorStats } from "@/lib/api/social";
-import { getCurrentUserId, getCurrentUsername, getWalletAddress } from "@/lib/identity";
+import { getCurrentUserId, getCurrentUsername, getTonWalletAddress, getWalletAddress } from "@/lib/identity";
 import { api } from "@/lib/api";
 import { gameTemplates } from "@/lib/templates";
 import { useStudioContext } from "@/context/StudioContext";
@@ -347,7 +347,7 @@ function Profile() {
     const n = value ?? 0;
     return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
   };
-  const wallet = getWalletAddress();
+  const wallet = getTonWalletAddress() ?? getWalletAddress();
   const displayName = getCurrentUsername();
   // Joined date from the earliest real record we have (creation or activity).
   const timestamps: number[] = [
@@ -403,7 +403,7 @@ function Profile() {
             <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5 font-mono">
                 <Link2 className="size-3.5" />
-                {wallet ?? "Not connected — local creator profile"}
+                {wallet ?? "Privy creator profile"}
               </span>
               {joined && (
                 <span className="flex items-center gap-1.5">
