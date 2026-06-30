@@ -92,6 +92,12 @@ function numericPlays(plays: string) {
   return value || 0;
 }
 
+function formatCount(value: number) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return String(value);
+}
+
 function uniqueGames(games: Game[]) {
   return games.filter(
     (game, index, collection) =>
