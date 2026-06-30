@@ -41,7 +41,7 @@ import { gradientForId, templateToGame } from "@/lib/studio-meta";
 import { useSocial } from "@/hooks/useSocial";
 import { useFollow } from "@/hooks/useFollow";
 import { getCurrentUserId } from "@/lib/identity";
-import { recordView } from "@/lib/api/social";
+import { recordQualifiedPlay, recordView } from "@/lib/api/social";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
@@ -457,6 +457,25 @@ function PlayFeed() {
   useEffect(() => {
     setIsGameActive(false);
     playStartedAt.current = Date.now();
+  }, [gameId]);
+
+  useEffect(() => {
+    if (!gameId) return;
+    const key = `kult-qualified-play-${gameId}`;
+    if (sessionStorage.getItem(key)) return;
+
+    const uid = getCurrentUserId();
+    const sessionId = `${gameId}:${uid}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const timer = window.setTimeout(() => {
+      const durationSeconds = Math.floor((Date.now() - playStartedAt.current) / 1000);
+      recordQualifiedPlay(gameId, { userId: uid, sessionId, durationSeconds })
+        .then((result) => {
+          if (result.qualified) sessionStorage.setItem(key, "1");
+        })
+        .catch(() => {});
+    }, 30_000);
+
+    return () => window.clearTimeout(timer);
   }, [gameId]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const feedTabs = [

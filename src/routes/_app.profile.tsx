@@ -362,10 +362,17 @@ function Profile() {
 
   const stats = [
     { label: "Games", value: String(createdGames.length) },
+    { label: "KULT Points", value: formatStat(creatorStats?.lifetimePoints) },
     { label: "Plays", value: formatStat(creatorStats?.plays) },
-    { label: "Followers", value: formatStat(creatorStats?.followers) },
     { label: "Likes", value: formatStat(creatorStats?.likes) },
+    { label: "Followers", value: formatStat(creatorStats?.followers) },
   ];
+  const todayPoints = creatorStats?.currentDay
+    ? creatorStats.dailyPoints?.[creatorStats.currentDay] ?? 0
+    : 0;
+  const weekPoints = creatorStats?.currentWeek
+    ? creatorStats.weeklyPoints?.[creatorStats.currentWeek] ?? 0
+    : 0;
 
   const filteredActivities = activities.filter((activity) => {
     const actDate = new Date(activity.timestamp);
@@ -411,7 +418,7 @@ function Profile() {
                 </span>
               )}
             </div>
-            <div className="mt-6 grid grid-cols-4 gap-3">
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
               {stats.map((s) => (
                 <div key={s.label} className="rounded-xl border border-border/60 bg-background/40 p-3 text-center">
                   <p className="font-display text-lg font-black">{s.value}</p>
@@ -428,13 +435,21 @@ function Profile() {
               <span className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
                 <Gift className="size-4" /> Referral rewards
               </span>
-              <h3 className="mt-2 font-display text-2xl font-black">Invite players. Earn 50 KP.</h3>
+              <h3 className="mt-2 font-display text-2xl font-black">Invite players. Earn 5 KP per qualified referral play.</h3>
               <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-                Your friend receives 100 KP after completing their first authenticated game session
+                Referral rewards land after a referred player completes an authenticated game session
                 longer than 30 seconds.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <div className="rounded-xl border border-border/60 bg-background/45 px-5 py-3 text-center">
+                <p className="font-display text-xl font-black">{formatStat(todayPoints)}</p>
+                <p className="label-mono text-[8px] text-muted-foreground">Today KP</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-background/45 px-5 py-3 text-center">
+                <p className="font-display text-xl font-black">{formatStat(weekPoints)}</p>
+                <p className="label-mono text-[8px] text-muted-foreground">Week KP</p>
+              </div>
               <div className="rounded-xl border border-border/60 bg-background/45 px-5 py-3 text-center">
                 <p className="font-display text-xl font-black">{referral?.count ?? 0}</p>
                 <p className="label-mono text-[8px] text-muted-foreground">Rewarded referrals</p>

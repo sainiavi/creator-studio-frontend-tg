@@ -142,6 +142,17 @@ export async function recordView(gameId: string, userId: string) {
   return data as { gameId: string; views: number };
 }
 
+export async function recordQualifiedPlay(
+  gameId: string,
+  input: { userId: string; sessionId: string; durationSeconds: number },
+) {
+  const { data } = await api.post(`/social/plays/${encodeURIComponent(gameId)}/qualify`, input);
+  return data as {
+    qualified: boolean;
+    points: null | { awarded?: boolean; duplicate?: boolean; points?: number };
+  };
+}
+
 // ─── Follows ─────────────────────────────────────────────────────────────────
 
 export type FollowStatus = { creatorId: string; following: boolean; followers: number };
@@ -164,9 +175,29 @@ export type CreatorStats = {
   plays: number;
   likes: number;
   followers: number;
+  lifetimePoints: number;
+  dailyPoints: Record<string, number>;
+  weeklyPoints: Record<string, number>;
+  currentDay: string | null;
+  currentWeek: string | null;
 };
 
 export async function fetchCreatorStats(creatorId: string) {
   const { data } = await api.get(`/social/creator-stats/${encodeURIComponent(creatorId)}`);
   return data as CreatorStats;
+}
+
+export type PointSummary = {
+  userId: string;
+  lifetimePoints: number;
+  dailyPoints: Record<string, number>;
+  weeklyPoints: Record<string, number>;
+  currentDay: string | null;
+  currentWeek: string | null;
+  updatedAt: string | null;
+};
+
+export async function fetchPointSummary(userId: string) {
+  const { data } = await api.get(`/social/points/${encodeURIComponent(userId)}`);
+  return data as PointSummary;
 }

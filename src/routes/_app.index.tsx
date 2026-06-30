@@ -32,6 +32,8 @@ import { templateToGame, getThumbnailUrl, resolveGameThumbnail } from "@/lib/stu
 import type { Game } from "@/lib/games-data";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
+import { fetchPointSummary } from "@/lib/api/social";
+import { getCurrentUserId } from "@/lib/identity";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -102,6 +104,7 @@ function Home() {
   const { studio, createdGames, removeCreatedGame } = useStudioContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Game[]>([]);
+  const [kultPoints, setKultPoints] = useState(0);
   const [, setIsSearching] = useState(false);
 
   useEffect(() => {
@@ -144,6 +147,12 @@ function Home() {
   const [prompt, setPrompt] = useState(
     "Create a cyberpunk racing game with AI drivers and neon city rewards.",
   );
+
+  useEffect(() => {
+    fetchPointSummary(getCurrentUserId())
+      .then((summary) => setKultPoints(summary.lifetimePoints ?? 0))
+      .catch(() => {});
+  }, []);
 
   // The user's own creations (from this browser and from the backend) — without
   // this, search only covered the static template showcase.
@@ -330,7 +339,7 @@ function Home() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-md border border-border/60 bg-card/70 px-3 py-2 text-xs font-bold">
-            <Zap className="size-4 text-neon-violet" /> 1,250
+            <Zap className="size-4 text-neon-violet" /> {formatCount(kultPoints)} KP
           </div>
           <button
             type="button"

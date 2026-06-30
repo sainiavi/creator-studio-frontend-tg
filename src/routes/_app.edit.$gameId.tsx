@@ -55,6 +55,7 @@ function GameEditor() {
   const [publishing, setPublishing] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [publishError, setPublishError] = useState("");
+  const [publishPoints, setPublishPoints] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<"settings" | "code">("settings");
   // Mobile shows one panel at a time, switched by the bottom control bar
@@ -161,12 +162,15 @@ function GameEditor() {
     if (!game || publishing) return;
     setPublishing(true);
     setPublishError("");
+    setPublishPoints(null);
     try {
       if (dirty && !(await save())) {
         throw new Error("Save the latest changes before publishing.");
       }
       const response = await api.post(`/games/${encodeURIComponent(gameId)}/publish`);
       const publishedGame = response.data?.game ?? game;
+      const awardedPoints = response.data?.points?.awarded ? Number(response.data.points.points ?? 0) : 0;
+      setPublishPoints(awardedPoints > 0 ? awardedPoints : null);
       setGame(publishedGame);
       addCreatedGame(publishedGame);
       setPublishDialogOpen(true);
@@ -597,6 +601,11 @@ function GameEditor() {
             </p>
             {!publishError && (
               <>
+                {publishPoints != null && (
+                  <div className="mt-4 rounded-lg border border-primary/35 bg-primary/10 px-3 py-2 text-sm font-bold text-primary">
+                    +{publishPoints} KULT Points. You are now on the New leaderboard.
+                  </div>
+                )}
                 <div className="mt-5 flex gap-2 rounded-xl border border-border/60 bg-background/60 p-2 pl-3">
                   <input
                     readOnly
