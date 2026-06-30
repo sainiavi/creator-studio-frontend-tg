@@ -65,19 +65,6 @@ export const templateEmoji: Record<string, string> = {
   "realistic-driving": "🚗",
   "fps-survival": "🧟",
   "flight-sim": "✈️",
-  "unity-karting": "🏁",
-  "unity-fps": "🔫",
-  "unity-platformer": "🕹️",
-  "unity-zombiesmasher": "🧟",
-  "unity-spaceinvaders": "👾",
-  "unity-pong": "🏓",
-  "unity-tetris": "🧱",
-  "unity-snake": "🐍",
-  "unity-pacman": "🟡",
-  "unity-towerdefense": "🏰",
-  "unity-solitaire": "🂡",
-  "unity-flappybird": "🐤",
-  "unity-runner": "🏃",
   "head-soccer-2026": "⚽",
   "goof-runner": "🏃",
   "mini-racer": "🏎️",
@@ -131,23 +118,6 @@ const appBase = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 const withAppBase = (urls: Record<string, string>): Record<string, string> =>
   Object.fromEntries(Object.entries(urls).map(([id, url]) => [id, `${appBase}${url}`]));
 
-// Standalone Unity WebGL build entry points (served from /public/templates).
-export const unityGameUrls: Record<string, string> = withAppBase({
-  "unity-karting": "/templates/unity-karting/index.html",
-  "unity-fps": "/templates/unity-fps/index.html",
-  "unity-platformer": "/templates/unity-platformer/demo-api/unity/index.html",
-  "unity-zombiesmasher": "/templates/unity-zombiesmasher/index.html",
-  "unity-spaceinvaders": "/templates/unity-spaceinvaders/index.html",
-  "unity-pong": "/templates/unity-pong/index.html",
-  "unity-tetris": "/templates/unity-tetris/index.html",
-  "unity-snake": "/templates/unity-snake/index.html",
-  "unity-pacman": "/templates/unity-pacman/index.html",
-  "unity-towerdefense": "/templates/unity-towerdefense/index.html",
-  "unity-solitaire": "/templates/unity-solitaire/index.html",
-  "unity-flappybird": "/templates/unity-flappybird/index.html",
-  "unity-runner": "/templates/unity-runner/index.html",
-});
-
 // Standalone Construct/HTML5 game entry points (served from /public/templates).
 export const constructGameUrls: Record<string, string> = withAppBase({
   "offline-12minibattles": "/templates/offline-12minibattles/index.html",
@@ -192,7 +162,6 @@ export const constructGameUrls: Record<string, string> = withAppBase({
   "offline-dadish": "/templates/offline-dadish/index.html",
   "offline-dadish2": "/templates/offline-dadish2/index.html",
   "offline-dadish3": "/templates/offline-dadish3/index.html",
-  "offline-deathrun3d": "/templates/offline-deathrun3d/index.html",
   "offline-doodlejump": "/templates/offline-doodlejump/index.html",
   "offline-drawclimber": "/templates/offline-drawclimber/index.html",
   "offline-ducklife": "/templates/offline-ducklife/index.html",
@@ -212,12 +181,10 @@ export const constructGameUrls: Record<string, string> = withAppBase({
   "offline-footballlegends": "/templates/offline-footballlegends/index.html",
   "offline-freerider3": "/templates/offline-freerider3/index.html",
   "offline-fruitninja": "/templates/offline-fruitninja/index.html",
-  "offline-funnybattle": "/templates/offline-funnybattle/index.html",
   "offline-getontop": "/templates/offline-getontop/index.html",
   "offline-googlebaseball": "/templates/offline-googlebaseball/index.html",
   "offline-googledino": "/templates/offline-googledino/index.html",
   "offline-hanger2": "/templates/offline-hanger2/index.html",
-  "offline-helixjump": "/templates/offline-helixjump/index.html",
   "offline-hillclimbracinglite": "/templates/offline-hillclimbracinglite/index.html",
   "offline-idlebreakout": "/templates/offline-idlebreakout/index.html",
   "offline-ironsnout": "/templates/offline-ironsnout/index.html",
@@ -246,7 +213,6 @@ export const constructGameUrls: Record<string, string> = withAppBase({
   "offline-parkingfury2": "/templates/offline-parkingfury2/index.html",
   "offline-parkingfury3": "/templates/offline-parkingfury3/index.html",
   "offline-picosschool": "/templates/offline-picosschool/index.html",
-  "offline-pingpongchaos": "/templates/offline-pingpongchaos/index.html",
   "offline-pixelspeedrun": "/templates/offline-pixelspeedrun/index.html",
   "offline-plonky": "/templates/offline-plonky/index.html",
   "offline-polytrack": "/templates/offline-polytrack/index.html",
@@ -311,10 +277,9 @@ export function gradientForId(id: string): Game["gradient"] {
   return gradientKeys[hash % gradientKeys.length];
 }
 
-export type TemplateEngine = "threejs" | "unity" | "construct";
+export type TemplateEngine = "threejs" | "construct";
 
 export function engineOf(template: { engine?: string }): TemplateEngine {
-  if (template.engine === "unity") return "unity";
   if (template.engine === "construct") return "construct";
   return "threejs";
 }
@@ -333,12 +298,7 @@ export function templateToGame(template: any, index = 0): Game {
     plays: playCount(index),
     emoji: templateEmoji[template.id] ?? "🎮",
     gradient: gradientForId(template.id),
-    creator:
-      engineOf(template) === "unity"
-        ? "Unity Build"
-        : engineOf(template) === "construct"
-          ? "Construct Template"
-          : "3D Web Game",
+    creator: engineOf(template) === "construct" ? "Construct Template" : "3D Web Game",
     thumbnailUrl: getThumbnailUrl(template.id),
     templateId: template.id,
   };

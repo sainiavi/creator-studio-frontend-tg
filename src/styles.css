@@ -222,11 +222,10 @@
 }
 
 /*
- * Game preview surface styles (canvas engine + Unity iframe).
+ * Game preview surface styles (canvas engine + HTML5 iframe).
  * Ported from the original studio shell and re-themed onto the design tokens.
  */
 .three-preview-wrap,
-.unity-preview-wrap,
 .html5-preview-wrap {
   position: relative;
   width: 100%;
@@ -239,7 +238,6 @@
 }
 
 .feed-game-frame--canvas .three-preview-wrap,
-.feed-game-frame--unity .unity-preview-wrap,
 .feed-game-frame--construct .html5-preview-wrap {
   aspect-ratio: auto;
   height: 100%;
@@ -262,7 +260,6 @@
   touch-action: none;
 }
 
-.unity-preview-wrap iframe,
 .html5-preview-wrap iframe {
   position: absolute;
   inset: 0;
@@ -371,7 +368,6 @@ kbd {
 }
 
 .feed-game-frame:fullscreen .three-preview-wrap,
-.feed-game-frame:fullscreen .unity-preview-wrap,
 .feed-game-frame:fullscreen .html5-preview-wrap {
   width: 100vw;
   height: 100vh;
@@ -392,7 +388,6 @@ kbd {
    above the bar or the bottom of the playfield hides behind it. */
 @media (min-width: 1024px) {
   .feed-game-frame:fullscreen .three-preview-wrap,
-  .feed-game-frame:fullscreen .unity-preview-wrap,
   .feed-game-frame:fullscreen .html5-preview-wrap,
   .feed-game-frame:fullscreen .three-preview,
   .feed-game-frame:fullscreen .three-preview canvas,
@@ -422,7 +417,6 @@ kbd {
    centers and letterboxes each game inside), instead of a 16:9 strip pinned
    to the top with dead space below. */
 .editor-game-frame .three-preview-wrap,
-.editor-game-frame .unity-preview-wrap,
 .editor-game-frame .html5-preview-wrap {
   aspect-ratio: auto;
   height: 100%;

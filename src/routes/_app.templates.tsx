@@ -18,7 +18,6 @@ export const Route = createFileRoute("/_app/templates")({
 
 const engines = [
   { id: "threejs", label: "Three.js" },
-  { id: "unity", label: "Unity" },
   { id: "construct", label: "HTML5" },
 ] as const;
 

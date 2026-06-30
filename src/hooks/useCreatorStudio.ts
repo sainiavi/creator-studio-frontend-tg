@@ -167,9 +167,7 @@ export function localPackage(template: any, options: any) {
       renderer:
         template.engine === "construct"
           ? "Embedded HTML5 Construct runtime"
-          : template.engine === "unity"
-            ? "Unity WebGL runtime"
-            : "Playable Canvas runtime",
+          : "Playable Canvas runtime",
       runtimeTarget: "Browser",
       externalAssets: template.engine === "construct",
       publishReady: true,

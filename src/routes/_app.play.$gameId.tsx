@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { GamePreview } from "@/components/studio/GamePreview";
-import { UnityPreview } from "@/components/studio/UnityPreview";
 import { Html5Preview } from "@/components/studio/Html5Preview";
 import { SimpleAgentGame } from "@/components/studio/SimpleAgentGame";
 import { NeonSudokuGame } from "@/components/studio/NeonSudokuGame";
@@ -260,7 +259,9 @@ function PlayFeed() {
   const { setSidebarCollapsed, studio, createdGames, refreshCreatedGames } = useStudioContext();
   const isSimpleAgentGame = gameId === "simple-agent-game";
   const isNeonSudoku = gameId === "neon-sudoku";
+  const isTemplateRoute = gameTemplates.some((template: any) => template.id === gameId);
   const generatedPackageMatches =
+    !isTemplateRoute &&
     Boolean(studio.generatedPackage?.id) &&
     (studio.generatedPackage?.id === gameId ||
      studio.generatedPackage?.templateId === gameId ||
@@ -280,8 +281,7 @@ function PlayFeed() {
   // Shared links resolve through the public-by-ID endpoint. It returns only
   // explicitly published games, so drafts cannot be opened by guessing an id.
   useEffect(() => {
-    const isTemplate = gameTemplates.some((template: any) => template.id === gameId);
-    if (!gameId || isSimpleAgentGame || isNeonSudoku || isTemplate || generatedPackageMatches || localCustomGame) {
+    if (!gameId || isSimpleAgentGame || isNeonSudoku || isTemplateRoute || generatedPackageMatches || localCustomGame) {
       setPublicLoadState("idle");
       return;
     }
@@ -304,7 +304,7 @@ function PlayFeed() {
     return () => {
       cancelled = true;
     };
-  }, [gameId, isSimpleAgentGame, isNeonSudoku, generatedPackageMatches, localCustomGame]);
+  }, [gameId, isSimpleAgentGame, isNeonSudoku, isTemplateRoute, generatedPackageMatches, localCustomGame]);
 
   // The AI build finishes minutes after the game record exists. While this
   // created game has no code yet, poll the backend so the finished build
@@ -348,11 +348,7 @@ function PlayFeed() {
             category: studio.generatedPackage.category || "Casual",
             mechanic: studio.generatedPackage.gameplay?.mechanic || "custom gameplay mechanics",
             controls: studio.generatedPackage.gameplay?.controls || "controls",
-            engine: studio.generatedPackage.build?.renderer === "unity"
-              ? "unity"
-              : studio.generatedPackage.build?.renderer === "construct"
-                ? "construct"
-                : "threejs"
+            engine: studio.generatedPackage.build?.renderer === "construct" ? "construct" : "threejs"
           }
         : customGame
           ? {
@@ -409,7 +405,7 @@ function PlayFeed() {
   const gameTags = Array.from(
     new Set([
       game.category,
-      engine === "unity" ? "Unity" : engine === "construct" ? "HTML5" : "Canvas",
+      engine === "construct" ? "HTML5" : "Canvas",
       "AI Generated",
     ]),
   );
@@ -521,8 +517,6 @@ function PlayFeed() {
       "match3",
       "flappy",
       "space-shooter",
-      "unity-zombiesmasher",
-      "unity-karting",
       "head-soccer-2026",
       "bubble-shooter",
       "cratch-royale",
@@ -535,8 +529,6 @@ function PlayFeed() {
       "memory",
       "drawing",
       "quiz",
-      "unity-pong",
-      "unity-solitaire",
       "race-kings",
       "spin-wheel-royale",
     ],
@@ -578,7 +570,7 @@ function PlayFeed() {
         engine: "canvas",
       };
       const allTemplates = [neonSudokuTemplate, simpleAgentTemplate, ...gameTemplates];
-      const templates = isMobile ? allTemplates.filter((t: any) => t.engine !== "unity") : allTemplates;
+      const templates = allTemplates;
       
       switch (tab) {
         case "Trending":
@@ -884,11 +876,7 @@ function PlayFeed() {
             <div
               ref={frameRef}
               className={`relative feed-game-frame w-full h-full rounded-b-3xl overflow-hidden pointer-events-auto lg:w-[400px] lg:h-full lg:rounded-none lg:shadow-2xl lg:border-x lg:border-white/10 ${
-                engine === "unity"
-                  ? "feed-game-frame--unity"
-                  : engine === "construct"
-                    ? "feed-game-frame--construct"
-                    : "feed-game-frame--canvas"
+                engine === "construct" ? "feed-game-frame--construct" : "feed-game-frame--canvas"
               } ${leaderboardOpen ? "feed-game-frame--leaderboard-open" : ""}`}
             >
               <div className={`w-full h-full lg:h-[calc(100%-76px)] lg:pointer-events-auto ${!isGameActive ? "pointer-events-none" : ""}`}>
@@ -896,8 +884,6 @@ function PlayFeed() {
                   <NeonSudokuGame onScoreSubmit={handleScoreSubmit} />
                 ) : isSimpleAgentGame ? (
                   <SimpleAgentGame onScoreSubmit={handleScoreSubmit} />
-                ) : engine === "unity" ? (
-                  <UnityPreview templateId={template.id} />
                 ) : engine === "construct" ? (
                   <Html5Preview templateId={template.id} />
                 ) : (

@@ -8,11 +8,24 @@ export type LeaderboardEntry = {
   score: number;
   createdAt: string;
   updatedAt?: string;
+  zeroGStorage?: ZeroGStoragePointer;
 };
 
 export type Leaderboard = {
   gameId: string;
   entries: LeaderboardEntry[];
+  zeroGStorage?: ZeroGStoragePointer;
+};
+
+export type ZeroGStoragePointer = {
+  objectType: string;
+  objectId: string;
+  status: "uploaded" | "skipped" | "failed";
+  contentHash: string;
+  rootHash?: string | null;
+  txHash?: string | null;
+  uri: string;
+  byteLength: number;
 };
 
 export async function fetchLeaderboard(gameId: string, limit = 500) {

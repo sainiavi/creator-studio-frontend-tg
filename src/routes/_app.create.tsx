@@ -76,6 +76,12 @@ function conceptFor(game: string, vibe: string) {
   return fallback ?? first;
 }
 
+function isCreateConfirmation(text: string) {
+  return /^(ok|okay|yes|yep|sure|create it|build it|go ahead|start)(,?\s+)?(create|build|make|start)?\s*(it)?!?$/i.test(
+    text.trim(),
+  );
+}
+
 function Create() {
   const { studio, addCreatedGame, removeCreatedGame } = useStudioContext();
   const navigate = useNavigate();
@@ -113,7 +119,9 @@ function Create() {
   const chatPrompt = [gameRequest, vibeRequest].filter(Boolean).join(". ");
 
   const build = async (strategy: "pure-agent" | "hybrid", promptOverride = "") => {
-    const buildPrompt = promptOverride || chatPrompt || studio.prompt;
+    const pendingInput = chatInput.trim();
+    const promptWithPendingInput = [chatPrompt || studio.prompt, pendingInput].filter(Boolean).join(". ");
+    const buildPrompt = promptOverride || promptWithPendingInput;
     if (!buildPrompt.trim() || phase === "building") return;
     const game = await studio.generateFromPrompt(strategy, buildPrompt);
     addCreatedGame(game ?? studio.generatedPackage);
@@ -166,7 +174,8 @@ function Create() {
     }
 
     if (chatStage === "concept") {
-      const prompt = `${gameRequest}. ${vibeRequest}. ${selectedConcept}.`;
+      const extraPrompt = isCreateConfirmation(value) ? "" : value;
+      const prompt = [gameRequest, vibeRequest, selectedConcept, extraPrompt].filter(Boolean).join(". ");
       studio.setPrompt(prompt);
       setChatStage("ready");
       setMessages((current) => [
