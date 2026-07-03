@@ -1,6 +1,9 @@
-import { Play, ArrowUpRight, Pencil, Zap } from "lucide-react";
+import { ArrowUpRight, Heart, Pencil, Play, Repeat2, Share2, Trophy, Zap } from "lucide-react";
 import { type Game, gradientClass } from "@/lib/games-data";
 import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { getCurrentUserId } from "@/lib/identity";
+import { recordShare, toggleLike } from "@/lib/api/social";
 
 export function GameCard({
   game,
@@ -13,12 +16,46 @@ export function GameCard({
   onEdit?: (game: Game) => void;
 }) {
   const navigate = useNavigate();
+  const [liked, setLiked] = useState(false);
+  const [likes, setLikes] = useState(game.likes ?? 0);
+  const [shares, setShares] = useState(game.shares ?? 0);
   const open = () => {
     if (game.playUrl) {
       window.location.href = game.playUrl;
       return;
     }
     if (game.templateId) navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
+  };
+  const remix = () => {
+    const seed = [
+      `Remix ${game.title}`,
+      game.prompt || `${game.category} game by ${game.creator}`,
+      "Keep the core mechanics, physics, controls, and pacing.",
+      "Change the theme, characters, visual style, and one gameplay twist.",
+    ].join(". ");
+    sessionStorage.setItem("kult-remix-prompt", seed);
+    navigate({ to: "/create" });
+  };
+  const like = async () => {
+    setLiked((value) => !value);
+    setLikes((value) => Math.max(0, value + (liked ? -1 : 1)));
+    if (game.templateId) {
+      const result = await toggleLike(game.templateId, getCurrentUserId()).catch(() => null);
+      if (result) {
+        setLiked(result.liked);
+        setLikes(result.count);
+      }
+    }
+  };
+  const share = async () => {
+    if (game.templateId) {
+      const result = await recordShare(game.templateId, getCurrentUserId(), "link").catch(() => null);
+      if (result) setShares(result.count);
+    } else {
+      setShares((value) => value + 1);
+    }
+    const url = game.templateId ? `${window.location.origin}/play/${game.templateId}` : window.location.href;
+    await navigator.clipboard?.writeText(url).catch(() => null);
   };
 
   return (
@@ -76,7 +113,8 @@ export function GameCard({
           <Zap className="size-3" /> Instant Play
         </button>
       </div>
-      <div className="flex items-center justify-between gap-2 p-4">
+      <div className="space-y-3 p-4">
+        <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <h3 className="truncate font-display text-sm font-bold">{game.title}</h3>
           <p className="label-mono mt-1 text-[9px] text-muted-foreground">{game.creator}</p>
@@ -91,6 +129,45 @@ export function GameCard({
         >
           <Play className="size-3" /> Play <ArrowUpRight className="size-3" />
         </button>
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              void like();
+            }}
+            className={`flex h-8 items-center justify-center gap-1 rounded-md border border-border/60 text-[10px] font-bold ${liked ? "bg-rose-500/15 text-rose-400" : "text-muted-foreground hover:text-foreground"}`}
+            title="Like"
+          >
+            <Heart className={`size-3 ${liked ? "fill-current" : ""}`} /> {likes}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              remix();
+            }}
+            className="flex h-8 items-center justify-center gap-1 rounded-md border border-border/60 text-[10px] font-bold text-muted-foreground hover:text-foreground"
+            title="Remix"
+          >
+            <Repeat2 className="size-3" /> Remix
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              void share();
+            }}
+            className="flex h-8 items-center justify-center gap-1 rounded-md border border-border/60 text-[10px] font-bold text-muted-foreground hover:text-foreground"
+            title="Share"
+          >
+            <Share2 className="size-3" /> {shares}
+          </button>
+          <span className="flex h-8 items-center justify-center gap-1 rounded-md border border-border/60 text-[10px] font-bold text-muted-foreground" title="Creator Score earned">
+            <Trophy className="size-3" /> {game.creatorScore ?? 0}
+          </span>
+        </div>
       </div>
     </article>
   );

@@ -103,6 +103,7 @@ function templateForPrompt(prompt: string) {
       : null;
 
   return (
+    match(["offline-fruitninja"], ["fruit ninja", "fruitninja", "fruit slice", "fruit slicing", "slice fruit", "slicing", "slash fruit", "blade fruit"]) ||
     match(["chess"], ["chess", "checkmate", "chessboard", "grandmaster"]) ||
     match(["head-soccer-2026"], ["soccer", "football", "world cup", "sports"]) ||
     match(["goof-runner"], ["endless runner", "runner", "run", "jump", "parkour"]) ||
@@ -113,6 +114,20 @@ function templateForPrompt(prompt: string) {
     gameTemplates.find((template) => text.includes(template.name.toLowerCase())) ||
     null
   );
+}
+
+function titleFromPrompt(prompt: string) {
+  const text = prompt.toLowerCase();
+  if (/(fruit\s*ninja|fruitninja|fruit\s*slice|slice\s*fruit|slicing)/.test(text)) {
+    return "Fruit Ninja Game";
+  }
+  const cleaned = prompt
+    .replace(/\b(generate|create|make|build|a|an|the|game|please|with|using)\b/gi, " ")
+    .replace(/[^a-z0-9\s-]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const words = (cleaned || "Custom AI Game").split(" ").slice(0, 5);
+  return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 }
 
 function recentCreationContext() {
@@ -435,7 +450,24 @@ export function useCreatorStudio() {
       pauseTemplateSync();
       setEngine(engineOf(promptTemplate));
       setSelectedId(promptTemplate.id);
-      const localGame = localPackage(promptTemplate, effectiveOptions);
+      const playableFallbackGame = localPackage(promptTemplate, effectiveOptions);
+      const localGame = { ...playableFallbackGame };
+      if (strategy === "pure-agent") {
+        localGame.title = titleFromPrompt(effectivePrompt);
+        localGame.templateId = "pure-agent";
+        localGame.templateName = "Pure AI Agent Game";
+        localGame.tier = "prompt-agent";
+        localGame.category = localMatch?.category ?? "Arcade";
+        localGame.gameplay = {
+          ...(localGame.gameplay ?? {}),
+          mechanic: /fruit\s*ninja|fruitninja|fruit\s*slice|slice\s*fruit|slicing/i.test(effectivePrompt)
+            ? "Swipe or drag to slice flying fruit, build combo streaks, and avoid bombs."
+            : localGame.gameplay?.mechanic,
+          controls: /fruit\s*ninja|fruitninja|fruit\s*slice|slice\s*fruit|slicing/i.test(effectivePrompt)
+            ? "Touch or mouse drag to slice"
+            : localGame.gameplay?.controls,
+        };
+      }
       setGeneratedPackage(localGame);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -508,7 +540,11 @@ export function useCreatorStudio() {
       // and link the build even after navigation or a refresh.
       if (generationRef.current === token) {
         updateActiveBuild({
-          game: { id: baseGame?.id, templateId: baseGame?.templateId, title: baseGame?.title },
+          game: {
+            id: baseGame?.id,
+            templateId: baseGame?.templateId,
+            title: strategy === "pure-agent" ? (baseGame?.title || titleFromPrompt(effectivePrompt)) : baseGame?.title,
+          },
         });
       }
 
@@ -549,10 +585,15 @@ export function useCreatorStudio() {
             setAgentStatus(`AI build ready · ${refinement.source ?? refinement.model ?? "agent"}`);
             updateActiveBuild({ phase: "done", statusText: "AI build ready" });
           } else {
-            setAgentStatus("AI build returned no code — showing playable template");
+            const fallback = strategy === "pure-agent" ? playableFallbackGame : baseGame;
+            if (strategy === "pure-agent") {
+              setGeneratedPackage(fallback);
+            }
+            setAgentStatus("AI build returned no code — showing the closest playable template");
             updateActiveBuild({
               phase: "done",
-              statusText: "AI build returned no code — the playable template version was saved.",
+              statusText: "AI build returned no code — the closest playable template version was saved.",
+              game: { id: fallback?.id, templateId: fallback?.templateId, title: fallback?.title },
             });
           }
         } catch (error: any) {
@@ -560,11 +601,20 @@ export function useCreatorStudio() {
           // Surface the real failure (e.g. "interrupted by a server restart",
           // "insufficient balance") instead of calling everything a timeout.
           const detail = error.response?.data?.error ?? error?.message;
+          const fallback = strategy === "pure-agent" ? playableFallbackGame : baseGame;
+          if (strategy === "pure-agent") {
+            setGeneratedPackage(fallback);
+            setPackageMode("Prompt");
+          }
           const message = detail
-            ? `AI build failed: ${detail} — showing playable template`
-            : "AI build timed out — showing playable template";
+            ? `AI build failed: ${detail} — showing closest playable template`
+            : "AI build timed out — showing closest playable template";
           setAgentStatus(message);
-          updateActiveBuild({ phase: "failed", statusText: message });
+          updateActiveBuild({
+            phase: strategy === "pure-agent" ? "done" : "failed",
+            statusText: message,
+            game: { id: fallback?.id, templateId: fallback?.templateId, title: fallback?.title },
+          });
         }
       })();
 

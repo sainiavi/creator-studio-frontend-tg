@@ -1,20 +1,34 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { GameCard } from "@/components/studio/GameCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { type Game } from "@/lib/games-data";
 import { templateEmoji, gradientForId, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
-import { fetchCreatorStats, type CreatorStats } from "@/lib/api/social";
-import { getCurrentUserId, getCurrentUsername, getWalletAddress } from "@/lib/identity";
+import {
+  fetchAchievements,
+  fetchCreatorStats,
+  fetchDailyChallenges,
+  fetchFollowing,
+  fetchNotifications,
+  markNotificationsRead,
+  type AchievementSummary,
+  type CreatorStats,
+  type DailyChallenge,
+  type NotificationItem,
+} from "@/lib/api/social";
+import { getCurrentUserId, getCurrentUsername, getWalletAddress, setCurrentUsername } from "@/lib/identity";
 import { api } from "@/lib/api";
 import { gameTemplates } from "@/lib/templates";
 import { useStudioContext } from "@/context/StudioContext";
 import {
-  MapPin,
-  Link2,
   Copy,
   Gift,
   Check,
-  Calendar,
   ChevronLeft,
   ChevronRight,
   Heart,
@@ -24,6 +38,12 @@ import {
   Rocket,
   Gamepad2,
   Loader2,
+  Trophy,
+  BadgeCheck,
+  Bell,
+  Target,
+  Pencil,
+  X,
 } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -191,6 +211,15 @@ function Profile() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
   const [referral, setReferral] = useState<ReferralSummary | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
+  const [dailyChallenges, setDailyChallenges] = useState<DailyChallenge[]>([]);
+  const [achievementSummary, setAchievementSummary] = useState<AchievementSummary | null>(null);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [openPanel, setOpenPanel] = useState<"challenges" | "achievements" | "notifications" | null>(null);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [displayName, setDisplayName] = useState(() => getCurrentUsername());
+  const [draftDisplayName, setDraftDisplayName] = useState(displayName);
+  const [editingDisplayName, setEditingDisplayName] = useState(false);
+  const [identityCopied, setIdentityCopied] = useState(false);
 
   const getThumbnail = useCallback((id: string | undefined, fallbackUrl?: string) => {
     if (!id) return fallbackUrl;
@@ -339,7 +368,12 @@ function Profile() {
 
   const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
   useEffect(() => {
-    fetchCreatorStats(getCurrentUserId()).then(setCreatorStats).catch(() => {});
+    const userId = getCurrentUserId();
+    fetchCreatorStats(userId).then(setCreatorStats).catch(() => {});
+    fetchFollowing(userId).then((data) => setFollowingCount(data.following?.length ?? 0)).catch(() => {});
+    fetchDailyChallenges(userId).then((data) => setDailyChallenges(data.challenges)).catch(() => {});
+    fetchAchievements(userId).then(setAchievementSummary).catch(() => {});
+    fetchNotifications(userId).then((data) => setNotifications(data.notifications)).catch(() => {});
     fetchReferralSummary().then(setReferral).catch(() => {});
   }, []);
 
@@ -347,8 +381,11 @@ function Profile() {
     const n = value ?? 0;
     return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
   };
+  const userId = getCurrentUserId();
   const wallet = getWalletAddress();
-  const displayName = getCurrentUsername();
+  const identityLine = wallet ?? userId;
+  const compactIdentity =
+    identityLine.length > 14 ? `${identityLine.slice(0, 6)}...${identityLine.slice(-4)}` : identityLine;
   // Joined date from the earliest real record we have (creation or activity).
   const timestamps: number[] = [
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -357,9 +394,14 @@ function Profile() {
   ].filter((t) => Number.isFinite(t));
   const joined =
     timestamps.length > 0
-      ? new Date(Math.min(...timestamps)).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+      ? new Date(Math.min(...timestamps)).toLocaleDateString(undefined, {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })
       : null;
 
+<<<<<<< Updated upstream
   const stats = [
     { label: "Games", value: String(createdGames.length) },
     { label: "Creator Score", value: formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore ?? creatorStats?.lifetimePoints) },
@@ -373,6 +415,36 @@ function Profile() {
   const weekPoints = creatorStats?.currentWeek
     ? creatorStats.weeklyScore?.[creatorStats.currentWeek] ?? creatorStats.weeklyPoints?.[creatorStats.currentWeek] ?? 0
     : 0;
+=======
+  const saveDisplayName = () => {
+    const savedName = setCurrentUsername(draftDisplayName);
+    setDisplayName(savedName);
+    setDraftDisplayName(savedName);
+    setEditingDisplayName(false);
+  };
+
+  const cancelDisplayNameEdit = () => {
+    setDraftDisplayName(displayName);
+    setEditingDisplayName(false);
+  };
+
+  const copyIdentity = async () => {
+    try {
+      await navigator.clipboard.writeText(identityLine);
+      setIdentityCopied(true);
+      window.setTimeout(() => setIdentityCopied(false), 1200);
+    } catch {
+      setIdentityCopied(false);
+    }
+  };
+
+  const openNotificationsPanel = () => {
+    setOpenPanel("notifications");
+    void markNotificationsRead(getCurrentUserId()).then(() => {
+      setNotifications((current) => current.map((notification) => ({ ...notification, read: true })));
+    }).catch(() => null);
+  };
+>>>>>>> Stashed changes
 
   const filteredActivities = activities.filter((activity) => {
     const actDate = new Date(activity.timestamp);
@@ -398,36 +470,283 @@ function Profile() {
     <div>
       <PageHeader title="Profile" subtitle="Your creator identity · Published games" />
       <div className="px-6 py-8 lg:px-10">
-        <div className="animate-float-up overflow-hidden rounded-2xl border border-border/60 bg-card shadow-card">
-          <div className="h-32 bg-gradient-to-r from-[oklch(0.72_0.27_340)] via-[oklch(0.65_0.25_295)] to-[oklch(0.82_0.16_195)]" />
-          <div className="px-6 pb-6">
-            <div className="-mt-12 flex items-end justify-between">
-              <div className="flex size-24 items-center justify-center rounded-2xl border-4 border-card bg-secondary text-5xl">🎮</div>
+        <div className="animate-float-up rounded-2xl border border-border/60 bg-[oklch(0.07_0.018_282)] p-5 shadow-card sm:p-6">
+          <div className="flex items-center gap-4 sm:gap-5">
+            <div className="grid size-24 shrink-0 place-items-center rounded-full border-2 border-primary/80 bg-gradient-to-br from-primary/35 via-fuchsia-500/25 to-cyan-400/25 text-5xl shadow-[0_0_28px_oklch(0.72_0.25_305_/_0.35)]">
+              🎮
             </div>
-            <h2 className="mt-4 font-display text-2xl font-black">
-              {displayName}
-            </h2>
-            <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5 font-mono">
-                <Link2 className="size-3.5" />
-                {wallet ?? "Not connected — local creator profile"}
-              </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                {editingDisplayName ? (
+                  <input
+                    value={draftDisplayName}
+                    onChange={(event) => setDraftDisplayName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") saveDisplayName();
+                      if (event.key === "Escape") cancelDisplayNameEdit();
+                    }}
+                    autoFocus
+                    maxLength={32}
+                    className="min-w-0 rounded-lg border border-primary/40 bg-background/70 px-3 py-1.5 font-display text-2xl font-black text-foreground outline-none focus:border-primary sm:text-3xl"
+                  />
+                ) : (
+                  <h2 className="truncate font-display text-2xl font-black text-foreground sm:text-3xl">
+                    {displayName}
+                  </h2>
+                )}
+                <BadgeCheck className="size-5 shrink-0 fill-primary text-background" />
+                {editingDisplayName ? (
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={saveDisplayName}
+                      title="Save name"
+                      className="grid size-8 place-items-center rounded-lg border border-primary/40 bg-primary/15 text-primary transition hover:bg-primary/25"
+                    >
+                      <Check className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelDisplayNameEdit}
+                      title="Cancel name edit"
+                      className="grid size-8 place-items-center rounded-lg border border-border/60 bg-background/40 text-muted-foreground transition hover:text-foreground"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftDisplayName(displayName);
+                      setEditingDisplayName(true);
+                    }}
+                    title="Edit name"
+                    className="grid size-8 shrink-0 place-items-center rounded-lg border border-border/60 bg-background/35 text-muted-foreground transition hover:border-primary/50 hover:text-primary"
+                  >
+                    <Pencil className="size-4" />
+                  </button>
+                )}
+              </div>
+              <div className="mt-1 flex min-w-0 items-center gap-2 text-sm font-semibold text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={copyIdentity}
+                  title="Copy wallet address"
+                  className="flex min-w-0 items-center gap-1.5 rounded-md text-left transition hover:text-primary"
+                >
+                  <span className="truncate font-mono">{compactIdentity}</span>
+                  {identityCopied ? <Check className="size-3.5 shrink-0" /> : <Copy className="size-3.5 shrink-0" />}
+                </button>
+              </div>
               {joined && (
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="size-3.5" /> Joined {joined}
-                </span>
+                <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                  Joined {joined}
+                </p>
+              )}
+              {achievementSummary?.inventory.genesisFounderBadge && (
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-400/35 bg-amber-400/10 px-3 py-1.5 text-xs font-black text-amber-300">
+                  <BadgeCheck className="size-4 fill-amber-400/30 text-amber-300" /> Genesis Founder
+                </div>
               )}
             </div>
+<<<<<<< Updated upstream
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
               {stats.map((s) => (
                 <div key={s.label} className="rounded-xl border border-border/60 bg-background/40 p-3 text-center">
                   <p className="font-display text-lg font-black">{s.value}</p>
                   <p className="label-mono text-[8px] text-muted-foreground">{s.label}</p>
+=======
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-amber-300/25 bg-amber-300/10 px-4 py-3 shadow-[inset_0_0_18px_oklch(0.82_0.18_80_/_0.08)]">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="label-mono text-[0.68rem] font-black leading-none text-amber-300">CREATOR SCORE</p>
+                  <p className="mt-1.5 font-display text-3xl font-black leading-none text-amber-300">
+                    {formatStat(creatorStats?.creatorScore)}
+                  </p>
+>>>>>>> Stashed changes
                 </div>
-              ))}
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-amber-300/20 text-amber-300 shadow-[0_0_14px_oklch(0.82_0.18_80_/_0.28)]">
+                  <Trophy className="size-4" />
+                </span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 shadow-[inset_0_0_18px_oklch(0.7_0.24_295_/_0.07)]">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="label-mono text-[0.68rem] font-black leading-none text-primary">KULT POINTS (KP)</p>
+                  <p className="mt-1.5 font-display text-3xl font-black leading-none text-primary">
+                    {formatStat(creatorStats?.lifetimePoints)}
+                  </p>
+                </div>
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-[0.68rem] font-black text-primary-foreground shadow-[0_0_14px_oklch(0.72_0.25_305_/_0.32)]">
+                  KP
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="font-display text-3xl font-black">{formatStat(createdGames.length)}</p>
+              <p className="mt-1 text-sm font-bold text-muted-foreground">Games</p>
+            </div>
+            <div>
+              <p className="font-display text-3xl font-black">{formatStat(creatorStats?.followers)}</p>
+              <p className="mt-1 text-sm font-bold text-muted-foreground">Followers</p>
+            </div>
+            <div>
+              <p className="font-display text-3xl font-black">{formatStat(followingCount)}</p>
+              <p className="mt-1 text-sm font-bold text-muted-foreground">Following</p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-xl border border-border/55 bg-background/30 p-3">
+              <p className="font-display text-2xl font-black">{formatStat(creatorStats?.likes)}</p>
+              <p className="label-mono mt-1 text-[9px] text-muted-foreground">LIKES</p>
+            </div>
+            <div className="rounded-xl border border-border/55 bg-background/30 p-3">
+              <p className="font-display text-2xl font-black">{formatStat(creatorStats?.shares)}</p>
+              <p className="label-mono mt-1 text-[9px] text-muted-foreground">SHARES</p>
+            </div>
+            <div className="rounded-xl border border-border/55 bg-background/30 p-3">
+              <p className="font-display text-2xl font-black">{formatStat(creatorStats?.remixes)}</p>
+              <p className="label-mono mt-1 text-[9px] text-muted-foreground">REMIXES</p>
             </div>
           </div>
         </div>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+          <button
+            type="button"
+            onClick={() => setOpenPanel("challenges")}
+            className="flex min-h-24 items-center gap-4 rounded-xl border border-border/60 bg-card/55 p-5 text-left transition hover:border-primary/50 hover:bg-card"
+          >
+            <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
+              <Target className="size-5" />
+            </span>
+            <span>
+              <span className="block font-display text-lg font-black">Daily Challenges</span>
+              <span className="mt-1 block text-xs text-muted-foreground">{dailyChallenges.filter((c) => c.completed).length}/{dailyChallenges.length} complete</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpenPanel("achievements")}
+            className="flex min-h-24 items-center gap-4 rounded-xl border border-border/60 bg-card/55 p-5 text-left transition hover:border-primary/50 hover:bg-card"
+          >
+            <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
+              <Trophy className="size-5" />
+            </span>
+            <span>
+              <span className="block font-display text-lg font-black">Achievements</span>
+              <span className="mt-1 block text-xs text-muted-foreground">{achievementSummary?.inventory.badges.length ?? 0} unlocked</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={openNotificationsPanel}
+            className="flex min-h-24 items-center gap-4 rounded-xl border border-border/60 bg-card/55 p-5 text-left transition hover:border-primary/50 hover:bg-card"
+          >
+            <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
+              <Bell className="size-5" />
+            </span>
+            <span>
+              <span className="block font-display text-lg font-black">Notifications</span>
+              <span className="mt-1 block text-xs text-muted-foreground">{notifications.filter((n) => !n.read).length} unread</span>
+            </span>
+          </button>
+        </div>
+
+        <Dialog open={openPanel === "challenges"} onOpenChange={(open) => !open && setOpenPanel(null)}>
+          <DialogContent className="max-h-[82vh] overflow-y-auto border-border/60 bg-card sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 font-display text-xl font-black">
+                <Target className="size-5 text-primary" /> Daily Challenges
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {dailyChallenges.map((challenge) => (
+                <div key={challenge.id} className="rounded-lg border border-border/60 bg-background/35 p-4">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="font-bold">{challenge.title}</span>
+                    <span className="text-muted-foreground">{challenge.progress}/{challenge.target}</span>
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-background">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${Math.min(100, (challenge.progress / challenge.target) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">{challenge.reward}</p>
+                </div>
+              ))}
+              {dailyChallenges.length === 0 && <p className="text-sm text-muted-foreground">No daily challenges loaded yet.</p>}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={openPanel === "achievements"} onOpenChange={(open) => !open && setOpenPanel(null)}>
+          <DialogContent className="max-h-[82vh] overflow-y-auto border-border/60 bg-card sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 font-display text-xl font-black">
+                <Trophy className="size-5 text-primary" /> Achievements
+              </DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-3">
+              {(achievementSummary?.achievements ?? []).map((achievement) => (
+                <div
+                  key={achievement.id}
+                  className={`rounded-lg border p-4 ${achievement.unlocked ? "border-primary/40 bg-primary/10" : "border-border/50 bg-background/30 opacity-65"}`}
+                >
+                  <p className="text-sm font-bold">{achievement.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{achievement.description}</p>
+                </div>
+              ))}
+              {(achievementSummary?.achievements ?? []).length === 0 && <p className="text-sm text-muted-foreground">No achievements loaded yet.</p>}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={openPanel === "notifications"}
+          onOpenChange={(open) => {
+            if (!open) {
+              setOpenPanel(null);
+              return;
+            }
+            void markNotificationsRead(getCurrentUserId()).then(() => {
+              setNotifications((current) => current.map((notification) => ({ ...notification, read: true })));
+            }).catch(() => null);
+          }}
+        >
+          <DialogContent className="max-h-[82vh] overflow-y-auto border-border/60 bg-card sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 font-display text-xl font-black">
+                <Bell className="size-5 text-primary" /> Notifications
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {notifications.map((notification, index) => (
+                <div
+                  key={`${notification.createdAt}-${index}`}
+                  className={`rounded-lg border p-4 ${notification.read ? "border-border/50 bg-background/30" : "border-primary/45 bg-primary/10"}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-bold">{notification.title}</p>
+                    {!notification.read && <span className="mt-1 size-1.5 rounded-full bg-primary" />}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{notification.body}</p>
+                </div>
+              ))}
+              {notifications.length === 0 && <p className="text-sm text-muted-foreground">No notifications yet.</p>}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="mt-8 overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card to-card p-6 shadow-card">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">

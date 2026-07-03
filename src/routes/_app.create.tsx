@@ -33,6 +33,10 @@ type ChatMessage = {
 type ChatStage = "game" | "vibe" | "concept" | "ready";
 
 const conceptByGame: Record<string, string[]> = {
+  fruit: [
+    "Fruit Slice Zen: Swipe through flying fruit, avoid bombs, chain combos, and keep the pace calm but satisfying.",
+    "Fruit Ninja Arcade: A fast slicing game with fruit arcs, combo streaks, bombs to avoid, and juicy touch controls.",
+  ],
   chess: [
     "Royal Gambit: A calm 1-on-1 chess match against a thoughtful AI on a clean neon board.",
     "Knight's Duel: Sharp tactical chess with highlighted legal moves and quick AI replies.",
@@ -61,6 +65,7 @@ const conceptByGame: Record<string, string[]> = {
 
 function gameKind(text: string) {
   const value = text.toLowerCase();
+  if (/(fruit\s*ninja|fruit|slice|slicing|slash|knife|blade)/.test(value)) return "fruit";
   if (/(chess|checkmate|chessboard)/.test(value)) return "chess";
   if (/(soccer|football|world cup)/.test(value)) return "soccer";
   if (/(runner|running|run|parkour|jump)/.test(value)) return "runner";
@@ -104,6 +109,20 @@ function Create() {
   // Re-render once a second while building so the elapsed time and step list move
   // even between 5s job polls.
   const [, setTick] = useState(0);
+  useEffect(() => {
+    const remixPrompt = sessionStorage.getItem("kult-remix-prompt");
+    if (remixPrompt) {
+      sessionStorage.removeItem("kult-remix-prompt");
+      setGameRequest(remixPrompt);
+      setChatStage("vibe");
+      setMessages([
+        { role: "assistant", text: "Remix loaded. What theme or character swap do you want?" },
+        { role: "user", text: remixPrompt },
+      ]);
+      studio.setPrompt(remixPrompt);
+    }
+  }, []);
+
   useEffect(() => {
     if (phase !== "building") return;
     const interval = setInterval(() => setTick((t) => t + 1), 1000);
@@ -185,6 +204,27 @@ function Create() {
       ]);
       void build("hybrid", prompt);
     }
+  };
+
+  const submitComposerPrompt = () => {
+    const value = chatInput.trim();
+    if (!value || phase === "building") return;
+
+    if (chatStage === "concept" && isCreateConfirmation(value)) {
+      sendChat(value);
+      return;
+    }
+
+    const prompt = [gameRequest, vibeRequest, selectedConcept, value].filter(Boolean).join(". ");
+    studio.setPrompt(prompt);
+    setChatInput("");
+    setChatStage("ready");
+    setMessages((current) => [
+      ...current,
+      { role: "user", text: value },
+      { role: "assistant", text: "Got it. I am treating that as your prompt and building it now." },
+    ]);
+    void build("hybrid", prompt);
   };
 
   const freshChat = chatStage === "game" && messages.length <= 1;
@@ -325,14 +365,14 @@ function Create() {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") sendChat();
+                    if (e.key === "Enter") submitComposerPrompt();
                   }}
-                  placeholder={chatStage === "game" ? "Type soccer, runner, racing..." : "Type a vibe or confirmation..."}
+                  placeholder={chatStage === "game" ? "Type soccer, runner, racing..." : "Type a prompt or command..."}
                   className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground sm:text-base"
                 />
                 <button
                   type="button"
-                  onClick={() => sendChat()}
+                  onClick={() => submitComposerPrompt()}
                   disabled={phase === "building"}
                   className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90 disabled:opacity-60 sm:size-10"
                 >
@@ -354,7 +394,7 @@ function Create() {
                 <span className="min-w-0 flex-1">
                   <span className="label-mono block text-xs font-black tracking-[0.14em] text-white">HYBRID MODE</span>
                   <span className="mt-0.5 block text-[11px] leading-relaxed text-white/65">
-                    {buildingStrategy === "hybrid" ? "Building your game…" : "Best of both worlds. AI designs, you refine."}
+                    {buildingStrategy === "hybrid" ? "Building your game…" : "Best of both worlds."}
                   </span>
                 </span>
                 <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/10 text-white transition group-hover:bg-white/20">
@@ -373,7 +413,7 @@ function Create() {
                 <span className="min-w-0 flex-1">
                   <span className="label-mono block text-xs font-black tracking-[0.14em] text-white">PURE AGENT STRATEGY</span>
                   <span className="mt-0.5 block text-[11px] leading-relaxed text-white/65">
-                    {buildingStrategy === "pure-agent" ? "Building your game…" : "Let the AI agent handle everything from idea to game."}
+                    {buildingStrategy === "pure-agent" ? "Building your game…" : "AI agent handle everything from idea to game."}
                   </span>
                 </span>
                 <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/10 text-white transition group-hover:bg-white/20">

@@ -104,7 +104,7 @@ export type UserActivity = {
   userId: string;
   gameId: string | null;
   gameTitle: string | null;
-  activityType: "like" | "favorite" | "share" | "comment" | "create" | "play";
+  activityType: "like" | "favorite" | "share" | "comment" | "create" | "play" | "publish" | "major_edit";
   details: string;
   timestamp: string;
 };
@@ -156,6 +156,7 @@ export async function recordQualifiedPlay(
 // ─── Follows ─────────────────────────────────────────────────────────────────
 
 export type FollowStatus = { creatorId: string; following: boolean; followers: number };
+export type FollowingResponse = { followerId: string; following: string[] };
 
 export async function fetchFollowStatus(creatorId: string, userId: string) {
   const { data } = await api.get(`/social/follows/${encodeURIComponent(creatorId)}`, {
@@ -169,12 +170,20 @@ export async function toggleFollowApi(creatorId: string, userId: string) {
   return data as FollowStatus;
 }
 
+export async function fetchFollowing(userId: string) {
+  const { data } = await api.get(`/social/follows/user/${encodeURIComponent(userId)}`);
+  return data as FollowingResponse;
+}
+
 export type CreatorStats = {
   creatorId: string;
   games: number;
   plays: number;
   likes: number;
+  shares: number;
+  remixes: number;
   followers: number;
+<<<<<<< Updated upstream
   creatorScore: number;
   lifetimeScore: number;
   dailyScore: Record<string, number>;
@@ -184,6 +193,11 @@ export type CreatorStats = {
   weeklyPoints: Record<string, number>;
   currentDay: string | null;
   currentWeek: string | null;
+=======
+  featured: number;
+  creatorScore: number;
+  lifetimePoints: number;
+>>>>>>> Stashed changes
 };
 
 export async function fetchCreatorStats(creatorId: string) {
@@ -191,6 +205,7 @@ export async function fetchCreatorStats(creatorId: string) {
   return data as CreatorStats;
 }
 
+<<<<<<< Updated upstream
 export type PointSummary = {
   userId: string;
   kultPoints: number;
@@ -205,4 +220,62 @@ export type PointSummary = {
 export async function fetchPointSummary(userId: string) {
   const { data } = await api.get(`/social/points/${encodeURIComponent(userId)}`);
   return data as PointSummary;
+=======
+export type DailyChallenge = {
+  id: string;
+  title: string;
+  metric: string;
+  target: number;
+  progress: number;
+  reward: string;
+  completed: boolean;
+};
+
+export async function fetchDailyChallenges(userId: string) {
+  const { data } = await api.get(`/social/daily-challenges/${encodeURIComponent(userId)}`);
+  return data as { userId: string; date: string; week: string; challenges: DailyChallenge[] };
+}
+
+export type Achievement = {
+  id: string;
+  title: string;
+  description: string;
+  unlocked: boolean;
+};
+
+export type AchievementSummary = {
+  userId: string;
+  inventory: {
+    badges: string[];
+    genesisFounderBadge: boolean;
+  };
+  achievements: Achievement[];
+};
+
+export async function fetchAchievements(userId: string) {
+  const { data } = await api.get(`/social/achievements/${encodeURIComponent(userId)}`);
+  return data as AchievementSummary;
+}
+
+export type NotificationItem = {
+  type: string;
+  title: string;
+  body: string;
+  gameId?: string | null;
+  actorId?: string | null;
+  read: boolean;
+  createdAt: string;
+};
+
+export async function fetchNotifications(userId: string, unreadOnly = false) {
+  const { data } = await api.get(`/social/notifications/${encodeURIComponent(userId)}`, {
+    params: { unreadOnly, limit: 20 },
+  });
+  return data as { userId: string; notifications: NotificationItem[] };
+}
+
+export async function markNotificationsRead(userId: string) {
+  const { data } = await api.post(`/social/notifications/${encodeURIComponent(userId)}/read`);
+  return data as { userId: string; updated: number };
+>>>>>>> Stashed changes
 }

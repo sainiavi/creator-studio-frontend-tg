@@ -54,6 +54,44 @@ function reportGameError(message, stack) {
     window.parent.postMessage({ __kultGameError: { message: String(message), stack: String(stack || "") } }, "*");
   } catch {}
 }
+// --- Storage shim -------------------------------------------------------------
+// The sandbox (allow-scripts, no allow-same-origin) makes ANY access to
+// window.localStorage throw a SecurityError, and generated games routinely
+// persist high scores there. Shadow both storages with an in-memory Storage
+// so those games run unchanged (data lives for the iframe's lifetime). Mirrors
+// the shim the backend smoke test uses, so builds behave the same in both.
+(function () {
+  function memoryStorage() {
+    const data = new Map();
+    const api = {
+      getItem: function (k) { return data.has(String(k)) ? data.get(String(k)) : null; },
+      setItem: function (k, v) { data.set(String(k), String(v)); },
+      removeItem: function (k) { data.delete(String(k)); },
+      clear: function () { data.clear(); },
+      key: function (i) { const keys = Array.from(data.keys()); return i in keys ? keys[i] : null; },
+      get length() { return data.size; },
+    };
+    // Proxy so direct property use (localStorage.best = 5) shares the same data.
+    return new Proxy(api, {
+      get: function (t, p) {
+        if (p in t) return t[p];
+        return typeof p === "string" && data.has(p) ? data.get(p) : undefined;
+      },
+      set: function (t, p, v) { data.set(String(p), String(v)); return true; },
+      deleteProperty: function (t, p) { data.delete(String(p)); return true; },
+      has: function (t, p) { return p in t || data.has(String(p)); },
+    });
+  }
+  ["localStorage", "sessionStorage"].forEach(function (name) {
+    try {
+      window[name].getItem("__kult_probe__");
+      return; // real storage works, leave it alone
+    } catch {}
+    try {
+      Object.defineProperty(window, name, { value: memoryStorage(), configurable: true });
+    } catch {}
+  });
+})();
 // --- Canvas fit ---------------------------------------------------------------
 // Scales the canvas (up or down) to the largest size that fits the frame while
 // preserving the game's own aspect ratio. The element box always equals the

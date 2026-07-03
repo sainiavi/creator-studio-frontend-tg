@@ -39,20 +39,27 @@ export function getCurrentUserId(): string {
 
 /** Display name: shortened wallet (0x1234…abcd) or the generated anon name. */
 export function getCurrentUsername(): string {
+  const savedName = localStorage.getItem(ANON_NAME_KEY);
+  if (savedName?.trim()) return savedName.trim();
+
   const wallet = getWalletAddress();
   if (wallet) return `${wallet.slice(0, 6)}…${wallet.slice(-4)}`;
 
-  let name = localStorage.getItem(ANON_NAME_KEY);
-  if (!name) {
-    const adjectives = ["Swift", "Neon", "Pixel", "Cosmic", "Turbo", "Hyper", "Retro", "Glitch"];
-    const nouns = ["Fox", "Owl", "Hawk", "Wolf", "Cat", "Panda", "Tiger", "Bear"];
-    name =
-      adjectives[Math.floor(Math.random() * adjectives.length)] +
-      nouns[Math.floor(Math.random() * nouns.length)] +
-      Math.floor(Math.random() * 999);
-    localStorage.setItem(ANON_NAME_KEY, name);
-  }
+  const adjectives = ["Swift", "Neon", "Pixel", "Cosmic", "Turbo", "Hyper", "Retro", "Glitch"];
+  const nouns = ["Fox", "Owl", "Hawk", "Wolf", "Cat", "Panda", "Tiger", "Bear"];
+  const name =
+    adjectives[Math.floor(Math.random() * adjectives.length)] +
+    nouns[Math.floor(Math.random() * nouns.length)] +
+    Math.floor(Math.random() * 999);
+  localStorage.setItem(ANON_NAME_KEY, name);
   return name;
+}
+
+export function setCurrentUsername(name: string): string {
+  const cleanName = name.trim().slice(0, 32);
+  if (!cleanName) return getCurrentUsername();
+  localStorage.setItem(ANON_NAME_KEY, cleanName);
+  return cleanName;
 }
 
 /** True when `creatorId` belongs to the current user (or is unset/legacy). */

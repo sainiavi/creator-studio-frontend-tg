@@ -10,6 +10,10 @@ export type Game = {
   templateId?: string;
   playUrl?: string;
   prompt?: string;
+  likes?: number;
+  shares?: number;
+  creatorScore?: number;
+  remixOf?: string;
   zeroGStorage?: ZeroGStoragePointer;
   thumbnailZeroGStorage?: ZeroGStoragePointer;
 };

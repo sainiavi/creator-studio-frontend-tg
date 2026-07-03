@@ -10,11 +10,17 @@ import {
 } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ArrowRight,
+  Bell,
   Bot,
   ChevronLeft,
   ChevronRight,
-  CircleDollarSign,
   Gamepad2,
   Globe2,
   Pencil,
@@ -22,6 +28,7 @@ import {
   Rocket,
   Search,
   Sparkles,
+  Trophy,
   TrendingUp,
   WandSparkles,
   X,
@@ -32,7 +39,17 @@ import { templateToGame, getThumbnailUrl, resolveGameThumbnail } from "@/lib/stu
 import type { Game } from "@/lib/games-data";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
+<<<<<<< Updated upstream
 import { fetchPointSummary } from "@/lib/api/social";
+=======
+import {
+  fetchCreatorStats,
+  fetchNotifications,
+  markNotificationsRead,
+  type CreatorStats,
+  type NotificationItem,
+} from "@/lib/api/social";
+>>>>>>> Stashed changes
 import { getCurrentUserId } from "@/lib/identity";
 
 export const Route = createFileRoute("/_app/")({
@@ -71,7 +88,7 @@ const featured: Game[] = [
 ];
 
 const activity = [
-  { icon: CircleDollarSign, color: "text-neon-green", text: "Neon Drift earned $120", time: "2h" },
+  { icon: Trophy, color: "text-neon-green", text: "Neon Drift gained Creator Score", time: "2h" },
   { icon: Bot, color: "text-neon-cyan", text: "RacerBot v2 deployed", time: "4h" },
   { icon: Play, color: "text-neon-violet", text: "PixelKnight played AI Arena", time: "6h" },
   { icon: TrendingUp, color: "text-neon-pink", text: "Cyber Runner reached 1K plays", time: "1d" },
@@ -112,6 +129,47 @@ function Home() {
   const [searchResults, setSearchResults] = useState<Game[]>([]);
   const [kultPoints, setKultPoints] = useState(0);
   const [, setIsSearching] = useState(false);
+  const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [mobileFeedTab, setMobileFeedTab] = useState("For You");
+
+  const formatStat = useCallback((value: number | undefined) => {
+    const n = value ?? 0;
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return String(n);
+  }, []);
+
+  useEffect(() => {
+    const userId = getCurrentUserId();
+    fetchCreatorStats(userId).then(setCreatorStats).catch(() => {
+      setCreatorStats(null);
+    });
+    const refreshNotifications = () => {
+      fetchNotifications(userId).then((data) => setNotifications(data.notifications)).catch(() => {
+        setNotifications([]);
+      });
+    };
+    refreshNotifications();
+    const interval = window.setInterval(refreshNotifications, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const openNotifications = async () => {
+    setNotificationsOpen(true);
+    const userId = getCurrentUserId();
+    const data = await fetchNotifications(userId).catch(() => null);
+    if (data) setNotifications(data.notifications);
+    await markNotificationsRead(userId).catch(() => null);
+    setNotifications((current) => current.map((notification) => ({ ...notification, read: true })));
+  };
+
+  const openNotificationTarget = (notification: NotificationItem) => {
+    if (!notification.gameId) return;
+    setNotificationsOpen(false);
+    navigate({ to: "/play/$gameId", params: { gameId: notification.gameId } });
+  };
 
   useEffect(() => {
     const query = searchQuery.trim();
@@ -211,6 +269,10 @@ function Home() {
             : "community",
           thumbnailUrl: resolveGameThumbnail(g),
           templateId: g.id ?? g.templateId,
+          likes: Number(g.points?.likes ?? 0),
+          shares: Number(g.points?.shares ?? 0),
+          creatorScore: Number(g.creatorScore ?? g.points?.total ?? 0),
+          remixOf: g.remixOf,
         });
         setCommunityGames(games.map(toGame));
         setLatestGames(
@@ -320,6 +382,28 @@ function Home() {
     ];
   }, [searchQuery, shelves, searchResults]);
 
+  const mobileFeedTabs = useMemo(() => {
+    const byTitle = new Map(visibleShelves.map((shelf) => [shelf.title, shelf.games]));
+    const baseTabs = [
+      { label: "For You", games: byTitle.get("Players' Choice") ?? byTitle.get("Trending") ?? [] },
+      { label: "🔥 Trending", games: byTitle.get("Trending") ?? [] },
+      { label: "New", games: byTitle.get("Latest") ?? [] },
+      { label: "Following", games: byTitle.get("My Creations") ?? [] },
+    ];
+    const categoryTabs = visibleShelves
+      .filter((shelf) => !["My Creations", "Trending", "Latest", "Players' Choice", "Favourite Games"].includes(shelf.title))
+      .map((shelf) => ({ label: shelf.title, games: shelf.games }));
+    return [...baseTabs, ...categoryTabs].filter((tab) => tab.games.length > 0);
+  }, [visibleShelves]);
+
+  const selectedMobileFeed = mobileFeedTabs.find((tab) => tab.label === mobileFeedTab) ?? mobileFeedTabs[0];
+
+  useEffect(() => {
+    if (mobileFeedTabs.length > 0 && !mobileFeedTabs.some((tab) => tab.label === mobileFeedTab)) {
+      setMobileFeedTab(mobileFeedTabs[0].label);
+    }
+  }, [mobileFeedTab, mobileFeedTabs]);
+
   const create = () => {
     studio.setPrompt(prompt);
     navigate({ to: "/create" });
@@ -349,6 +433,18 @@ function Home() {
           </div>
           <button
             type="button"
+            onClick={() => void openNotifications()}
+            title="Open notifications"
+            aria-label="Open notifications"
+            className="relative grid size-9 place-items-center rounded-full border border-border/60 bg-card/70 text-muted-foreground transition hover:border-primary/50 hover:text-primary"
+          >
+            <Bell className="size-4" />
+            {notifications.some((notification) => !notification.read) && (
+              <span className="absolute right-2 top-2 size-1.5 rounded-full bg-primary" />
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => navigate({ to: "/profile" })}
             title="Open profile"
             aria-label="Open profile"
@@ -358,6 +454,38 @@ function Home() {
           </button>
         </div>
       </header>
+
+      <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+        <DialogContent className="max-h-[82vh] overflow-y-auto border-border/60 bg-card sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-display text-xl font-black">
+              <Bell className="size-5 text-primary" /> Notifications
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {notifications.map((notification, index) => (
+              <button
+                key={`${notification.createdAt}-${index}`}
+                type="button"
+                onClick={() => openNotificationTarget(notification)}
+                disabled={!notification.gameId}
+                className={`w-full rounded-lg border p-4 text-left transition ${
+                  notification.read
+                    ? "border-border/50 bg-background/30"
+                    : "border-primary/45 bg-primary/10"
+                } ${notification.gameId ? "hover:border-primary/60" : "cursor-default"}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-bold">{notification.title}</p>
+                  {!notification.read && <span className="mt-1 size-1.5 rounded-full bg-primary" />}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{notification.body}</p>
+              </button>
+            ))}
+            {notifications.length === 0 && <p className="text-sm text-muted-foreground">No notifications yet.</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid gap-3 p-3 xl:grid-cols-[minmax(0,1fr)_310px]">
         <main className="min-w-0 space-y-3">
@@ -405,43 +533,106 @@ function Home() {
             </div>
           </section>
 
-          {visibleShelves.slice(0, 3).map((shelf) => (
-            <GameShelf
-              key={shelf.title}
-              title={shelf.title}
-              games={shelf.games}
-              cardsPerRow={4}
-              onDeleteGame={
-                shelf.title === "My Creations"
-                  ? (game) => { if (game.templateId) void removeCreatedGame(game.templateId); }
-                  : undefined
-              }
-              onEditGame={
-                shelf.title === "My Creations"
-                  ? (game) => { if (game.templateId) navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } }); }
-                  : undefined
-              }
-            />
-          ))}
+          {selectedMobileFeed && (
+            <section className="md:hidden rounded-lg border border-border/60 bg-card/55 p-3">
+              <div className="-mx-3 overflow-x-auto px-3">
+                <div className="flex min-w-max items-center gap-7 border-b border-border/40">
+                  {mobileFeedTabs.map((tab) => {
+                    const selected = selectedMobileFeed.label === tab.label;
+                    return (
+                      <button
+                        key={tab.label}
+                        type="button"
+                        onClick={() => setMobileFeedTab(tab.label)}
+                        className={`relative pb-3 text-base font-black transition ${
+                          selected ? "text-foreground" : "text-muted-foreground"
+                        }`}
+                      >
+                        {tab.label}
+                        {selected && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {selectedMobileFeed.games.slice(0, 12).map((game, index) => (
+                  <GameTile
+                    key={`${selectedMobileFeed.label}-${game.title}-${index}`}
+                    game={game}
+                    onOpen={() => {
+                      if (game.templateId) navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
+                    }}
+                    onDelete={
+                      selectedMobileFeed.label === "Following"
+                        ? () => { if (game.templateId) void removeCreatedGame(game.templateId); }
+                        : undefined
+                    }
+                    onEdit={
+                      selectedMobileFeed.label === "Following"
+                        ? () => { if (game.templateId) navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } }); }
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className="hidden space-y-3 md:block">
+            {visibleShelves.slice(0, 3).map((shelf) => (
+              <GameShelf
+                key={shelf.title}
+                title={shelf.title}
+                games={shelf.games}
+                cardsPerRow={4}
+                onDeleteGame={
+                  shelf.title === "My Creations"
+                    ? (game) => { if (game.templateId) void removeCreatedGame(game.templateId); }
+                    : undefined
+                }
+                onEditGame={
+                  shelf.title === "My Creations"
+                    ? (game) => { if (game.templateId) navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } }); }
+                    : undefined
+                }
+              />
+            ))}
+          </div>
         </main>
 
         <aside className="space-y-3">
           <Panel title="Creator Dashboard">
             <div className="grid grid-cols-2 gap-2">
-              <Metric label="Games Created" value="24" icon={Gamepad2} color="text-neon-violet" />
-              <Metric label="Total Plays" value="128.4K" icon={Play} color="text-neon-cyan" />
               <Metric
-                label="Revenue"
-                value="$2,845"
-                icon={CircleDollarSign}
+                label="Games Created"
+                value={formatStat(creatorStats?.games ?? createdGames.length)}
+                icon={Gamepad2}
+                color="text-neon-violet"
+              />
+              <Metric
+                label="Total Plays"
+                value={formatStat(creatorStats?.plays)}
+                icon={Play}
+                color="text-neon-cyan"
+              />
+              <Metric
+                label="Creator Score"
+                value={formatStat(creatorStats?.creatorScore)}
+                icon={Trophy}
                 color="text-neon-green"
               />
-              <Metric label="AI Agents" value="18" icon={Bot} color="text-neon-pink" />
+              <Metric
+                label="Kult Points"
+                value={formatStat(creatorStats?.lifetimePoints)}
+                icon={Zap}
+                color="text-neon-pink"
+              />
             </div>
             <div className="mt-2 flex items-end justify-between rounded-md bg-background/50 p-4">
               <div>
-                <p className="text-xs text-muted-foreground">Active Players</p>
-                <strong className="mt-1 block text-2xl">4.3K</strong>
+                <p className="text-xs text-muted-foreground">Followers</p>
+                <strong className="mt-1 block text-2xl">{formatStat(creatorStats?.followers)}</strong>
               </div>
               <svg viewBox="0 0 120 38" className="h-12 w-36" aria-hidden="true">
                 <polyline
@@ -499,7 +690,7 @@ function Home() {
           </Panel>
         </aside>
 
-        <div className="min-w-0 space-y-3 xl:col-span-2">
+        <div className="hidden min-w-0 space-y-3 md:block xl:col-span-2">
           {visibleShelves.slice(3).map((shelf) => (
             <GameShelf
               key={shelf.title}
