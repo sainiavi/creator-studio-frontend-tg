@@ -362,16 +362,16 @@ function Profile() {
 
   const stats = [
     { label: "Games", value: String(createdGames.length) },
-    { label: "KULT Points", value: formatStat(creatorStats?.lifetimePoints) },
+    { label: "Creator Score", value: formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore ?? creatorStats?.lifetimePoints) },
     { label: "Plays", value: formatStat(creatorStats?.plays) },
     { label: "Likes", value: formatStat(creatorStats?.likes) },
     { label: "Followers", value: formatStat(creatorStats?.followers) },
   ];
   const todayPoints = creatorStats?.currentDay
-    ? creatorStats.dailyPoints?.[creatorStats.currentDay] ?? 0
+    ? creatorStats.dailyScore?.[creatorStats.currentDay] ?? creatorStats.dailyPoints?.[creatorStats.currentDay] ?? 0
     : 0;
   const weekPoints = creatorStats?.currentWeek
-    ? creatorStats.weeklyPoints?.[creatorStats.currentWeek] ?? 0
+    ? creatorStats.weeklyScore?.[creatorStats.currentWeek] ?? creatorStats.weeklyPoints?.[creatorStats.currentWeek] ?? 0
     : 0;
 
   const filteredActivities = activities.filter((activity) => {
@@ -435,7 +435,7 @@ function Profile() {
               <span className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
                 <Gift className="size-4" /> Referral rewards
               </span>
-              <h3 className="mt-2 font-display text-2xl font-black">Invite players. Earn 5 KP per qualified referral play.</h3>
+              <h3 className="mt-2 font-display text-2xl font-black">Invite players. Earn KP and Creator Score.</h3>
               <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
                 Referral rewards land after a referred player completes an authenticated game session
                 longer than 30 seconds.
@@ -444,11 +444,11 @@ function Profile() {
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <div className="rounded-xl border border-border/60 bg-background/45 px-5 py-3 text-center">
                 <p className="font-display text-xl font-black">{formatStat(todayPoints)}</p>
-                <p className="label-mono text-[8px] text-muted-foreground">Today KP</p>
+                <p className="label-mono text-[8px] text-muted-foreground">Today CS</p>
               </div>
               <div className="rounded-xl border border-border/60 bg-background/45 px-5 py-3 text-center">
                 <p className="font-display text-xl font-black">{formatStat(weekPoints)}</p>
-                <p className="label-mono text-[8px] text-muted-foreground">Week KP</p>
+                <p className="label-mono text-[8px] text-muted-foreground">Week CS</p>
               </div>
               <div className="rounded-xl border border-border/60 bg-background/45 px-5 py-3 text-center">
                 <p className="font-display text-xl font-black">{referral?.count ?? 0}</p>

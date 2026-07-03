@@ -175,6 +175,10 @@ export type CreatorStats = {
   plays: number;
   likes: number;
   followers: number;
+  creatorScore: number;
+  lifetimeScore: number;
+  dailyScore: Record<string, number>;
+  weeklyScore: Record<string, number>;
   lifetimePoints: number;
   dailyPoints: Record<string, number>;
   weeklyPoints: Record<string, number>;
@@ -189,6 +193,7 @@ export async function fetchCreatorStats(creatorId: string) {
 
 export type PointSummary = {
   userId: string;
+  kultPoints: number;
   lifetimePoints: number;
   dailyPoints: Record<string, number>;
   weeklyPoints: Record<string, number>;

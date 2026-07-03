@@ -169,7 +169,7 @@ function GameEditor() {
       }
       const response = await api.post(`/games/${encodeURIComponent(gameId)}/publish`);
       const publishedGame = response.data?.game ?? game;
-      const awardedPoints = response.data?.points?.awarded ? Number(response.data.points.points ?? 0) : 0;
+      const awardedPoints = response.data?.points?.awarded ? Number(response.data.points.cs ?? response.data.points.points ?? 0) : 0;
       setPublishPoints(awardedPoints > 0 ? awardedPoints : null);
       setGame(publishedGame);
       addCreatedGame(publishedGame);
@@ -603,7 +603,7 @@ function GameEditor() {
               <>
                 {publishPoints != null && (
                   <div className="mt-4 rounded-lg border border-primary/35 bg-primary/10 px-3 py-2 text-sm font-bold text-primary">
-                    +{publishPoints} KULT Points. You are now on the New leaderboard.
+                    +{publishPoints} Creator Score. You are now on the New leaderboard.
                   </div>
                 )}
                 <div className="mt-5 flex gap-2 rounded-xl border border-border/60 bg-background/60 p-2 pl-3">

@@ -156,7 +156,7 @@ function Home() {
 
   useEffect(() => {
     fetchPointSummary(getCurrentUserId())
-      .then((summary) => setKultPoints(summary.lifetimePoints ?? 0))
+      .then((summary) => setKultPoints(summary.kultPoints ?? summary.lifetimePoints ?? 0))
       .catch(() => {});
   }, []);
 
