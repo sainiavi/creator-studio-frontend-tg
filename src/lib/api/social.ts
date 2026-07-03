@@ -203,6 +203,13 @@ export async function fetchCreatorStats(creatorId: string) {
 export type PointSummary = {
   userId: string;
   kultPoints: number;
+  level: null | {
+    level: number;
+    points: number;
+    currentLevelPoints: number;
+    nextLevelPoints: number;
+    progress: number;
+  };
   lifetimePoints: number;
   dailyPoints: Record<string, number>;
   weeklyPoints: Record<string, number>;
@@ -272,4 +279,26 @@ export async function fetchNotifications(userId: string, unreadOnly = false) {
 export async function markNotificationsRead(userId: string) {
   const { data } = await api.post(`/social/notifications/${encodeURIComponent(userId)}/read`);
   return data as { userId: string; updated: number };
+}
+
+export type EconomyLeaderboardEntry = {
+  rank: number;
+  userId?: string;
+  walletAddress?: string;
+  creatorId?: string;
+  kultPoints?: number;
+  creatorScore?: number;
+  lifetimeScore?: number;
+  level?: PointSummary["level"];
+};
+
+export async function fetchEconomyLeaderboard(
+  economy: "kp" | "cs",
+  period: "weekly" | "all-time" = "all-time",
+  limit = 100,
+) {
+  const { data } = await api.get("/social/economy-leaderboard", {
+    params: { economy, period, limit },
+  });
+  return data as { economy: "kp" | "cs"; period: string; entries: EconomyLeaderboardEntry[] };
 }

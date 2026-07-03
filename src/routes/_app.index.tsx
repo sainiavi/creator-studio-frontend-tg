@@ -125,6 +125,7 @@ function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Game[]>([]);
   const [kultPoints, setKultPoints] = useState(0);
+  const [kpLevel, setKpLevel] = useState(1);
   const [, setIsSearching] = useState(false);
   const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -211,7 +212,10 @@ function Home() {
 
   useEffect(() => {
     fetchPointSummary(getCurrentUserId())
-      .then((summary) => setKultPoints(summary.kultPoints ?? summary.lifetimePoints ?? 0))
+      .then((summary) => {
+        setKultPoints(summary.kultPoints ?? summary.lifetimePoints ?? 0);
+        setKpLevel(summary.level?.level ?? 1);
+      })
       .catch(() => {});
   }, []);
 
@@ -426,7 +430,7 @@ function Home() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-md border border-border/60 bg-card/70 px-3 py-2 text-xs font-bold">
-            <Zap className="size-4 text-neon-violet" /> {formatCount(kultPoints)} KP
+            <Zap className="size-4 text-neon-violet" /> Level {kpLevel} · {formatCount(kultPoints)} KP
           </div>
           <button
             type="button"
