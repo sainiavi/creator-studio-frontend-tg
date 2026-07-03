@@ -39,17 +39,14 @@ import { templateToGame, getThumbnailUrl, resolveGameThumbnail } from "@/lib/stu
 import type { Game } from "@/lib/games-data";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
-<<<<<<< Updated upstream
-import { fetchPointSummary } from "@/lib/api/social";
-=======
 import {
   fetchCreatorStats,
   fetchNotifications,
+  fetchPointSummary,
   markNotificationsRead,
   type CreatorStats,
   type NotificationItem,
 } from "@/lib/api/social";
->>>>>>> Stashed changes
 import { getCurrentUserId } from "@/lib/identity";
 
 export const Route = createFileRoute("/_app/")({

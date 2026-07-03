@@ -401,21 +401,13 @@ function Profile() {
         })
       : null;
 
-<<<<<<< Updated upstream
-  const stats = [
-    { label: "Games", value: String(createdGames.length) },
-    { label: "Creator Score", value: formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore ?? creatorStats?.lifetimePoints) },
-    { label: "Plays", value: formatStat(creatorStats?.plays) },
-    { label: "Likes", value: formatStat(creatorStats?.likes) },
-    { label: "Followers", value: formatStat(creatorStats?.followers) },
-  ];
   const todayPoints = creatorStats?.currentDay
     ? creatorStats.dailyScore?.[creatorStats.currentDay] ?? creatorStats.dailyPoints?.[creatorStats.currentDay] ?? 0
     : 0;
   const weekPoints = creatorStats?.currentWeek
     ? creatorStats.weeklyScore?.[creatorStats.currentWeek] ?? creatorStats.weeklyPoints?.[creatorStats.currentWeek] ?? 0
     : 0;
-=======
+
   const saveDisplayName = () => {
     const savedName = setCurrentUsername(draftDisplayName);
     setDisplayName(savedName);
@@ -444,7 +436,6 @@ function Profile() {
       setNotifications((current) => current.map((notification) => ({ ...notification, read: true })));
     }).catch(() => null);
   };
->>>>>>> Stashed changes
 
   const filteredActivities = activities.filter((activity) => {
     const actDate = new Date(activity.timestamp);
@@ -550,13 +541,6 @@ function Profile() {
                 </div>
               )}
             </div>
-<<<<<<< Updated upstream
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
-              {stats.map((s) => (
-                <div key={s.label} className="rounded-xl border border-border/60 bg-background/40 p-3 text-center">
-                  <p className="font-display text-lg font-black">{s.value}</p>
-                  <p className="label-mono text-[8px] text-muted-foreground">{s.label}</p>
-=======
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -565,9 +549,8 @@ function Profile() {
                 <div className="min-w-0">
                   <p className="label-mono text-[0.68rem] font-black leading-none text-amber-300">CREATOR SCORE</p>
                   <p className="mt-1.5 font-display text-3xl font-black leading-none text-amber-300">
-                    {formatStat(creatorStats?.creatorScore)}
+                    {formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore)}
                   </p>
->>>>>>> Stashed changes
                 </div>
                 <span className="grid size-8 shrink-0 place-items-center rounded-full bg-amber-300/20 text-amber-300 shadow-[0_0_14px_oklch(0.82_0.18_80_/_0.28)]">
                   <Trophy className="size-4" />

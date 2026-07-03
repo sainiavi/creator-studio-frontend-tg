@@ -183,7 +183,7 @@ export type CreatorStats = {
   shares: number;
   remixes: number;
   followers: number;
-<<<<<<< Updated upstream
+  featured: number;
   creatorScore: number;
   lifetimeScore: number;
   dailyScore: Record<string, number>;
@@ -193,11 +193,6 @@ export type CreatorStats = {
   weeklyPoints: Record<string, number>;
   currentDay: string | null;
   currentWeek: string | null;
-=======
-  featured: number;
-  creatorScore: number;
-  lifetimePoints: number;
->>>>>>> Stashed changes
 };
 
 export async function fetchCreatorStats(creatorId: string) {
@@ -205,7 +200,6 @@ export async function fetchCreatorStats(creatorId: string) {
   return data as CreatorStats;
 }
 
-<<<<<<< Updated upstream
 export type PointSummary = {
   userId: string;
   kultPoints: number;
@@ -220,7 +214,8 @@ export type PointSummary = {
 export async function fetchPointSummary(userId: string) {
   const { data } = await api.get(`/social/points/${encodeURIComponent(userId)}`);
   return data as PointSummary;
-=======
+}
+
 export type DailyChallenge = {
   id: string;
   title: string;
@@ -277,5 +272,4 @@ export async function fetchNotifications(userId: string, unreadOnly = false) {
 export async function markNotificationsRead(userId: string) {
   const { data } = await api.post(`/social/notifications/${encodeURIComponent(userId)}/read`);
   return data as { userId: string; updated: number };
->>>>>>> Stashed changes
 }
