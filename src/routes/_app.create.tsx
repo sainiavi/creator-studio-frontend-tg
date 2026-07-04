@@ -120,6 +120,14 @@ function Create() {
         { role: "user", text: remixPrompt },
       ]);
       studio.setPrompt(remixPrompt);
+      return;
+    }
+    // Idea typed into the home hero box: pre-fill the chat input so the user
+    // just hits send (or edits it first).
+    const heroPrompt = sessionStorage.getItem("kult-create-prompt");
+    if (heroPrompt) {
+      sessionStorage.removeItem("kult-create-prompt");
+      setChatInput(heroPrompt);
     }
   }, []);
 

@@ -216,9 +216,7 @@ function Home() {
 
     return () => clearTimeout(handler);
   }, [searchQuery]);
-  const [prompt, setPrompt] = useState(
-    "Create a cyberpunk racing game with AI drivers and neon city rewards.",
-  );
+  const [prompt, setPrompt] = useState("");
 
   useEffect(() => {
     fetchPointSummary(getCurrentUserId())
@@ -418,7 +416,10 @@ function Home() {
   }, [mobileFeedTab, mobileFeedTabs]);
 
   const create = () => {
-    studio.setPrompt(prompt);
+    const value = prompt.trim();
+    studio.setPrompt(value);
+    // Hand the typed idea to the create page, which drops it into its chat input.
+    if (value) sessionStorage.setItem("kult-create-prompt", value);
     navigate({ to: "/create" });
   };
 
@@ -523,7 +524,7 @@ function Home() {
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
                   className="h-20 w-full resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
-                  placeholder="Describe your game..."
+                  placeholder="Create your own game, share it with friends & earn rewards ✨ Describe your idea..."
                   maxLength={500}
                 />
                 <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3">
