@@ -15,11 +15,13 @@ import {
   fetchDailyChallenges,
   fetchFollowing,
   fetchNotifications,
+  fetchPointSummary,
   markNotificationsRead,
   type AchievementSummary,
   type CreatorStats,
   type DailyChallenge,
   type NotificationItem,
+  type PointSummary,
 } from "@/lib/api/social";
 import { getCurrentUserId, getCurrentUsername, getWalletAddress, setCurrentUsername } from "@/lib/identity";
 import { api } from "@/lib/api";
@@ -216,6 +218,7 @@ function Profile() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [openPanel, setOpenPanel] = useState<"challenges" | "achievements" | "notifications" | null>(null);
   const [followingCount, setFollowingCount] = useState(0);
+  const [pointSummary, setPointSummary] = useState<PointSummary | null>(null);
   const [displayName, setDisplayName] = useState(() => getCurrentUsername());
   const [draftDisplayName, setDraftDisplayName] = useState(displayName);
   const [editingDisplayName, setEditingDisplayName] = useState(false);
@@ -371,6 +374,7 @@ function Profile() {
     const userId = getCurrentUserId();
     fetchCreatorStats(userId).then(setCreatorStats).catch(() => {});
     fetchFollowing(userId).then((data) => setFollowingCount(data.following?.length ?? 0)).catch(() => {});
+    fetchPointSummary(userId).then(setPointSummary).catch(() => {});
     fetchDailyChallenges(userId).then((data) => setDailyChallenges(data.challenges)).catch(() => {});
     fetchAchievements(userId).then(setAchievementSummary).catch(() => {});
     fetchNotifications(userId).then((data) => setNotifications(data.notifications)).catch(() => {});
@@ -562,7 +566,10 @@ function Profile() {
                 <div className="min-w-0">
                   <p className="label-mono text-[0.68rem] font-black leading-none text-primary">KULT POINTS (KP)</p>
                   <p className="mt-1.5 font-display text-3xl font-black leading-none text-primary">
-                    {formatStat(creatorStats?.lifetimePoints)}
+                    {formatStat(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
+                  </p>
+                  <p className="mt-1 label-mono text-[0.62rem] font-bold text-primary/75">
+                    Level {pointSummary?.level?.level ?? 1}
                   </p>
                 </div>
                 <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-[0.68rem] font-black text-primary-foreground shadow-[0_0_14px_oklch(0.72_0.25_305_/_0.32)]">
