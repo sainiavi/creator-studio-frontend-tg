@@ -95,6 +95,9 @@ function Create() {
   const [gameRequest, setGameRequest] = useState("");
   const [vibeRequest, setVibeRequest] = useState("");
   const [selectedConcept, setSelectedConcept] = useState("");
+  // The confirmed prompt, waiting for the user to pick a strategy. Nothing
+  // builds until one of the two mode buttons is clicked.
+  const [finalPrompt, setFinalPrompt] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "assistant", text: "Hey there! What kind of game do you want to create?" },
   ]);
@@ -147,7 +150,9 @@ function Create() {
 
   const build = async (strategy: "pure-agent" | "hybrid", promptOverride = "") => {
     const pendingInput = chatInput.trim();
-    const promptWithPendingInput = [chatPrompt || studio.prompt, pendingInput].filter(Boolean).join(". ");
+    const promptWithPendingInput = [finalPrompt || chatPrompt || studio.prompt, pendingInput]
+      .filter(Boolean)
+      .join(". ");
     const buildPrompt = promptOverride || promptWithPendingInput;
     if (!buildPrompt.trim() || phase === "building") return;
     const game = await studio.generateFromPrompt(strategy, buildPrompt);
@@ -194,7 +199,7 @@ function Create() {
         { role: "assistant", text: concept },
         {
           role: "assistant",
-          text: "Say “Ok, create it!” when you want me to build this from the closest playable template.",
+          text: "Say “Ok, create it!” to lock this concept in, then pick Hybrid Mode or Pure Agent Strategy to build it.",
         },
       ]);
       return;
@@ -204,13 +209,16 @@ function Create() {
       const extraPrompt = isCreateConfirmation(value) ? "" : value;
       const prompt = [gameRequest, vibeRequest, selectedConcept, extraPrompt].filter(Boolean).join(". ");
       studio.setPrompt(prompt);
+      setFinalPrompt(prompt);
       setChatStage("ready");
       setMessages((current) => [
         ...current,
         { role: "user", text: value },
-        { role: "assistant", text: `I've created a plan for you. Building ${selectedConcept.split(":")[0]} from a matching template now.` },
+        {
+          role: "assistant",
+          text: `Plan ready for ${selectedConcept.split(":")[0]}! Choose Hybrid Mode or Pure Agent Strategy below to start building.`,
+        },
       ]);
-      void build("hybrid", prompt);
     }
   };
 
@@ -225,14 +233,17 @@ function Create() {
 
     const prompt = [gameRequest, vibeRequest, selectedConcept, value].filter(Boolean).join(". ");
     studio.setPrompt(prompt);
+    setFinalPrompt(prompt);
     setChatInput("");
     setChatStage("ready");
     setMessages((current) => [
       ...current,
       { role: "user", text: value },
-      { role: "assistant", text: "Got it. I am treating that as your prompt and building it now." },
+      {
+        role: "assistant",
+        text: "Got it — that's your prompt. Choose Hybrid Mode or Pure Agent Strategy below to start building.",
+      },
     ]);
-    void build("hybrid", prompt);
   };
 
   const freshChat = chatStage === "game" && messages.length <= 1;
