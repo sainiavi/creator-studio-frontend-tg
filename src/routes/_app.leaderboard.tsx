@@ -250,7 +250,7 @@ function Leaderboard() {
         subtitle="Creator ranks by Creator Score · Player ranks by KULT Points"
       />
 
-      <div className="mx-auto max-w-5xl px-4 py-6 pb-28 sm:px-6 lg:px-10 lg:pb-6">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-10">
         <div className="mb-5 flex flex-col items-center justify-center gap-3">
           <div className="inline-flex w-fit rounded-xl border border-border/60 bg-card/60 p-1 shadow-card">
             <button
