@@ -422,6 +422,8 @@ function PlayFeed() {
       });
   const isCustomCreation = Boolean(generatedPackageMatches || customGame);
   const isShareable = !isCustomCreation || pkg?.publish?.published === true;
+  const baseRemixCount = Number((customGame as any)?.remixes ?? (pkg as any)?.remixes ?? 0);
+  const [remixCount, setRemixCount] = useState(baseRemixCount);
   const social = useSocial(gameId);
   // Real follow state: target the game's creator (template games fall back to
   // a stable pseudo-creator id derived from the displayed creator name).
@@ -430,6 +432,7 @@ function PlayFeed() {
   const follow = useFollow(creatorId);
   const isFollowing = follow.following;
   const setIsFollowing = (_next?: boolean) => {
+    if (follow.isSelf) return;
     void follow.toggle();
   };
   // Count a real play once per game per browser session.
@@ -444,6 +447,21 @@ function PlayFeed() {
       .then((r) => setViewCount(r.views))
       .catch(() => {});
   }, [gameId]);
+  useEffect(() => {
+    setRemixCount(baseRemixCount);
+  }, [baseRemixCount, gameId]);
+
+  const handleRemix = useCallback(() => {
+    const seed = [
+      `Remix ${game.title}`,
+      (pkg as any)?.gameplay?.mechanic || template.mechanic || `${template.category ?? "Arcade"} game`,
+      "Keep the core mechanics, physics, controls, and pacing.",
+      "Change the theme, characters, visual style, and one gameplay twist.",
+    ].join(". ");
+    sessionStorage.setItem("kult-remix-prompt", seed);
+    setRemixCount((count) => count + 1);
+    navigate({ to: "/create" });
+  }, [game.title, navigate, pkg, template.category, template.mechanic]);
   if (viewCount != null) game.plays = viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}K` : String(viewCount);
   const isMobile = useIsMobile();
   const leaderboard = useLeaderboard(gameId);
@@ -751,7 +769,7 @@ function PlayFeed() {
 
   const socialButtons = (
     <>
-      <FollowSidebarButton following={isFollowing} onToggle={() => setIsFollowing(!isFollowing)} />
+      <RemixSidebarButton count={remixCount} onRemix={handleRemix} />
       <LeaderboardButton onClick={() => setLeaderboardOpen(true)} />
       <ShareButton
         count={social.shareCount}
@@ -947,9 +965,11 @@ function PlayFeed() {
                   )}
                   <button
                     onClick={() => setIsFollowing(!isFollowing)}
-                    className="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-black hover:bg-white/90 transition-colors"
+                    disabled={follow.isSelf}
+                    className="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-black transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-45"
+                    title={follow.isSelf ? "You cannot follow yourself" : undefined}
                   >
-                    {isFollowing ? "Following" : "Follow"}
+                    {follow.isSelf ? "You" : isFollowing ? "Following" : "Follow"}
                   </button>
                 </div>
               </div>
@@ -1113,6 +1133,28 @@ function FollowSidebarButton({
       </span>
       <span className="text-[10px] font-black lg:text-[10px]">
         {following ? "Following" : "Follow"}
+      </span>
+    </button>
+  );
+}
+
+function RemixSidebarButton({
+  count,
+  onRemix,
+}: {
+  count: number;
+  onRemix: () => void;
+}) {
+  return (
+    <button
+      onClick={onRemix}
+      className="group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 lg:min-w-12"
+    >
+      <span className="grid size-11 place-items-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.42)] transition duration-300 group-hover:brightness-110 lg:size-10">
+        <Shuffle className="size-5 text-white" />
+      </span>
+      <span className="text-[10px] font-black lg:text-[10px]">
+        {formatCount(count)}
       </span>
     </button>
   );
@@ -1654,12 +1696,24 @@ function DetailsModal({
   isFollowing,
   setIsFollowing,
 }: any) {
+  const navigate = useNavigate();
   if (!open) return null;
 
   const title = generatedPackageMatches ? pkg.title : template.name;
   const description = generatedPackageMatches ? pkg.gameplay?.mechanic : template.mechanic;
   // The game's own cover when it has one, else the template cover.
   const thumbnailSrc = (pkg as any)?.thumbnailUrl || getThumbnailUrl(template.id);
+  const remix = () => {
+    const seed = [
+      `Remix ${title}`,
+      description || `${template.category ?? "Arcade"} game`,
+      "Keep the core mechanics, physics, controls, and pacing.",
+      "Change the theme, characters, visual style, and one gameplay twist.",
+    ].join(". ");
+    sessionStorage.setItem("kult-remix-prompt", seed);
+    onClose();
+    navigate({ to: "/create" });
+  };
 
   return (
     <>
@@ -1715,7 +1769,11 @@ function DetailsModal({
               </div>
               <span className="font-bold text-white text-base">@{profile.name}</span>
             </div>
-            <button className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur-md transition hover:bg-white/20">
+            <button
+              type="button"
+              onClick={remix}
+              className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur-md transition hover:bg-white/20"
+            >
               <Shuffle size={16} /> Remix
             </button>
           </div>

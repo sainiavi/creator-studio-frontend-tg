@@ -83,7 +83,7 @@ export async function fetchFavoriteStatus(gameId: string, userId?: string) {
 
 // ─── Shares ────────────────────────────────────────────────────────────────
 
-export type SharePlatform = "link" | "twitter" | "discord" | "telegram" | "whatsapp" | "embed" | "instagram" | "email";
+export type SharePlatform = "link" | "twitter" | "discord" | "telegram" | "whatsapp" | "embed" | "instagram" | "email" | "youtube";
 
 export async function recordShare(
   gameId: string,

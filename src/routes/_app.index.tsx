@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type ComponentType,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -23,13 +24,18 @@ import {
   ChevronRight,
   Gamepad2,
   Globe2,
+  Heart,
+  MessageCircle,
   Pencil,
   Play,
+  Repeat2,
   Rocket,
   Search,
+  Share2,
   Sparkles,
   Trophy,
   TrendingUp,
+  Users,
   WandSparkles,
   X,
   Zap,
@@ -43,10 +49,13 @@ import {
   fetchCreatorStats,
   fetchNotifications,
   fetchPointSummary,
+  fetchSocialStats,
   markNotificationsRead,
+  toggleLike,
   type CreatorStats,
   type NotificationItem,
 } from "@/lib/api/social";
+import { ShareGameModal } from "@/components/studio/ShareGameModal";
 import { getCurrentUserId } from "@/lib/identity";
 
 export const Route = createFileRoute("/_app/")({
@@ -190,6 +199,7 @@ function Home() {
             emoji: "🎮",
             gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
             creator: g.creator ?? "you",
+            creatorId: g.creatorId,
             thumbnailUrl: resolveGameThumbnail(g),
             templateId: g.id ?? g.templateId,
             prompt: g.customization?.prompt || "",
@@ -233,6 +243,7 @@ function Home() {
           emoji: "🎮",
           gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
           creator: "you",
+          creatorId: g.creatorId ?? getCurrentUserId(),
           thumbnailUrl: resolveGameThumbnail(g),
           templateId: g.id ?? g.templateId,
           prompt: g.customization?.prompt || "",
@@ -268,6 +279,7 @@ function Home() {
           creator: g.creatorId?.startsWith("0x")
             ? `${g.creatorId.slice(0, 6)}…${g.creatorId.slice(-4)}`
             : "community",
+          creatorId: g.creatorId,
           thumbnailUrl: resolveGameThumbnail(g),
           templateId: g.id ?? g.templateId,
           likes: Number(g.points?.likes ?? 0),
@@ -556,7 +568,7 @@ function Home() {
                   })}
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-3 grid grid-cols-1 gap-2">
                 {selectedMobileFeed.games.slice(0, 12).map((game, index) => (
                   <GameTile
                     key={`${selectedMobileFeed.label}-${game.title}-${index}`}
@@ -936,11 +948,109 @@ const FALLBACK_COVER =
     </svg>`,
   );
 
+// Creator stats are shared by every tile from the same creator — fetch once
+// per creator per page load, not once per tile.
+const creatorStatsCache = new Map<string, Promise<CreatorStats | null>>();
+
+function getCreatorStats(creatorId: string) {
+  let promise = creatorStatsCache.get(creatorId);
+  if (!promise) {
+    promise = fetchCreatorStats(creatorId).catch(() => null);
+    creatorStatsCache.set(creatorId, promise);
+  }
+  return promise;
+}
+
 function GameTile({ game, onOpen, onDelete, onEdit }: { game: Game; onOpen: () => void; onDelete?: () => void; onEdit?: () => void }) {
+  const navigate = useNavigate();
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const tileRef = useRef<HTMLDivElement>(null);
+  const [liked, setLiked] = useState(false);
+  const [likes, setLikes] = useState(game.likes ?? 0);
+  const [comments, setComments] = useState(0);
+  const [shares, setShares] = useState(game.shares ?? 0);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [creatorMeta, setCreatorMeta] = useState<{ followers: number; remixes: number } | null>(null);
+
+  // Real counts come from the social API, but only once the tile scrolls into
+  // view — the "view all" grid can hold 100+ tiles and must not fire 100 GETs.
+  useEffect(() => {
+    const gameId = game.templateId;
+    const creatorId = game.creatorId;
+    const node = tileRef.current;
+    if ((!gameId && !creatorId) || !node) return;
+    let cancelled = false;
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      observer.disconnect();
+      if (gameId) {
+        fetchSocialStats(gameId, getCurrentUserId())
+          .then((stats) => {
+            if (cancelled) return;
+            setLiked(stats.likes.liked);
+            setLikes(stats.likes.count);
+            setComments(stats.comments.count);
+            setShares(stats.shares.count);
+          })
+          .catch(() => {});
+      }
+      if (creatorId) {
+        void getCreatorStats(creatorId).then((stats) => {
+          if (cancelled || !stats) return;
+          setCreatorMeta({ followers: stats.followers ?? 0, remixes: stats.remixes ?? 0 });
+        });
+      }
+    });
+    observer.observe(node);
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [game.templateId, game.creatorId]);
+
+  const like = async () => {
+    setLiked((value) => !value);
+    setLikes((value) => Math.max(0, value + (liked ? -1 : 1)));
+    if (!game.templateId) return;
+    const result = await toggleLike(game.templateId, getCurrentUserId()).catch(() => null);
+    if (result) {
+      setLiked(result.liked);
+      setLikes(result.count);
+    }
+  };
+
+  const share = async () => {
+    // Real games open the full share modal; showcase cards without a backend
+    // id have no shareable play URL, so just copy the current page link.
+    if (game.templateId) {
+      setShareOpen(true);
+      return;
+    }
+    await navigator.clipboard?.writeText(window.location.href).catch(() => null);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 1500);
+  };
+
+  const remix = () => {
+    const seed = [
+      `Remix ${game.title}`,
+      game.prompt || `${game.category} game by ${game.creator}`,
+      "Keep the core mechanics, physics, controls, and pacing.",
+      "Change the theme, characters, visual style, and one gameplay twist.",
+    ].join(". ");
+    sessionStorage.setItem("kult-remix-prompt", seed);
+    navigate({ to: "/create" });
+  };
+
+  const stopTilePress = {
+    onPointerDown: (event: ReactPointerEvent) => event.stopPropagation(),
+    onPointerUp: (event: ReactPointerEvent) => event.stopPropagation(),
+  };
 
   return (
     <div
+      ref={tileRef}
       role="button"
       tabIndex={0}
       onPointerDown={(event) => {
@@ -959,13 +1069,14 @@ function GameTile({ game, onOpen, onDelete, onEdit }: { game: Game; onOpen: () =
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") onOpen();
       }}
-      className="group w-full min-w-0 overflow-hidden rounded-md border border-border/50 bg-background/40 text-left transition hover:border-primary/50"
+      className="group w-full min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-card text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-neon"
     >
       <div className="relative aspect-square overflow-hidden">
         <img
           src={game.thumbnailUrl}
           alt=""
           draggable={false}
+          loading="lazy"
           onError={(event) => {
             const img = event.currentTarget;
             if (img.dataset.fallback) return;
@@ -974,17 +1085,22 @@ function GameTile({ game, onOpen, onDelete, onEdit }: { game: Game; onOpen: () =
           }}
           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/55" />
+        <span className="label-mono absolute left-2 top-2 rounded-md bg-black/45 px-2 py-1 text-[9px] text-white backdrop-blur">
+          {game.category}
+        </span>
+        <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/55 px-2 py-1 text-[10px] font-bold text-white backdrop-blur">
+          <Play className="size-3" /> {game.plays}
+        </span>
         {onEdit && (
           <button
             title={`Edit ${game.title}`}
-            onPointerDown={(event) => event.stopPropagation()}
-            onPointerUp={(event) => event.stopPropagation()}
+            {...stopTilePress}
             onClick={(event) => {
               event.stopPropagation();
               onEdit();
             }}
-            className="absolute left-1.5 top-1.5 z-10 grid size-6 place-items-center rounded-md bg-black/60 text-white/80 opacity-0 transition group-hover:opacity-100 hover:bg-primary hover:text-primary-foreground"
+            className="absolute left-2 top-9 z-10 grid size-7 place-items-center rounded-md bg-black/60 text-white/80 opacity-0 transition group-hover:opacity-100 hover:bg-primary hover:text-primary-foreground"
           >
             <Pencil className="size-3.5" />
           </button>
@@ -992,25 +1108,100 @@ function GameTile({ game, onOpen, onDelete, onEdit }: { game: Game; onOpen: () =
         {onDelete && (
           <button
             title={`Delete ${game.title}`}
-            onPointerDown={(event) => event.stopPropagation()}
-            onPointerUp={(event) => event.stopPropagation()}
+            {...stopTilePress}
             onClick={(event) => {
               event.stopPropagation();
               if (window.confirm(`Delete "${game.title}"? This cannot be undone.`)) onDelete();
             }}
-            className="absolute right-1.5 top-1.5 z-10 grid size-6 place-items-center rounded-md bg-black/60 text-white/80 opacity-0 transition group-hover:opacity-100 hover:bg-red-600 hover:text-white"
+            className="absolute right-2 top-2 z-10 grid size-7 place-items-center rounded-md bg-black/60 text-white/80 opacity-0 transition group-hover:opacity-100 hover:bg-red-600 hover:text-white"
           >
             <X className="size-3.5" />
           </button>
         )}
       </div>
-      <div className="p-2">
-        <p className="truncate text-[11px] font-bold">{game.title}</p>
-        <div className="mt-1 flex items-center justify-between text-[9px] text-muted-foreground">
-          <span className="truncate">{game.category}</span>
-          <span className="shrink-0">{game.plays}</span>
+      <div className="p-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="truncate font-display text-xs font-bold">{game.title}</p>
+          <span className="label-mono shrink-0 text-[8px] text-muted-foreground">{game.creator}</span>
+        </div>
+        {creatorMeta && (
+          <div className="mt-1.5 flex items-center gap-3 text-[9px] text-muted-foreground">
+            <span className="flex items-center gap-1" title={`${game.creator} has ${creatorMeta.followers} followers`}>
+              <Users className="size-3 text-neon-cyan" /> {formatCount(creatorMeta.followers)} followers
+            </span>
+            <span className="flex items-center gap-1" title={`${game.creator}'s games were remixed ${creatorMeta.remixes} times`}>
+              <Repeat2 className="size-3 text-neon-violet" /> {formatCount(creatorMeta.remixes)} remixes
+            </span>
+          </div>
+        )}
+        <div className="mt-2 flex items-center justify-between border-t border-border/50 pt-2">
+          <button
+            type="button"
+            title="Like"
+            aria-label={`Like ${game.title}`}
+            {...stopTilePress}
+            onClick={(event) => {
+              event.stopPropagation();
+              void like();
+            }}
+            className={`flex min-w-0 items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold transition ${
+              liked ? "text-rose-400" : "text-muted-foreground hover:text-rose-400"
+            }`}
+          >
+            <Heart className={`size-3.5 ${liked ? "fill-current" : ""}`} /> {formatCount(likes)}
+          </button>
+          <button
+            type="button"
+            title="Comments"
+            aria-label={`Comments on ${game.title}`}
+            {...stopTilePress}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpen();
+            }}
+            className="flex min-w-0 items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold text-muted-foreground transition hover:text-neon-cyan"
+          >
+            <MessageCircle className="size-3.5" /> {formatCount(comments)}
+          </button>
+          <button
+            type="button"
+            title={shareCopied ? "Link copied!" : "Share"}
+            aria-label={`Share ${game.title}`}
+            {...stopTilePress}
+            onClick={(event) => {
+              event.stopPropagation();
+              void share();
+            }}
+            className="flex min-w-0 items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold text-muted-foreground transition hover:text-neon-green"
+          >
+            <Share2 className="size-3.5" /> {shareCopied ? "✓" : formatCount(shares)}
+          </button>
+          <button
+            type="button"
+            title="Remix this game"
+            aria-label={`Remix ${game.title}`}
+            {...stopTilePress}
+            onClick={(event) => {
+              event.stopPropagation();
+              remix();
+            }}
+            className="flex min-w-0 items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary transition hover:bg-primary hover:text-primary-foreground"
+          >
+            <Repeat2 className="size-3.5" /> Remix
+          </button>
         </div>
       </div>
+      {game.templateId && (
+        <ShareGameModal
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          gameId={game.templateId}
+          title={game.title}
+          category={game.category}
+          thumbnailUrl={game.thumbnailUrl}
+          onShared={setShares}
+        />
+      )}
     </div>
   );
 }

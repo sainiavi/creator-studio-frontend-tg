@@ -5,6 +5,8 @@ export type Game = {
   emoji: string;
   gradient: "pink" | "green" | "cyan" | "warm" | "violet";
   creator: string;
+  /** Raw backend creator id (e.g. wallet address) — used to fetch creator stats. */
+  creatorId?: string;
   thumbnailUrl?: string;
   /** When set, the card opens this real template in the Studio. */
   templateId?: string;
