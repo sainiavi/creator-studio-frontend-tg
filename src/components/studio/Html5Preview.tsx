@@ -5,6 +5,7 @@ import { constructGameUrls } from "@/lib/studio-meta";
 export function Html5Preview({ templateId }: { templateId: string }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const gameUrl = constructGameUrls[templateId];
 
   useEffect(() => {
     function handleFullscreenChange() {
@@ -24,14 +25,25 @@ export function Html5Preview({ templateId }: { templateId: string }) {
 
   return (
     <div className="html5-preview-wrap" ref={wrapRef}>
-      <iframe
-        title="HTML5 game preview"
-        src={constructGameUrls[templateId]}
-        width="100%"
-        height="100%"
-        style={{ border: "none" }}
-        allow="autoplay; keyboard"
-      />
+      {gameUrl ? (
+        <iframe
+          title="HTML5 game preview"
+          src={gameUrl}
+          width="100%"
+          height="100%"
+          style={{ border: "none" }}
+          allow="autoplay; keyboard"
+        />
+      ) : (
+        <div className="grid h-full w-full place-items-center bg-[#070a12] px-6 text-center text-white">
+          <div>
+            <p className="font-display text-lg font-black">Template unavailable</p>
+            <p className="mt-2 max-w-xs text-sm text-white/55">
+              This HTML game package is not installed in the app.
+            </p>
+          </div>
+        </div>
+      )}
       <button
         type="button"
         className="fullscreen-button"

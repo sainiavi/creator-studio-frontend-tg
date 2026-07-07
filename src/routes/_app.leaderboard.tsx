@@ -72,10 +72,10 @@ const podiumStyle = {
     badge: "size-9 text-base",
     lift: "-translate-y-5",
     ring: "border-amber-300",
-    glow: "shadow-[0_0_42px_-8px_oklch(0.86_0.19_85_/_0.9)]",
+    glow: "shadow-[0_0_42px_-8px_oklch(0.86_0.19_85_/_0.9),0_18px_60px_-26px_rgba(250,204,21,0.95)]",
     crown: "text-amber-300",
     halo: "bg-amber-300/20",
-    rankBg: "bg-amber-300 text-background",
+    rankBg: "bg-gradient-to-br from-amber-100 via-amber-300 to-yellow-500 text-background shadow-[0_0_22px_-6px_rgba(251,191,36,0.9)]",
   },
   2: {
     order: "order-1",
@@ -83,10 +83,10 @@ const podiumStyle = {
     badge: "size-8 text-sm",
     lift: "translate-y-3",
     ring: "border-slate-200",
-    glow: "shadow-[0_0_36px_-10px_oklch(0.86_0.02_270_/_0.75)]",
+    glow: "shadow-[0_0_36px_-10px_oklch(0.86_0.02_270_/_0.75),0_18px_54px_-30px_rgba(226,232,240,0.9)]",
     crown: "text-slate-200",
     halo: "bg-slate-200/16",
-    rankBg: "bg-slate-200 text-background",
+    rankBg: "bg-gradient-to-br from-white via-slate-200 to-slate-400 text-background shadow-[0_0_18px_-7px_rgba(226,232,240,0.9)]",
   },
   3: {
     order: "order-3",
@@ -94,10 +94,10 @@ const podiumStyle = {
     badge: "size-8 text-sm",
     lift: "translate-y-4",
     ring: "border-orange-300",
-    glow: "shadow-[0_0_36px_-10px_oklch(0.74_0.14_55_/_0.75)]",
+    glow: "shadow-[0_0_36px_-10px_oklch(0.74_0.14_55_/_0.75),0_18px_54px_-30px_rgba(251,146,60,0.9)]",
     crown: "text-orange-300",
     halo: "bg-orange-300/16",
-    rankBg: "bg-orange-300 text-background",
+    rankBg: "bg-gradient-to-br from-orange-100 via-orange-300 to-orange-500 text-background shadow-[0_0_18px_-7px_rgba(251,146,60,0.9)]",
   },
 } as const;
 
@@ -128,10 +128,11 @@ function Podium({
       : "grid min-h-44 grid-cols-3 items-center gap-2 sm:min-h-56 sm:gap-6";
 
   return (
-    <div className="relative mb-6 overflow-hidden rounded-2xl border border-border/50 bg-[oklch(0.045_0.018_282)] px-3 py-8 shadow-card sm:px-6 sm:py-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,oklch(0.72_0.2_315_/_0.2),transparent_34%),radial-gradient(circle_at_24%_38%,oklch(0.86_0.07_265_/_0.13),transparent_28%),radial-gradient(circle_at_76%_40%,oklch(0.74_0.14_55_/_0.14),transparent_30%)]" />
-      <div className="pointer-events-none absolute inset-x-6 top-20 h-36 rounded-full bg-white/7 blur-3xl" />
-      <div className="pointer-events-none absolute inset-x-12 bottom-8 h-12 rounded-full bg-cyan-300/10 blur-2xl" />
+    <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-[oklch(0.045_0.018_282)] px-3 py-8 shadow-[0_24px_70px_-42px_rgba(0,0,0,0.95)] sm:px-6 sm:py-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,oklch(0.86_0.18_85_/_0.2),transparent_31%),radial-gradient(circle_at_24%_38%,oklch(0.64_0.22_282_/_0.16),transparent_30%),radial-gradient(circle_at_76%_40%,oklch(0.74_0.14_55_/_0.16),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_42%)]" />
+      <div className="pointer-events-none absolute inset-x-5 top-4 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-6 top-20 h-36 rounded-full bg-white/8 blur-3xl" />
+      <div className="pointer-events-none absolute inset-x-12 bottom-8 h-12 rounded-full bg-cyan-300/12 blur-2xl" />
       <div className={`relative ${layoutClass}`}>
         {podiumRows.map((row, index) => {
           const style = podiumStyle[row.rank as 1 | 2 | 3];
@@ -144,16 +145,18 @@ function Podium({
               className={`animate-float-up flex min-w-0 flex-col items-center justify-self-center ${placementClass}`}
               style={{ animationDelay: `${(index + 1) * 70}ms`, opacity: 0 }}
             >
-              <Crown className={`mb-1 size-6 drop-shadow ${style.crown} sm:size-8`} />
+              <Crown className={`mb-1 size-6 drop-shadow-[0_0_10px_currentColor] ${style.crown} sm:size-8`} />
               <div className="relative">
                 <div className={`absolute inset-0 rounded-full blur-xl ${style.halo}`} />
+                <div className="absolute -inset-2 rounded-full border border-white/10 bg-white/5 blur-[1px]" />
                 <div
-                  className={`relative overflow-hidden rounded-full border-4 bg-background ${style.size} ${style.ring} ${style.glow}`}
+                  className={`relative overflow-hidden rounded-full border-4 bg-background ring-1 ring-white/20 ${style.size} ${style.ring} ${style.glow}`}
                 >
                   <img src={avatar} alt="" className="size-full object-cover" />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/18 via-transparent to-black/18" />
                 </div>
                 <div
-                  className={`absolute -bottom-3 left-1/2 grid -translate-x-1/2 place-items-center rounded-full border-2 border-background font-display font-black ${style.badge} ${style.rankBg}`}
+                  className={`absolute -bottom-3 left-1/2 grid -translate-x-1/2 place-items-center rounded-full border-2 border-background font-display font-black ring-1 ring-white/25 ${style.badge} ${style.rankBg}`}
                 >
                   {row.rank}
                 </div>
@@ -162,7 +165,7 @@ function Podium({
                 <div className="flex items-center justify-center gap-1.5">
                   <p className="truncate font-display text-xs font-black sm:text-sm">{row.name}</p>
                   {isYou && (
-                    <span className="rounded-full bg-primary px-2 py-0.5 text-[9px] font-black text-primary-foreground">
+                    <span className="rounded-full bg-gradient-to-r from-primary to-[oklch(0.65_0.25_295)] px-2 py-0.5 text-[9px] font-black text-primary-foreground shadow-[0_0_14px_-6px_oklch(0.72_0.27_340)]">
                       You
                     </span>
                   )}
@@ -170,7 +173,7 @@ function Podium({
                 <p className="mt-1 truncate font-mono text-[10px] font-bold text-muted-foreground sm:text-xs">
                   {compactWallet(row)}
                 </p>
-                <p className={`mt-1 font-display text-sm font-black sm:text-base ${isCreator ? "text-amber-300" : "text-primary"}`}>
+                <p className={`mt-1 font-display text-sm font-black drop-shadow sm:text-base ${isCreator ? "text-amber-300" : "text-primary"}`}>
                   {formatStat(getScore(row))}
                 </p>
               </div>

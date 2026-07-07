@@ -3836,4 +3836,41 @@ export const themePresets = {
   fantasy: { label: "Fantasy", colors: ["#ff7a3d", "#67ffb4", "#ffd166"], mood: "rune-lit adventure" }
 };
 
-export const gameTemplates = rawGameTemplates;
+const unavailableConstructTemplateIds = new Set([
+  "happy-halloween-match3",
+  "happy-chef-bubble-shooter",
+  "sea-animals",
+  "christmas-candy",
+  "lollipops-match3",
+  "speed-racer",
+  "candy-match3",
+  "smiles-match3",
+  "valentines-match3",
+  "christmas-match3",
+  "animals-crash-match3",
+  "halloween-match3",
+  "scary-run",
+  "billiards",
+  "crazy-match3",
+  "cars",
+  "monster-match3",
+  "sweet-match3",
+  "crazy-car",
+  "summer-match3",
+  "funny-faces-match3",
+  "space-match3",
+  "math-game-kids",
+  "truck-racer",
+  "christmas-gifts",
+  "christmas-bubbles",
+  "stick-panda",
+  "christmas-balls",
+  "road-racer",
+  "jewels-match",
+  "pops-billiards",
+  "frog-super-bubbles",
+]);
+
+export const gameTemplates = rawGameTemplates.filter(
+  (template) => !unavailableConstructTemplateIds.has(template.id),
+);

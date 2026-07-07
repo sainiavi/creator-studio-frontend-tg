@@ -22,6 +22,7 @@ import {
   Bot,
   ChevronLeft,
   ChevronRight,
+  Eye,
   Gamepad2,
   Globe2,
   Heart,
@@ -40,8 +41,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { gameTemplates } from "@/lib/templates";
-import { templateToGame, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
+import { getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
 import type { Game } from "@/lib/games-data";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
@@ -49,8 +49,8 @@ import {
   fetchCreatorStats,
   fetchNotifications,
   fetchPointSummary,
+  fetchRecentActivities,
   fetchSocialStats,
-  fetchUserActivities,
   markNotificationsRead,
   toggleLike,
   type CreatorStats,
@@ -70,11 +70,8 @@ export const Route = createFileRoute("/_app/")({
   component: Home,
 });
 
-const library = gameTemplates.map((template, index) => templateToGame(template, index));
-const featured: Game[] = [...library];
-
 // Maps a real backend activity type to the icon/color used in the feed.
-const activityStyle: Record<UserActivity["activityType"], { icon: ComponentType<{ className?: string }>; color: string }> = {
+const activityStyle: Partial<Record<string, { icon: ComponentType<{ className?: string }>; color: string }>> = {
   like: { icon: Heart, color: "text-neon-pink" },
   favorite: { icon: Sparkles, color: "text-neon-violet" },
   share: { icon: Share2, color: "text-neon-green" },
@@ -83,6 +80,8 @@ const activityStyle: Record<UserActivity["activityType"], { icon: ComponentType<
   play: { icon: Play, color: "text-neon-cyan" },
   publish: { icon: Rocket, color: "text-neon-pink" },
   major_edit: { icon: Pencil, color: "text-neon-green" },
+  unpublish: { icon: X, color: "text-muted-foreground" },
+  reward_claim: { icon: Trophy, color: "text-neon-green" },
 };
 
 function relativeTime(timestamp: string) {
@@ -96,9 +95,25 @@ function relativeTime(timestamp: string) {
   return `${Math.floor(hours / 24)}d`;
 }
 
-const preferredCategories = ["Action", "Arcade", "Racing", "Puzzle"];
-const categoryPriority = ["Action", "Arcade", "Racing"];
+const preferredCategories = ["Action", "Arcade", "Racing", "Puzzle", "Strategy"];
+const categoryPriority = ["Action", "Arcade", "Racing", "Puzzle", "Strategy"];
 const placeholderSlots = Array.from({ length: 6 }, (_, index) => index);
+
+function homeCategory(category: string | undefined) {
+  const value = String(category ?? "Game").trim();
+  const lower = value.toLowerCase();
+  if (lower.includes("strategy")) return "Strategy";
+  if (lower.includes("board")) return "Board Games";
+  if (lower.includes("puzzle")) return "Puzzle";
+  if (lower.includes("racing")) return "Racing";
+  if (lower.includes("arcade")) return "Arcade";
+  if (lower.includes("action")) return "Action";
+  return value || "Game";
+}
+
+function withHomeCategory(game: Game): Game {
+  return { ...game, category: homeCategory(game.category) };
+}
 
 function numericPlays(plays: string) {
   if (plays === "New") return Number.POSITIVE_INFINITY;
@@ -112,6 +127,15 @@ function formatCount(value: number) {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
   return String(value);
+}
+
+function countFromLabel(value: string | undefined) {
+  if (!value || value === "New") return 0;
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) return 0;
+  if (value.endsWith("M")) return Math.round(parsed * 1_000_000);
+  if (value.endsWith("K")) return Math.round(parsed * 1_000);
+  return Math.round(parsed);
 }
 
 function uniqueGames(games: Game[]) {
@@ -133,6 +157,7 @@ function Home() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileFeedTab, setMobileFeedTab] = useState("For You");
+  const [recentEventsOpen, setRecentEventsOpen] = useState(false);
 
   const formatStat = useCallback((value: number | undefined) => {
     const n = value ?? 0;
@@ -148,8 +173,8 @@ function Home() {
     fetchCreatorStats(userId).then(setCreatorStats).catch(() => {
       setCreatorStats(null);
     });
-    fetchUserActivities(userId)
-      .then((items) => setActivities(items.slice(0, 4)))
+    fetchRecentActivities(50)
+      .then((items) => setActivities(items))
       .catch(() => setActivities([]));
     const refreshNotifications = () => {
       fetchNotifications(userId).then((data) => setNotifications(data.notifications)).catch(() => {
@@ -264,6 +289,25 @@ function Home() {
     [createdGames],
   );
 
+  const fallbackActivities: UserActivity[] = useMemo(
+    () =>
+      myProjects.map((game: any, index: number) => ({
+        _id: `local-${game.id ?? game.templateId ?? index}`,
+        userId: game.creatorId ?? getCurrentUserId(),
+        gameId: game.id ?? game.templateId ?? null,
+        gameTitle: game.title ?? null,
+        activityType: game.publish?.published ? "publish" : "create",
+        details: game.publish?.published
+          ? `Published ${game.title}`
+          : `Created ${game.title}`,
+        timestamp: game.updatedAt ?? game.createdAt ?? new Date().toISOString(),
+      })),
+    [myProjects],
+  );
+
+  const displayedActivities = activities.length > 0 ? activities : fallbackActivities;
+  const recentEventsPreview = displayedActivities.slice(0, 4);
+
   // Real view counts drive the Trending order: most viewed first.
   const [viewsMap, setViewsMap] = useState<Record<string, number>>({});
   const [communityGames, setCommunityGames] = useState<Game[]>([]);
@@ -320,40 +364,24 @@ function Home() {
       if (v <= 0) return game;
       return { ...game, plays: v >= 1000 ? `${(v / 1000).toFixed(1)}K` : String(v) };
     };
-    // Most-viewed first; untouched games keep their showcase order after them.
-    const trending = [...featured, ...myCreations, ...communityGames]
+    const realGames = uniqueGames([...myCreations, ...communityGames].map(withHomeCategory));
+    // Most-viewed first; only real created/community games are shown on Home.
+    const trending = [...realGames]
       .filter((game, i, all) => all.findIndex((x) => x.templateId === game.templateId) === i)
       .sort((first, second) => realViews(second) - realViews(first))
       .map(withRealPlays);
-    // Newest real games first (actual createdAt order from the backend);
-    // showcase templates only pad the shelf after them.
-    const latest = uniqueGames([...latestGames, ...featured]).map(withRealPlays);
+    const latest = uniqueGames([...latestGames, ...myCreations].map(withHomeCategory)).map(withRealPlays);
     const playersChoice = uniqueGames([
       ...preferredCategories.flatMap((category) =>
         trending.filter((game) => game.category === category),
       ),
       ...trending,
     ]);
-    const favoriteIds = [
-      "neon-sudoku",
-      "simple-agent-game",
-      "cyber-runner",
-      "ai-arena",
-      "racing",
-      "runner",
-      "match3",
-      "memory",
-      "space-shooter",
-      "quiz",
-    ];
-    const favorites = uniqueGames([
-      ...favoriteIds
-        .map((id) => featured.find((game) => game.templateId === id))
-        .filter((game): game is Game => Boolean(game)),
-      ...trending,
-    ]).slice(0, 14);
+    const favorites = uniqueGames([...trending])
+      .sort((first, second) => (second.likes ?? 0) - (first.likes ?? 0))
+      .slice(0, 14);
 
-    const categories = Array.from(new Set(featured.map((game) => game.category))).sort(
+    const categories = Array.from(new Set(realGames.map((game) => game.category))).sort(
       (first, second) => {
         const firstPriority = categoryPriority.indexOf(first);
         const secondPriority = categoryPriority.indexOf(second);
@@ -373,9 +401,9 @@ function Home() {
       { title: "Favourite Games", games: favorites },
       ...categories.map((category) => ({
         title: category,
-        games: featured.filter((game) => game.category === category),
+        games: realGames.filter((game) => game.category === category),
       })),
-    ];
+    ].filter((shelf) => shelf.games.length > 0);
   }, [myCreations, viewsMap, communityGames, latestGames]);
 
   const visibleShelves = useMemo(() => {
@@ -515,6 +543,24 @@ function Home() {
               </button>
             ))}
             {notifications.length === 0 && <p className="text-sm text-muted-foreground">No notifications yet.</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={recentEventsOpen} onOpenChange={setRecentEventsOpen}>
+        <DialogContent className="max-h-[82vh] overflow-y-auto border-border/60 bg-card sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-display text-xl font-black">
+              <Globe2 className="size-5 text-primary" /> Recent Events
+            </DialogTitle>
+          </DialogHeader>
+          <div className="divide-y divide-border/40">
+            {displayedActivities.map((item) => (
+              <ActivityEventRow key={item._id} item={item} />
+            ))}
+            {displayedActivities.length === 0 && (
+              <p className="py-4 text-sm text-muted-foreground">No platform events yet.</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -725,26 +771,16 @@ function Home() {
             </button>
           </Panel>
 
-          <Panel title="Recent Activity">
-            {activities.length === 0 ? (
+          <Panel title="Recent Events" action="View all" onActionClick={() => setRecentEventsOpen(true)}>
+            {recentEventsPreview.length === 0 ? (
               <p className="py-4 text-xs text-muted-foreground">
-                No activity yet — play, like, or publish a game and it shows up here.
+                No platform events yet — created and published games will show up here.
               </p>
             ) : (
               <div className="divide-y divide-border/40">
-                {activities.map((item) => {
-                  const style = activityStyle[item.activityType] ?? { icon: Gamepad2, color: "text-neon-cyan" };
-                  const Icon = style.icon;
-                  return (
-                    <div key={item._id} className="flex items-center gap-3 py-2.5">
-                      <Icon className={`size-4 shrink-0 ${style.color}`} />
-                      <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground" title={item.details}>
-                        {item.details}
-                      </p>
-                      <span className="shrink-0 text-[10px] text-muted-foreground/60">{relativeTime(item.timestamp)}</span>
-                    </div>
-                  );
-                })}
+                {recentEventsPreview.map((item) => (
+                  <ActivityEventRow key={item._id} item={item} />
+                ))}
               </div>
             )}
           </Panel>
@@ -792,6 +828,45 @@ function Feature({
         <p className="text-[11px] font-bold">{title}</p>
         <p className="text-[9px] text-muted-foreground">{copy}</p>
       </div>
+    </div>
+  );
+}
+
+function ActivityEventRow({ item }: { item: UserActivity }) {
+  const navigate = useNavigate();
+  const style = activityStyle[item.activityType] ?? { icon: Gamepad2, color: "text-neon-cyan" };
+  const Icon = style.icon;
+  const actor =
+    item.userId?.startsWith("0x") && item.userId.length > 10
+      ? `${item.userId.slice(0, 6)}...${item.userId.slice(-4)}`
+      : item.userId;
+  const detail = item.details || [actor, item.activityType, item.gameTitle].filter(Boolean).join(" ");
+  const content = (
+    <>
+      <Icon className={`size-4 shrink-0 ${style.color}`} />
+      <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground" title={detail}>
+        {detail}
+      </p>
+      <span className="shrink-0 text-[10px] text-muted-foreground/60">{relativeTime(item.timestamp)}</span>
+    </>
+  );
+
+  if (item.gameId) {
+    return (
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/play/$gameId", params: { gameId: item.gameId! } })}
+        className="flex w-full items-center gap-3 py-2.5 text-left transition hover:bg-white/[0.03]"
+        aria-label={`Open ${item.gameTitle ?? "game"}`}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 py-2.5">
+      {content}
     </div>
   );
 }
@@ -1016,9 +1091,14 @@ function GameTile({ game, onOpen, onDelete, onEdit }: { game: Game; onOpen: () =
   const [likes, setLikes] = useState(game.likes ?? 0);
   const [comments, setComments] = useState(0);
   const [shares, setShares] = useState(game.shares ?? 0);
+  const [views, setViews] = useState(countFromLabel(game.plays));
   const [shareCopied, setShareCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [creatorMeta, setCreatorMeta] = useState<{ followers: number; remixes: number } | null>(null);
+
+  useEffect(() => {
+    setViews(countFromLabel(game.plays));
+  }, [game.plays]);
 
   // Real counts come from the social API, but only once the tile scrolls into
   // view — the "view all" grid can hold 100+ tiles and must not fire 100 GETs.
@@ -1039,6 +1119,7 @@ function GameTile({ game, onOpen, onDelete, onEdit }: { game: Game; onOpen: () =
             setLikes(stats.likes.count);
             setComments(stats.comments.count);
             setShares(stats.shares.count);
+            setViews(stats.views?.count ?? 0);
           })
           .catch(() => {});
       }
@@ -1136,8 +1217,11 @@ function GameTile({ game, onOpen, onDelete, onEdit }: { game: Game; onOpen: () =
         <span className="label-mono absolute left-2 top-2 rounded-md bg-black/45 px-2 py-1 text-[9px] text-white backdrop-blur">
           {game.category}
         </span>
-        <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/55 px-2 py-1 text-[10px] font-bold text-white backdrop-blur">
-          <Play className="size-3" /> {game.plays}
+        <span
+          className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/55 px-2 py-1 text-[10px] font-bold text-white backdrop-blur"
+          title={`${formatCount(views)} views`}
+        >
+          <Eye className="size-3" /> {formatCount(views)} views
         </span>
         {onEdit && (
           <button

@@ -3,6 +3,7 @@ import { gameTemplates, themePresets } from "../lib/templates";
 import { api } from "../lib/api";
 import { engineOf } from "../lib/studio-meta";
 import { getCurrentUserId } from "@/lib/identity";
+import { createNotification } from "@/lib/api/social";
 
 const defaultPrompt = "cyberpunk doge samurai fighting AI robots in a neon arena";
 
@@ -67,6 +68,7 @@ export async function runCodeJob(
 // navigation and a full page refresh. The backend job keeps running either
 // way (jobs are mirrored in Mongo); on reload we resume polling by jobId.
 const ACTIVE_BUILD_KEY = "kult-active-build";
+const BUILD_NOTIFICATION_PREFIX = "kult-build-notified";
 
 export type ActiveBuild = {
   strategy: "hybrid" | "pure-agent";
@@ -95,6 +97,25 @@ function readActiveBuild(): ActiveBuild | null {
   } catch {
     return null;
   }
+}
+
+function notifyBuildReadyOnce(game: any, jobId?: string) {
+  const userId = getCurrentUserId();
+  const gameId = game?.id ?? game?.templateId ?? null;
+  const dedupeKey = `${BUILD_NOTIFICATION_PREFIX}-${jobId ?? gameId ?? "unknown"}`;
+  if (localStorage.getItem(dedupeKey)) return;
+  localStorage.setItem(dedupeKey, "1");
+  void createNotification({
+    userId,
+    type: "build_ready",
+    title: "Your AI build is ready",
+    body: `"${game?.title ?? "Your game"}" finished building and is ready to play.`,
+    gameId,
+    actorId: userId,
+    metadata: { jobId },
+  }).catch(() => {
+    localStorage.removeItem(dedupeKey);
+  });
 }
 
 function templateForPrompt(prompt: string) {
@@ -326,6 +347,7 @@ export function useCreatorStudio() {
           setPackageMode("Prompt + Agents");
           setStatus("Game generated with code");
           setAgentStatus(`AI build ready · ${refinement.source ?? refinement.model ?? "agent"}`);
+          notifyBuildReadyOnce(build.game, build.jobId);
           updateActiveBuild({ phase: "done", statusText: "AI build ready" });
         } else {
           updateActiveBuild({
@@ -549,6 +571,7 @@ export function useCreatorStudio() {
       // so generation can take 10-15 minutes without any HTTP timeout killing it.
       // If it is slow or fails, the playable template stays in place.
       void (async () => {
+        let codeJobId: string | undefined;
         try {
           const refinement = await runCodeJob(
             {
@@ -565,6 +588,7 @@ export function useCreatorStudio() {
             },
             () => generationRef.current !== token,
             (jobId) => {
+              codeJobId = jobId;
               if (generationRef.current === token) updateActiveBuild({ jobId });
             },
           );
@@ -579,6 +603,7 @@ export function useCreatorStudio() {
             setPackageMode("Prompt + Agents");
             setStatus("Game generated with code");
             setAgentStatus(`AI build ready · ${refinement.source ?? refinement.model ?? "agent"}`);
+            notifyBuildReadyOnce(baseGame, codeJobId);
             updateActiveBuild({ phase: "done", statusText: "AI build ready" });
           } else {
             const fallback = strategy === "pure-agent" ? playableFallbackGame : baseGame;

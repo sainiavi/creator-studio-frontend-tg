@@ -114,6 +114,11 @@ export async function fetchUserActivities(userId: string): Promise<UserActivity[
   return data as UserActivity[];
 }
 
+export async function fetchRecentActivities(limit = 50): Promise<UserActivity[]> {
+  const { data } = await api.get("/social/activity/recent", { params: { limit } });
+  return data as UserActivity[];
+}
+
 export type UserFavoritesResponse = {
   favorites: Array<{ gameId: string; userId: string; createdAt: string }>;
   count: number;
@@ -285,6 +290,19 @@ export async function fetchNotifications(userId: string, unreadOnly = false) {
 export async function markNotificationsRead(userId: string) {
   const { data } = await api.post(`/social/notifications/${encodeURIComponent(userId)}/read`);
   return data as { userId: string; updated: number };
+}
+
+export async function createNotification(input: {
+  userId: string;
+  type: string;
+  title: string;
+  body: string;
+  gameId?: string | null;
+  actorId?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  const { data } = await api.post("/social/notifications", input);
+  return data as { notification: NotificationItem };
 }
 
 export type EconomyLeaderboardEntry = {
