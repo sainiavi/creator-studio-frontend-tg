@@ -120,7 +120,6 @@ function reportGameError(message, stack) {
   let best = 0;
   let explicit = false;
   let lastSentAt = 0;
-  let lastOverSeen = 0;
   function send(score) {
     const value = Math.max(0, Math.floor(Number(score) || 0));
     try { window.parent.postMessage({ __kultGameScore: value }, "*"); } catch {}
@@ -137,7 +136,6 @@ function reportGameError(message, stack) {
     // Runs even with explicit scoring so restart-by-tap always works.
     if (overRe.test(s)) {
       window.__kultGameOver = true;
-      lastOverSeen = Date.now();
     }
     if (explicit) return;
     const m = s.match(scoreRe);
@@ -150,10 +148,6 @@ function reportGameError(message, stack) {
       send(best);
     }
   }
-  // Once the game stops drawing its game-over text, it has resumed.
-  setInterval(function () {
-    if (window.__kultGameOver && Date.now() - lastOverSeen > 800) window.__kultGameOver = false;
-  }, 200);
   const origFill = CanvasRenderingContext2D.prototype.fillText;
   CanvasRenderingContext2D.prototype.fillText = function (text, x, y, maxWidth) {
     scan(text);
@@ -203,7 +197,12 @@ function reportGameError(message, stack) {
     r: ["r", "KeyR", 82],
   };
   function tap(name) { press(K[name][0], K[name][1], K[name][2]); }
-  function restart() { tap("r"); tap("enter"); tap("space"); }
+  function restart() {
+    tap("r");
+    tap("enter");
+    tap("space");
+    window.__kultGameOver = false;
+  }
 
   let sx = 0, sy = 0;
   function begin(x, y) { sx = x; sy = y; }

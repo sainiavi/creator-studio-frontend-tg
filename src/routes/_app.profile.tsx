@@ -7,6 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { type Game } from "@/lib/games-data";
 import { templateEmoji, gradientForId, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
 import {
@@ -210,6 +217,7 @@ function Profile() {
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [likedGames, setLikedGames] = useState<Game[]>([]);
   const [favoriteGames, setFavoriteGames] = useState<Game[]>([]);
+  const [mobileGameTab, setMobileGameTab] = useState("My Games");
   const [showAllActivities, setShowAllActivities] = useState(false);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
   const [referral, setReferral] = useState<ReferralSummary | null>(null);
@@ -369,6 +377,37 @@ function Profile() {
   const historyGames: Game[] = Array.from(historyGamesMap.entries()).map(([gameId, title]) =>
     mapActivityToGame(gameId, title)
   );
+  const profileGameSections = [
+    {
+      title: "My Games",
+      games,
+      emptyMessage: (
+        <>
+          No games yet. Head to <span className="text-primary font-bold">Create</span> to generate your first playable build.
+        </>
+      ),
+      onEditGame: (g: Game) => {
+        if (g.templateId) navigate({ to: "/edit/$gameId", params: { gameId: g.templateId } });
+      },
+    },
+    {
+      title: "History",
+      games: historyGames,
+      emptyMessage: "No games in history. Play or generate games to see them listed here.",
+    },
+    {
+      title: "Favorites",
+      games: favoriteGames,
+      emptyMessage: "No favorite games yet. Click the bookmark icon on any game to favorite it.",
+    },
+    {
+      title: "Liked Games",
+      games: likedGames,
+      emptyMessage: "No liked games yet. Click the heart icon on any game to like it.",
+    },
+  ];
+  const selectedMobileGameSection =
+    profileGameSections.find((section) => section.title === mobileGameTab) ?? profileGameSections[0];
 
   const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
   useEffect(() => {
@@ -468,13 +507,19 @@ function Profile() {
     <div>
       <PageHeader title="Profile" subtitle="Your creator identity · Published games" />
       <div className="px-6 py-8 lg:px-10">
-        <div className="animate-float-up rounded-2xl border border-border/60 bg-[oklch(0.07_0.018_282)] p-5 shadow-card sm:p-6">
-          <div className="flex items-center gap-4 sm:gap-5">
-            <div className="grid size-24 shrink-0 place-items-center rounded-full border-2 border-primary/80 bg-gradient-to-br from-primary/35 via-fuchsia-500/25 to-cyan-400/25 text-5xl shadow-[0_0_28px_oklch(0.72_0.25_305_/_0.35)]">
-              🎮
+        <div className="animate-float-up relative overflow-hidden rounded-3xl border border-border/60 bg-[radial-gradient(circle_at_18%_10%,oklch(0.72_0.25_315/0.22),transparent_32%),radial-gradient(circle_at_88%_12%,oklch(0.82_0.16_195/0.16),transparent_30%),linear-gradient(145deg,oklch(0.08_0.02_282),oklch(0.045_0.014_282))] p-5 shadow-[0_24px_80px_oklch(0_0_0/0.45)] sm:p-6">
+          <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/80 to-transparent" />
+          <div className="pointer-events-none absolute -right-20 -top-24 size-56 rounded-full border border-primary/15 bg-primary/5 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-20 size-52 rounded-full border border-cyan-300/10 bg-cyan-300/5 blur-2xl" />
+
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
+            <div className="relative mx-auto grid size-28 shrink-0 place-items-center rounded-full bg-[conic-gradient(from_160deg,oklch(0.72_0.25_315),oklch(0.82_0.16_195),oklch(0.85_0.18_80),oklch(0.72_0.25_315))] p-1 shadow-[0_0_34px_oklch(0.72_0.25_315/0.36)] sm:mx-0">
+              <div className="grid size-full place-items-center rounded-full bg-[radial-gradient(circle_at_35%_30%,oklch(0.24_0.05_300),oklch(0.07_0.018_282)_68%)] text-5xl">
+                🎮
+              </div>
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 {editingDisplayName ? (
                   <input
                     value={draftDisplayName}
@@ -485,14 +530,14 @@ function Profile() {
                     }}
                     autoFocus
                     maxLength={32}
-                    className="min-w-0 rounded-lg border border-primary/40 bg-background/70 px-3 py-1.5 font-display text-2xl font-black text-foreground outline-none focus:border-primary sm:text-3xl"
+                    className="min-w-0 rounded-xl border border-primary/40 bg-background/70 px-3 py-1.5 text-center font-display text-2xl font-black text-foreground outline-none focus:border-primary sm:text-left sm:text-3xl"
                   />
                 ) : (
-                  <h2 className="truncate font-display text-2xl font-black text-foreground sm:text-3xl">
+                  <h2 className="max-w-full truncate font-display text-3xl font-black leading-none text-foreground sm:text-4xl">
                     {displayName}
                   </h2>
                 )}
-                <BadgeCheck className="size-5 shrink-0 fill-primary text-background" />
+                <BadgeCheck className="size-6 shrink-0 fill-primary text-background drop-shadow-[0_0_10px_oklch(0.72_0.25_315/0.55)]" />
                 {editingDisplayName ? (
                   <div className="flex shrink-0 items-center gap-1">
                     <button
@@ -526,87 +571,84 @@ function Profile() {
                   </button>
                 )}
               </div>
-              <div className="mt-1 flex min-w-0 items-center gap-2 text-sm font-semibold text-muted-foreground">
+              <div className="mt-3 flex min-w-0 items-center justify-center gap-2 text-sm font-semibold text-muted-foreground sm:justify-start">
                 <button
                   type="button"
                   onClick={copyIdentity}
                   title="Copy wallet address"
-                  className="flex min-w-0 items-center gap-1.5 rounded-md text-left transition hover:text-primary"
+                  className="flex min-w-0 items-center gap-2 rounded-full border border-border/50 bg-background/35 px-3 py-1.5 text-left transition hover:border-primary/50 hover:text-primary"
                 >
                   <span className="truncate font-mono">{compactIdentity}</span>
                   {identityCopied ? <Check className="size-3.5 shrink-0" /> : <Copy className="size-3.5 shrink-0" />}
                 </button>
               </div>
               {joined && (
-                <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                <p className="mt-2 text-sm font-semibold text-muted-foreground">
                   Joined {joined}
                 </p>
               )}
               {achievementSummary?.inventory.genesisFounderBadge && (
-                <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-400/35 bg-amber-400/10 px-3 py-1.5 text-xs font-black text-amber-300">
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-xs font-black text-amber-200 shadow-[0_0_22px_oklch(0.85_0.18_80/0.18)]">
                   <BadgeCheck className="size-4 fill-amber-400/30 text-amber-300" /> Genesis Founder
                 </div>
               )}
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-amber-300/25 bg-amber-300/10 px-4 py-3 shadow-[inset_0_0_18px_oklch(0.82_0.18_80_/_0.08)]">
+          <div className="relative mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="overflow-hidden rounded-2xl border border-amber-300/25 bg-[linear-gradient(135deg,oklch(0.22_0.07_80/0.62),oklch(0.08_0.02_282/0.84))] px-5 py-4 shadow-[inset_0_0_24px_oklch(0.82_0.18_80/0.1),0_0_24px_oklch(0.82_0.18_80/0.08)]">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="label-mono text-[0.68rem] font-black leading-none text-amber-300">CREATOR SCORE</p>
-                  <p className="mt-1.5 font-display text-3xl font-black leading-none text-amber-300">
+                  <p className="label-mono text-[0.68rem] font-black leading-none text-amber-200">CREATOR SCORE</p>
+                  <p className="mt-2 font-display text-4xl font-black leading-none text-amber-300">
                     {formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore)}
                   </p>
                 </div>
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-amber-300/20 text-amber-300 shadow-[0_0_14px_oklch(0.82_0.18_80_/_0.28)]">
-                  <Trophy className="size-4" />
+                <span className="grid size-12 shrink-0 place-items-center rounded-full bg-amber-300/20 text-amber-200 shadow-[0_0_20px_oklch(0.82_0.18_80/0.32)]">
+                  <Trophy className="size-5" />
                 </span>
               </div>
             </div>
-            <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 shadow-[inset_0_0_18px_oklch(0.7_0.24_295_/_0.07)]">
+            <div className="overflow-hidden rounded-2xl border border-primary/25 bg-[linear-gradient(135deg,oklch(0.22_0.08_315/0.54),oklch(0.08_0.02_282/0.88))] px-5 py-4 shadow-[inset_0_0_24px_oklch(0.7_0.24_295/0.1),0_0_24px_oklch(0.7_0.24_295/0.1)]">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <p className="label-mono text-[0.68rem] font-black leading-none text-primary">KULT POINTS (KP)</p>
-                  <p className="mt-1.5 font-display text-3xl font-black leading-none text-primary">
+                  <p className="mt-2 font-display text-4xl font-black leading-none text-primary">
                     {formatStat(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
                   </p>
                   <p className="mt-1 label-mono text-[0.62rem] font-bold text-primary/75">
                     Level {pointSummary?.level?.level ?? 1}
                   </p>
                 </div>
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-[0.68rem] font-black text-primary-foreground shadow-[0_0_14px_oklch(0.72_0.25_305_/_0.32)]">
-                  KP
-                </span>
               </div>
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-            <div>
-              <p className="font-display text-3xl font-black">{formatStat(createdGames.length)}</p>
+          <div className="relative mt-5 grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-2xl border border-border/45 bg-background/25 p-3">
+              <p className="font-display text-3xl font-black text-foreground">{formatStat(createdGames.length)}</p>
               <p className="mt-1 text-sm font-bold text-muted-foreground">Games</p>
             </div>
-            <div>
-              <p className="font-display text-3xl font-black">{formatStat(creatorStats?.followers)}</p>
+            <div className="rounded-2xl border border-border/45 bg-background/25 p-3">
+              <p className="font-display text-3xl font-black text-foreground">{formatStat(creatorStats?.followers)}</p>
               <p className="mt-1 text-sm font-bold text-muted-foreground">Followers</p>
             </div>
-            <div>
-              <p className="font-display text-3xl font-black">{formatStat(followingCount)}</p>
+            <div className="rounded-2xl border border-border/45 bg-background/25 p-3">
+              <p className="font-display text-3xl font-black text-foreground">{formatStat(followingCount)}</p>
               <p className="mt-1 text-sm font-bold text-muted-foreground">Following</p>
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-xl border border-border/55 bg-background/30 p-3">
+          <div className="relative mt-4 grid grid-cols-3 gap-3 text-center">
+            <div className="rounded-2xl border border-border/55 bg-background/35 p-3 transition hover:border-primary/35 hover:bg-primary/5">
               <p className="font-display text-2xl font-black">{formatStat(creatorStats?.likes)}</p>
               <p className="label-mono mt-1 text-[9px] text-muted-foreground">LIKES</p>
             </div>
-            <div className="rounded-xl border border-border/55 bg-background/30 p-3">
+            <div className="rounded-2xl border border-border/55 bg-background/35 p-3 transition hover:border-primary/35 hover:bg-primary/5">
               <p className="font-display text-2xl font-black">{formatStat(creatorStats?.shares)}</p>
               <p className="label-mono mt-1 text-[9px] text-muted-foreground">SHARES</p>
             </div>
-            <div className="rounded-xl border border-border/55 bg-background/30 p-3">
+            <div className="rounded-2xl border border-border/55 bg-background/35 p-3 transition hover:border-primary/35 hover:bg-primary/5">
               <p className="font-display text-2xl font-black">{formatStat(creatorStats?.remixes)}</p>
               <p className="label-mono mt-1 text-[9px] text-muted-foreground">REMIXES</p>
             </div>
@@ -794,56 +836,76 @@ function Profile() {
           </div>
         </div>
 
-        {/* My Games Row */}
-        <GameRow
-          title="My Games"
-          games={games}
-          onEditGame={(g) => {
-            if (g.templateId) navigate({ to: "/edit/$gameId", params: { gameId: g.templateId } });
-          }}
-          emptyMessage={
-            <>
-              No games yet. Head to <span className="text-primary font-bold">Create</span> to generate your first playable build.
-            </>
-          }
-        />
+        <div className="mt-8 sm:hidden">
+          <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex min-w-max items-center gap-7 border-b border-border/45">
+              {profileGameSections.map((section) => {
+                const selected = selectedMobileGameSection.title === section.title;
+                return (
+                  <button
+                    key={section.title}
+                    type="button"
+                    onClick={() => setMobileGameTab(section.title)}
+                    className={`relative pb-3 font-display text-base font-black transition ${
+                      selected ? "text-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    {section.title}
+                    {selected && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <GameRow
+            title={selectedMobileGameSection.title}
+            games={selectedMobileGameSection.games}
+            onEditGame={selectedMobileGameSection.onEditGame}
+            emptyMessage={selectedMobileGameSection.emptyMessage}
+          />
+        </div>
 
-        {/* History Row */}
-        <GameRow
-          title="History"
-          games={historyGames}
-          emptyMessage="No games in history. Play or generate games to see them listed here."
-        />
-
-        {/* Favorites Row */}
-        <GameRow
-          title="Favorites"
-          games={favoriteGames}
-          emptyMessage="No favorite games yet. Click the bookmark icon on any game to favorite it."
-        />
-
-        {/* Liked Games Row */}
-        <GameRow
-          title="Liked Games"
-          games={likedGames}
-          emptyMessage="No liked games yet. Click the heart icon on any game to like it."
-        />
+        <div className="hidden sm:block">
+          {profileGameSections.map((section) => (
+            <GameRow
+              key={section.title}
+              title={section.title}
+              games={section.games}
+              onEditGame={section.onEditGame}
+              emptyMessage={section.emptyMessage}
+            />
+          ))}
+        </div>
 
         {/* Recent Activity Section */}
         <div className="mt-14">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h2 className="font-display text-2xl font-black">Recent Activity</h2>
             
-            <select
+            <Select
               value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
-              className="rounded-lg border border-border/60 bg-secondary/30 px-3 py-1.5 text-xs font-bold text-primary outline-none transition-colors hover:bg-secondary/60 cursor-pointer"
+              onValueChange={(value) => setTimeFilter(value as TimeFilter)}
             >
-              <option value="today" className="bg-card text-foreground">Today</option>
-              <option value="week" className="bg-card text-foreground">This Week</option>
-              <option value="month" className="bg-card text-foreground">This Month</option>
-              <option value="all" className="bg-card text-foreground">All Time</option>
-            </select>
+              <SelectTrigger className="h-11 w-full min-w-[180px] rounded-xl border-border/70 bg-card/55 px-4 font-display text-sm font-bold text-primary shadow-[0_0_22px_oklch(0.7_0.25_315/0.12)] transition hover:border-primary/55 hover:bg-primary/10 sm:w-[190px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="overflow-hidden rounded-2xl border-border/70 bg-[oklch(0.14_0.02_282/0.98)] p-2 text-foreground shadow-[0_18px_60px_oklch(0_0_0/0.55),0_0_34px_oklch(0.7_0.25_315/0.18)] backdrop-blur-xl">
+                {[
+                  ["today", "Today"],
+                  ["week", "This Week"],
+                  ["month", "This Month"],
+                  ["all", "All Time"],
+                ].map(([value, label]) => (
+                  <SelectItem
+                    key={value}
+                    value={value}
+                    className="my-1 rounded-xl py-2.5 pl-3 pr-9 font-display text-sm font-bold text-muted-foreground focus:bg-primary/15 focus:text-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground [&>span:last-child]:right-3"
+                  >
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="mt-6 overflow-hidden rounded-2xl border border-border/60 bg-card/40 p-6 shadow-card">

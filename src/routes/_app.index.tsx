@@ -19,7 +19,6 @@ import {
 import {
   ArrowRight,
   Bell,
-  Bot,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -41,7 +40,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
+import { resolveGameThumbnail } from "@/lib/studio-meta";
 import type { Game } from "@/lib/games-data";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
@@ -239,8 +238,6 @@ function Home() {
 
     return () => clearTimeout(handler);
   }, [searchQuery]);
-  const [prompt, setPrompt] = useState("");
-
   useEffect(() => {
     fetchPointSummary(getCurrentUserId())
       .then((summary) => {
@@ -461,22 +458,18 @@ function Home() {
     }
   }, [mobileFeedTab, mobileFeedTabs]);
 
-  const create = () => {
-    const value = prompt.trim();
-    studio.setPrompt(value);
-    // Hand the typed idea to the create page, which drops it into its chat input.
-    if (value) sessionStorage.setItem("kult-create-prompt", value);
-    navigate({ to: "/create" });
-  };
-
   return (
-    <div className="min-h-screen bg-[oklch(0.105_0.018_282)]">
-      <header className="flex min-h-16 items-center justify-between gap-4 border-b border-border/50 px-4 py-2 sm:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-4">
+    <div className="min-h-screen overflow-x-hidden bg-[oklch(0.105_0.018_282)]">
+      <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border/50 px-4 py-3 sm:gap-4 sm:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+          <div className="min-w-0 sm:hidden">
+            <p className="font-display text-3xl font-black leading-none text-primary">KULT</p>
+            <p className="mt-1 text-sm font-semibold text-muted-foreground">Creator Studio</p>
+          </div>
           <p className="hidden shrink-0 text-sm text-muted-foreground sm:block">
             Welcome back, <span className="font-semibold text-foreground">KULT Creator</span>
           </p>
-          <label className="flex h-10 w-full max-w-md items-center gap-2 rounded-md border border-border/60 bg-card/70 px-3 transition focus-within:border-primary/60">
+          <label className="hidden h-10 w-full max-w-md items-center gap-2 rounded-md border border-border/60 bg-card/70 px-3 transition focus-within:border-primary/60 sm:flex">
             <Search className="size-4 shrink-0 text-muted-foreground" />
             <input
               type="search"
@@ -487,10 +480,17 @@ function Home() {
             />
           </label>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-md border border-border/60 bg-card/70 px-3 py-2 text-xs font-bold">
-            <Zap className="size-4 text-neon-violet" /> Level {kpLevel} · {formatCount(kultPoints)} KP
-          </div>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <label className="grid size-10 shrink-0 place-items-center rounded-full border border-border/60 bg-card/70 transition focus-within:border-primary/60 sm:hidden">
+            <Search className="size-4 shrink-0 text-muted-foreground" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              aria-label="Search games"
+              className="sr-only"
+            />
+          </label>
           <button
             type="button"
             onClick={() => void openNotifications()}
@@ -503,12 +503,17 @@ function Home() {
               <span className="absolute right-2 top-2 size-1.5 rounded-full bg-primary" />
             )}
           </button>
+          <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-3 py-2 text-xs font-bold sm:rounded-md">
+            <Zap className="size-4 text-neon-violet" />
+            <span className="sm:hidden">{formatCount(kultPoints)}</span>
+            <span className="hidden sm:inline">Level {kpLevel} · {formatCount(kultPoints)} KP</span>
+          </div>
           <button
             type="button"
             onClick={() => navigate({ to: "/profile" })}
             title="Open profile"
             aria-label="Open profile"
-            className="grid size-9 place-items-center rounded-full bg-primary/20 font-display text-sm font-bold text-primary transition hover:bg-primary/30"
+            className="hidden size-9 place-items-center rounded-full bg-primary/20 font-display text-sm font-bold text-primary transition hover:bg-primary/30 sm:grid"
           >
             K
           </button>
@@ -567,54 +572,10 @@ function Home() {
 
       <div className="grid gap-3 p-3 xl:grid-cols-[minmax(0,1fr)_310px]">
         <main className="min-w-0 space-y-3">
-          <section className="relative min-h-[380px] overflow-hidden rounded-lg border border-border/60 bg-card">
-            <img
-              src={getThumbnailUrl("cyber-runner")}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover opacity-55"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,oklch(0.12_0.025_282)_0%,oklch(0.12_0.025_282/0.94)_46%,oklch(0.12_0.025_282/0.36)_100%)]" />
-            <div className="relative z-10 flex min-h-[380px] items-end gap-6 p-6 lg:p-8">
-              <div className="flex min-w-0 max-w-[620px] flex-1 flex-col justify-center self-center">
-              <p className="label-mono mb-2 text-[10px] text-neon-cyan">AI game creation suite</p>
-              <h1 className="max-w-lg font-display text-3xl font-black leading-tight sm:text-4xl">
-                CREATE ANY GAME <span className="text-gradient">WITH AI</span>
-              </h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Turn an idea into a playable build in minutes.
-              </p>
-              <div className="mt-5 rounded-lg border border-primary/35 bg-[oklch(0.13_0.025_282/0.92)] p-3 shadow-neon">
-                <textarea
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  className="h-20 w-full resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
-                  placeholder="Create your own game, share it with friends & earn rewards ✨ Describe your idea..."
-                  maxLength={500}
-                />
-                <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3">
-                  <span className="text-[10px] text-muted-foreground">{prompt.length}/500</span>
-                  <button
-                    onClick={create}
-                    className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-[11px] font-bold text-primary-foreground transition hover:brightness-110"
-                  >
-                    <WandSparkles className="size-4" /> GENERATE GAME
-                  </button>
-                </div>
-              </div>
-              </div>
-              <div className="hidden w-52 shrink-0 space-y-3 lg:block">
-                <Feature icon={Sparkles} title="1-Click Generate" copy="Prompt to playable game" />
-                <Feature icon={Bot} title="AI Agent Integration" copy="Intelligent NPCs" />
-                <Feature icon={Globe2} title="Deploy to Browser" copy="Play instantly, anywhere" />
-                <Feature icon={Rocket} title="Publish & Earn" copy="Share your creations" />
-              </div>
-            </div>
-          </section>
-
           {selectedMobileFeed && (
-            <section className="min-[1190px]:hidden rounded-lg border border-border/60 bg-card/55 p-3">
+            <section className="min-[1190px]:hidden rounded-lg border border-transparent bg-transparent p-0 sm:border-border/60 sm:bg-card/55 sm:p-3">
               <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex min-w-max items-center gap-7 border-b border-border/40">
+                <div className="flex min-w-max items-center gap-8 border-b border-transparent py-5 sm:gap-7 sm:border-border/40 sm:py-0">
                   {mobileFeedTabs.map((tab) => {
                     const selected = selectedMobileFeed.label === tab.label;
                     return (
@@ -633,25 +594,37 @@ function Home() {
                   })}
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-3">
+              <div className="mt-2 grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-3">
                 {selectedMobileFeed.games.slice(0, 12).map((game, index) => (
-                  <GameTile
-                    key={`${selectedMobileFeed.label}-${game.title}-${index}`}
-                    game={game}
-                    onOpen={() => {
-                      if (game.templateId) navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
-                    }}
-                    onDelete={
-                      selectedMobileFeed.label === "Following"
-                        ? () => { if (game.templateId) void removeCreatedGame(game.templateId); }
-                        : undefined
-                    }
-                    onEdit={
-                      selectedMobileFeed.label === "Following"
-                        ? () => { if (game.templateId) navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } }); }
-                        : undefined
-                    }
-                  />
+                  <div key={`${selectedMobileFeed.label}-${game.title}-${index}`}>
+                    <div className="md:hidden">
+                      <MobileFeedCard
+                        game={game}
+                        label={index === 0 ? selectedMobileFeed.label.replace("🔥 ", "") : "New"}
+                        onOpen={() => {
+                          if (game.templateId) navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
+                        }}
+                      />
+                    </div>
+                    <div className="hidden md:block">
+                      <GameTile
+                        game={game}
+                        onOpen={() => {
+                          if (game.templateId) navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
+                        }}
+                        onDelete={
+                          selectedMobileFeed.label === "Following"
+                            ? () => { if (game.templateId) void removeCreatedGame(game.templateId); }
+                            : undefined
+                        }
+                        onEdit={
+                          selectedMobileFeed.label === "Following"
+                            ? () => { if (game.templateId) navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } }); }
+                            : undefined
+                        }
+                      />
+                    </div>
+                  </div>
                 ))}
               </div>
             </section>
@@ -805,28 +778,6 @@ function Home() {
             />
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function Feature({
-  icon: Icon,
-  title,
-  copy,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  title: string;
-  copy: string;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="grid size-9 shrink-0 place-items-center rounded-md border border-primary/30 bg-primary/15">
-        <Icon className="size-4 text-primary" />
-      </div>
-      <div>
-        <p className="text-[11px] font-bold">{title}</p>
-        <p className="text-[9px] text-muted-foreground">{copy}</p>
       </div>
     </div>
   );
@@ -1081,6 +1032,137 @@ function getCreatorStats(creatorId: string) {
     creatorStatsCache.set(creatorId, promise);
   }
   return promise;
+}
+
+function MobileFeedCard({
+  game,
+  label,
+  onOpen,
+}: {
+  game: Game;
+  label: string;
+  onOpen: () => void;
+}) {
+  const creator = game.creator?.startsWith("0x") ? game.creator : `@${game.creator.replace(/^@/, "")}`;
+  const [stats, setStats] = useState({
+    views: countFromLabel(game.plays),
+    likes: game.likes ?? 0,
+    comments: 0,
+    shares: game.shares ?? 0,
+    remixes: 0,
+  });
+
+  useEffect(() => {
+    setStats((current) => ({
+      ...current,
+      views: countFromLabel(game.plays),
+      likes: game.likes ?? current.likes,
+      shares: game.shares ?? current.shares,
+    }));
+  }, [game.plays, game.likes, game.shares]);
+
+  useEffect(() => {
+    if (!game.templateId) return;
+    let cancelled = false;
+    fetchSocialStats(game.templateId, getCurrentUserId())
+      .then((socialStats) => {
+        if (cancelled) return;
+        setStats((current) => ({
+          ...current,
+          views: socialStats.views?.count ?? current.views,
+          likes: socialStats.likes.count,
+          comments: socialStats.comments.count,
+          shares: socialStats.shares.count,
+        }));
+      })
+      .catch(() => {});
+    if (game.creatorId) {
+      void getCreatorStats(game.creatorId).then((creatorStats) => {
+        if (cancelled || !creatorStats) return;
+        setStats((current) => ({ ...current, remixes: creatorStats.remixes ?? 0 }));
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [game.templateId, game.creatorId]);
+
+  return (
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") onOpen();
+      }}
+      className="relative min-h-[520px] overflow-hidden rounded-[2rem] border border-white/12 bg-card text-left shadow-[0_24px_70px_oklch(0.72_0.2_260/0.24)]"
+    >
+      <img
+        src={game.thumbnailUrl}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        onError={(event) => {
+          const img = event.currentTarget;
+          if (img.dataset.fallback) return;
+          img.dataset.fallback = "1";
+          img.src = FALLBACK_COVER;
+        }}
+        className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-xl brightness-125 saturate-150"
+      />
+      <img
+        src={game.thumbnailUrl}
+        alt=""
+        loading="lazy"
+        draggable={false}
+        onError={(event) => {
+          const img = event.currentTarget;
+          if (img.dataset.fallback) return;
+          img.dataset.fallback = "1";
+          img.src = FALLBACK_COVER;
+        }}
+        className="absolute inset-0 h-full w-full object-contain brightness-110 saturate-120 contrast-105"
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_10%,white/0.1,transparent_24%),radial-gradient(circle_at_92%_16%,oklch(0.82_0.16_195/0.12),transparent_24%),linear-gradient(180deg,oklch(0.02_0.008_282/0.08)_0%,oklch(0.03_0.01_282/0.1)_34%,oklch(0.02_0.008_282/0.9)_82%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-[linear-gradient(180deg,transparent,oklch(0.015_0.006_282/0.94))]" />
+      <span className="absolute left-6 top-6 rounded-full bg-white/92 px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] text-slate-950 shadow-[0_12px_28px_oklch(0_0_0/0.35)] backdrop-blur">
+        {label || game.category}
+      </span>
+      <span className="absolute right-6 top-6 flex items-center gap-1 rounded-full bg-black/70 px-4 py-2 text-sm font-black text-white shadow-[0_12px_28px_oklch(0_0_0/0.28)] backdrop-blur">
+        <Play className="size-4 fill-current" /> {formatCount(stats.views)}
+      </span>
+      <div className="absolute inset-x-0 bottom-0 p-6">
+        <h2 className="max-w-[88%] font-display text-3xl font-black uppercase leading-tight text-white drop-shadow-[0_4px_12px_oklch(0_0_0/0.85)]">
+          {game.title}
+        </h2>
+        <p className="mt-3 text-base font-bold text-white drop-shadow-[0_3px_10px_oklch(0_0_0/0.85)]">by {creator} ✓</p>
+        <div className="mt-5 grid grid-cols-4 gap-2 text-xs font-bold text-white">
+          <span className="flex items-center justify-center gap-1 rounded-full bg-black/62 px-2.5 py-1.5 shadow-[0_8px_18px_oklch(0_0_0/0.24)] backdrop-blur">
+            <Heart className="size-4" /> {formatCount(stats.likes)}
+          </span>
+          <span className="flex items-center justify-center gap-1 rounded-full bg-black/62 px-2.5 py-1.5 shadow-[0_8px_18px_oklch(0_0_0/0.24)] backdrop-blur">
+            <MessageCircle className="size-4" /> {formatCount(stats.comments)}
+          </span>
+          <span className="flex items-center justify-center gap-1 rounded-full bg-black/62 px-2.5 py-1.5 shadow-[0_8px_18px_oklch(0_0_0/0.24)] backdrop-blur">
+            <Repeat2 className="size-4" /> {formatCount(stats.remixes)}
+          </span>
+          <span className="flex items-center justify-center gap-1 rounded-full bg-black/62 px-2.5 py-1.5 shadow-[0_8px_18px_oklch(0_0_0/0.24)] backdrop-blur">
+            <Share2 className="size-4" /> {formatCount(stats.shares)}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpen();
+          }}
+          className="mx-auto mt-5 flex h-11 w-[88%] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-300 via-sky-400 to-blue-500 font-display text-sm font-black uppercase tracking-[0.08em] text-white shadow-[0_14px_30px_oklch(0.72_0.18_220/0.34)]"
+        >
+          <Play className="size-4 fill-current" /> Play Now
+        </button>
+      </div>
+    </article>
+  );
 }
 
 function GameTile({ game, onOpen, onDelete, onEdit }: { game: Game; onOpen: () => void; onDelete?: () => void; onEdit?: () => void }) {
