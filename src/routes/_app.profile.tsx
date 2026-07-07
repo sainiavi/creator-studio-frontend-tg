@@ -17,6 +17,7 @@ import {
   fetchNotifications,
   fetchPointSummary,
   markNotificationsRead,
+  updateProfileName,
   type AchievementSummary,
   type CreatorStats,
   type DailyChallenge,
@@ -417,6 +418,8 @@ function Profile() {
     setDisplayName(savedName);
     setDraftDisplayName(savedName);
     setEditingDisplayName(false);
+    // Persist server-side so leaderboards and other users see the new name.
+    void updateProfileName(getCurrentUserId(), savedName).catch(() => {});
   };
 
   const cancelDisplayNameEdit = () => {

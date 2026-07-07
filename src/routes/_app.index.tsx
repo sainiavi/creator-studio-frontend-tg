@@ -50,10 +50,12 @@ import {
   fetchNotifications,
   fetchPointSummary,
   fetchSocialStats,
+  fetchUserActivities,
   markNotificationsRead,
   toggleLike,
   type CreatorStats,
   type NotificationItem,
+  type UserActivity,
 } from "@/lib/api/social";
 import { ShareGameModal } from "@/components/studio/ShareGameModal";
 import { getCurrentUserId } from "@/lib/identity";
@@ -69,39 +71,30 @@ export const Route = createFileRoute("/_app/")({
 });
 
 const library = gameTemplates.map((template, index) => templateToGame(template, index));
-const featured: Game[] = [
-  {
-    title: "Neon Sudoku",
-    category: "Puzzle",
-    plays: "New",
-    emoji: "S",
-    gradient: "violet",
-    creator: "@0g-agent",
-    thumbnailUrl: getThumbnailUrl("neon-sudoku"),
-    templateId: "neon-sudoku",
-  },
-  {
-    title: "Simple Agent Game",
-    category: "Agent Arcade",
-    plays: "New",
-    emoji: "A",
-    gradient: "cyan",
-    creator: "@0g-agent",
-    thumbnailUrl: getThumbnailUrl("simple-agent-game"),
-    templateId: "simple-agent-game",
-  },
-  ...library,
-];
+const featured: Game[] = [...library];
 
-const activity = [
-  { icon: Trophy, color: "text-neon-green", text: "Neon Drift gained Creator Score", time: "2h" },
-  { icon: Bot, color: "text-neon-cyan", text: "RacerBot v2 deployed", time: "4h" },
-  { icon: Play, color: "text-neon-violet", text: "PixelKnight played AI Arena", time: "6h" },
-  { icon: TrendingUp, color: "text-neon-pink", text: "Cyber Runner reached 1K plays", time: "1d" },
-  { icon: Zap, color: "text-neon-violet", text: "Sudoku Master unlocked 'Speed Demon' badge", time: "2d" },
-  { icon: Gamepad2, color: "text-neon-green", text: "New high score on Space Shooter: 24.5K pts", time: "3d" },
-  { icon: Rocket, color: "text-neon-pink", text: "Bubble Reef published to IPFS", time: "4d" },
-];
+// Maps a real backend activity type to the icon/color used in the feed.
+const activityStyle: Record<UserActivity["activityType"], { icon: ComponentType<{ className?: string }>; color: string }> = {
+  like: { icon: Heart, color: "text-neon-pink" },
+  favorite: { icon: Sparkles, color: "text-neon-violet" },
+  share: { icon: Share2, color: "text-neon-green" },
+  comment: { icon: MessageCircle, color: "text-neon-cyan" },
+  create: { icon: WandSparkles, color: "text-neon-violet" },
+  play: { icon: Play, color: "text-neon-cyan" },
+  publish: { icon: Rocket, color: "text-neon-pink" },
+  major_edit: { icon: Pencil, color: "text-neon-green" },
+};
+
+function relativeTime(timestamp: string) {
+  const ms = Date.now() - Date.parse(timestamp);
+  if (!Number.isFinite(ms) || ms < 0) return "now";
+  const minutes = Math.floor(ms / 60_000);
+  if (minutes < 1) return "now";
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
+}
 
 const preferredCategories = ["Action", "Arcade", "Racing", "Puzzle"];
 const categoryPriority = ["Action", "Arcade", "Racing"];
@@ -148,11 +141,16 @@ function Home() {
     return String(n);
   }, []);
 
+  const [activities, setActivities] = useState<UserActivity[]>([]);
+
   useEffect(() => {
     const userId = getCurrentUserId();
     fetchCreatorStats(userId).then(setCreatorStats).catch(() => {
       setCreatorStats(null);
     });
+    fetchUserActivities(userId)
+      .then((items) => setActivities(items.slice(0, 4)))
+      .catch(() => setActivities([]));
     const refreshNotifications = () => {
       fetchNotifications(userId).then((data) => setNotifications(data.notifications)).catch(() => {
         setNotifications([]);
@@ -244,8 +242,25 @@ function Home() {
           creatorId: g.creatorId ?? getCurrentUserId(),
           thumbnailUrl: resolveGameThumbnail(g),
           templateId: g.id ?? g.templateId,
+          likes: Number(g.points?.likes ?? 0),
           prompt: g.customization?.prompt || "",
         })),
+    [createdGames],
+  );
+
+  // The user's own game packages (same source as the profile page's My Games),
+  // newest first — real titles, thumbnails, publish state, and update times.
+  const myProjects = useMemo(
+    () =>
+      (createdGames as any[])
+        .filter((g: any) => g?.title)
+        .filter((g: any, i: number, all: any[]) => !g?.id || all.findIndex((x: any) => x?.id === g.id) === i)
+        .sort(
+          (a: any, b: any) =>
+            (Date.parse(b?.updatedAt ?? b?.createdAt ?? "") || 0) -
+            (Date.parse(a?.updatedAt ?? a?.createdAt ?? "") || 0),
+        )
+        .slice(0, 4),
     [createdGames],
   );
 
@@ -352,7 +367,6 @@ function Home() {
     );
 
     return [
-      ...(myCreations.length > 0 ? [{ title: "My Creations", games: myCreations }] : []),
       { title: "Trending", games: trending },
       { title: "Latest", games: latest },
       { title: "Players' Choice", games: playersChoice },
@@ -395,17 +409,21 @@ function Home() {
 
   const mobileFeedTabs = useMemo(() => {
     const byTitle = new Map(visibleShelves.map((shelf) => [shelf.title, shelf.games]));
+    // For You ranks by real like counts: most liked first.
+    const forYou = [...(byTitle.get("Players' Choice") ?? byTitle.get("Trending") ?? [])].sort(
+      (first, second) => (second.likes ?? 0) - (first.likes ?? 0),
+    );
     const baseTabs = [
-      { label: "For You", games: byTitle.get("Players' Choice") ?? byTitle.get("Trending") ?? [] },
+      { label: "For You", games: forYou },
       { label: "🔥 Trending", games: byTitle.get("Trending") ?? [] },
       { label: "New", games: byTitle.get("Latest") ?? [] },
-      { label: "Following", games: byTitle.get("My Creations") ?? [] },
+      { label: "Following", games: myCreations },
     ];
     const categoryTabs = visibleShelves
       .filter((shelf) => !["My Creations", "Trending", "Latest", "Players' Choice", "Favourite Games"].includes(shelf.title))
       .map((shelf) => ({ label: shelf.title, games: shelf.games }));
     return [...baseTabs, ...categoryTabs].filter((tab) => tab.games.length > 0);
-  }, [visibleShelves]);
+  }, [visibleShelves, myCreations]);
 
   const selectedMobileFeed = mobileFeedTabs.find((tab) => tab.label === mobileFeedTab) ?? mobileFeedTabs[0];
 
@@ -548,8 +566,8 @@ function Home() {
           </section>
 
           {selectedMobileFeed && (
-            <section className="md:hidden rounded-lg border border-border/60 bg-card/55 p-3">
-              <div className="-mx-3 overflow-x-auto px-3">
+            <section className="min-[1190px]:hidden rounded-lg border border-border/60 bg-card/55 p-3">
+              <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex min-w-max items-center gap-7 border-b border-border/40">
                   {mobileFeedTabs.map((tab) => {
                     const selected = selectedMobileFeed.label === tab.label;
@@ -569,7 +587,7 @@ function Home() {
                   })}
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-1 gap-2">
+              <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-3">
                 {selectedMobileFeed.games.slice(0, 12).map((game, index) => (
                   <GameTile
                     key={`${selectedMobileFeed.label}-${game.title}-${index}`}
@@ -593,8 +611,8 @@ function Home() {
             </section>
           )}
 
-          <div className="hidden space-y-3 md:block">
-            {visibleShelves.slice(0, 3).map((shelf) => (
+          <div className="hidden space-y-3 min-[1190px]:block">
+            {visibleShelves.slice(0, 2).map((shelf) => (
               <GameShelf
                 key={shelf.title}
                 title={shelf.title}
@@ -660,29 +678,45 @@ function Home() {
           </Panel>
 
           <Panel title="My Projects" action="View all" onActionClick={() => navigate({ to: "/profile" })}>
-            <div className="divide-y divide-border/40">
-              {featured.slice(0, 4).map((game, index) => (
-                <button
-                  key={game.title}
-                  onClick={() =>
-                    game.templateId &&
-                    navigate({ to: "/play/$gameId", params: { gameId: game.templateId } })
-                  }
-                  className="flex w-full items-center gap-4 py-4 text-left hover:bg-white/[0.02]"
-                >
-                  <img src={game.thumbnailUrl} alt="" className="size-12 rounded-lg object-cover" />
-                  <span className="min-w-0 flex-1">
-                    <strong className="block truncate text-sm">{game.title}</strong>
-                    <span className="text-xs text-muted-foreground">
-                      Updated {index + 1}h ago
-                    </span>
-                  </span>
-                  <span className="text-xs text-neon-green">
-                    {index % 2 ? "Building" : "Published"}
-                  </span>
-                </button>
-              ))}
-            </div>
+            {myProjects.length === 0 ? (
+              <p className="py-4 text-xs text-muted-foreground">
+                No projects yet — create your first game and it shows up here.
+              </p>
+            ) : (
+              <div className="divide-y divide-border/40">
+                {myProjects.map((g: any) => {
+                  const gameId = g.id ?? g.templateId;
+                  const building =
+                    studio.activeBuild?.phase === "building" && studio.activeBuild?.game?.id === g.id;
+                  const published = g.publish?.published === true;
+                  const updated = relativeTime(g.updatedAt ?? g.createdAt ?? "");
+                  return (
+                    <button
+                      key={gameId ?? g.title}
+                      onClick={() =>
+                        gameId && navigate({ to: "/play/$gameId", params: { gameId } })
+                      }
+                      className="flex w-full items-center gap-4 py-4 text-left hover:bg-white/[0.02]"
+                    >
+                      <img src={resolveGameThumbnail(g)} alt="" className="size-12 rounded-lg object-cover" />
+                      <span className="min-w-0 flex-1">
+                        <strong className="block truncate text-sm">{g.title}</strong>
+                        <span className="text-xs text-muted-foreground">
+                          {updated === "now" ? "Updated just now" : `Updated ${updated} ago`}
+                        </span>
+                      </span>
+                      <span
+                        className={`text-xs ${
+                          building ? "text-amber-300" : published ? "text-neon-green" : "text-muted-foreground"
+                        }`}
+                      >
+                        {building ? "Building" : published ? "Published" : "Draft"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <button
               onClick={() => navigate({ to: "/create" })}
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-md bg-primary py-3 text-sm font-bold text-primary-foreground"
@@ -692,20 +726,32 @@ function Home() {
           </Panel>
 
           <Panel title="Recent Activity">
-            <div className="divide-y divide-border/40">
-              {activity.map(({ icon: Icon, color, text, time }) => (
-                <div key={text} className="flex items-center gap-3 py-4">
-                  <Icon className={`size-5 shrink-0 ${color}`} />
-                  <p className="min-w-0 flex-1 text-xs text-muted-foreground">{text}</p>
-                  <span className="text-[10px] text-muted-foreground/60">{time}</span>
-                </div>
-              ))}
-            </div>
+            {activities.length === 0 ? (
+              <p className="py-4 text-xs text-muted-foreground">
+                No activity yet — play, like, or publish a game and it shows up here.
+              </p>
+            ) : (
+              <div className="divide-y divide-border/40">
+                {activities.map((item) => {
+                  const style = activityStyle[item.activityType] ?? { icon: Gamepad2, color: "text-neon-cyan" };
+                  const Icon = style.icon;
+                  return (
+                    <div key={item._id} className="flex items-center gap-3 py-2.5">
+                      <Icon className={`size-4 shrink-0 ${style.color}`} />
+                      <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground" title={item.details}>
+                        {item.details}
+                      </p>
+                      <span className="shrink-0 text-[10px] text-muted-foreground/60">{relativeTime(item.timestamp)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </Panel>
         </aside>
 
-        <div className="hidden min-w-0 space-y-3 md:block xl:col-span-2">
-          {visibleShelves.slice(3).map((shelf) => (
+        <div className="hidden min-w-0 space-y-3 min-[1190px]:block xl:col-span-2">
+          {visibleShelves.slice(2).map((shelf) => (
             <GameShelf
               key={shelf.title}
               title={shelf.title}

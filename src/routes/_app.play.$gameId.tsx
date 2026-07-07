@@ -544,7 +544,7 @@ function PlayFeed() {
 
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [isUiHidden, setIsUiHidden] = useState(false);
+  const isUiHidden = false;
   const [, setIsTransitioning] = useState(false);
   const startY = useRef(0);
   const cooldownRef = useRef(false);
@@ -705,7 +705,8 @@ function PlayFeed() {
       target.closest("button") ||
       target.closest("a") ||
       target.closest("input") ||
-      target.closest("textarea")
+      target.closest("textarea") ||
+      target.closest(".feed-game-frame")
     ) {
       return;
     }
@@ -732,9 +733,6 @@ function PlayFeed() {
       triggerPrevGame();
     } else {
       setDragY(0);
-      if (Math.abs(dragY) < 5) {
-        setIsUiHidden((prev) => !prev);
-      }
     }
   };
 
@@ -744,7 +742,8 @@ function PlayFeed() {
       const target = e.target as HTMLElement;
       if (
         target.closest(".comments-panel") ||
-        target.closest(".leaderboard-panel")
+        target.closest(".leaderboard-panel") ||
+        target.closest(".feed-game-frame")
       ) {
         return;
       }

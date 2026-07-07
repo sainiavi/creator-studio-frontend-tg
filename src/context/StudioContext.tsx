@@ -15,7 +15,7 @@ type StudioContextValue = {
   removeCreatedGame: (gameId: string) => Promise<void>;
   /** Re-fetches backend games and merges them in (e.g. while waiting for a build). */
   refreshCreatedGames: () => Promise<void>;
-  /** Select a template (switching engine if needed) and jump to the Studio route. */
+  /** Select a template (switching engine if needed) and jump to the Create route. */
   openInStudio: (templateId: string) => void;
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -173,13 +173,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     createFromTemplate();
   }, [createFromTemplate, customization, difficulty, extra, isTemplateSyncPaused, selectedId, theme]);
 
-  // The standalone Studio section was removed — "Use Template" now selects the
-  // template and opens it directly on its play page.
+  // "Use Template" selects the template, tags it for the Create page, and lets
+  // the user describe how the generated game should differ from the base.
   const openInStudio = (templateId: string) => {
     const template = gameTemplates.find((t: any) => t.id === templateId);
     if (template) studio.setEngine(engineOf(template));
     studio.setSelectedId(templateId);
-    navigate({ to: "/play/$gameId", params: { gameId: templateId } });
+    sessionStorage.setItem("kult-create-template-id", templateId);
+    navigate({ to: "/create" });
   };
 
   return (

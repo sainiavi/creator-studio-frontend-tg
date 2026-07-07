@@ -25,7 +25,7 @@ export async function pollCodeJob(
   jobId: string,
   startedAt: number,
   maxWaitMs: number,
-  onProgress?: (statusText: string) => void,
+  onProgress?: (statusText: string, stage?: string) => void,
   isCancelled?: () => boolean,
 ) {
   while (Date.now() - startedAt < maxWaitMs) {
@@ -43,7 +43,7 @@ export async function pollCodeJob(
     const progress = job?.progress;
     const stage = PROGRESS_STAGE_LABELS[progress?.stage] ?? "AI build in progress";
     const chars = progress?.chars ? ` · ${Number(progress.chars).toLocaleString()} chars` : "";
-    onProgress?.(`${stage}…${chars} (${elapsed}s)`);
+    onProgress?.(`${stage}…${chars} (${elapsed}s)`, progress?.stage);
   }
   return null;
 }
@@ -51,7 +51,7 @@ export async function pollCodeJob(
 export async function runCodeJob(
   body: Record<string, unknown>,
   maxWaitMs: number,
-  onProgress?: (statusText: string) => void,
+  onProgress?: (statusText: string, stage?: string) => void,
   isCancelled?: () => boolean,
   onJobId?: (jobId: string) => void,
 ) {
@@ -76,6 +76,8 @@ export type ActiveBuild = {
   phase: "building" | "done" | "failed";
   jobId?: string;
   statusText?: string;
+  /** Raw backend progress stage (e.g. "writing-code", "repairing") — drives the build-console step list. */
+  progressStage?: string;
   game?: { id?: string; templateId?: string; title?: string } | null;
 };
 
@@ -307,9 +309,9 @@ export function useCreatorStudio() {
           build.jobId!,
           build.startedAt,
           build.maxWaitMs,
-          (statusText) => {
+          (statusText, stage) => {
             setAgentStatus(statusText);
-            updateActiveBuild({ statusText });
+            updateActiveBuild({ statusText, ...(stage ? { progressStage: stage } : {}) });
           },
           () => generationRef.current !== token,
         );
@@ -400,21 +402,15 @@ export function useCreatorStudio() {
     [prompt, theme, difficulty, customization, extra],
   );
 
-  const createFromTemplate = useCallback(async () => {
-    setStatus("Creating");
+  // Keeps the generated package in sync with the selected template. Built
+  // locally on purpose: this runs ambiently on mount/selection change, and
+  // hitting POST /games/create here used to persist a junk draft and log a
+  // fake "Created game" activity on every page load. Real backend packages
+  // are only created by actual builds (generateFromPrompt).
+  const createFromTemplate = useCallback(() => {
     setPackageMode("Tier 1");
-    try {
-      const response = await api.post("/games/create", {
-        templateId: selectedTemplate.id,
-        userId: getCurrentUserId(),
-        ...options,
-      });
-      setGeneratedPackage(response.data.game);
-      setStatus("Generated");
-    } catch {
-      setGeneratedPackage(localPackage(selectedTemplate, options));
-      setStatus("Generated locally");
-    }
+    setGeneratedPackage(localPackage(selectedTemplate, options));
+    setStatus("Generated");
   }, [options, selectedTemplate]);
 
   const generateFromPrompt = useCallback(
@@ -562,10 +558,10 @@ export function useCreatorStudio() {
               strategy,
             },
             maxWaitMs,
-            (statusText) => {
+            (statusText, stage) => {
               if (generationRef.current !== token) return;
               setAgentStatus(statusText);
-              updateActiveBuild({ statusText });
+              updateActiveBuild({ statusText, ...(stage ? { progressStage: stage } : {}) });
             },
             () => generationRef.current !== token,
             (jobId) => {

@@ -195,6 +195,12 @@ export type CreatorStats = {
   currentWeek: string | null;
 };
 
+/** Persists the display name server-side so leaderboards show it everywhere. */
+export async function updateProfileName(userId: string, username: string) {
+  const { data } = await api.post("/social/profile", { userId, username });
+  return data as { userId: string; username: string };
+}
+
 export async function fetchCreatorStats(creatorId: string) {
   const { data } = await api.get(`/social/creator-stats/${encodeURIComponent(creatorId)}`);
   return data as CreatorStats;

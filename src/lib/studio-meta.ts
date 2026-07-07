@@ -284,10 +284,10 @@ export function engineOf(template: { engine?: string }): TemplateEngine {
   return "threejs";
 }
 
-const samplePlays = ["343K", "1.5M", "429K", "612K", "3.3M", "2.2M", "85.6K", "888K"];
-
-export function playCount(index: number): string {
-  return samplePlays[index % samplePlays.length];
+// Templates start with no fabricated play counts — the home page overlays the
+// real view totals from /social/views-top wherever they exist.
+export function playCount(_index: number): string {
+  return "New";
 }
 
 // Adapts a raw gameTemplate into the design-system Game shape used by GameCard.

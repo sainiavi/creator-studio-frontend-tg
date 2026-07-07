@@ -31,7 +31,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar py-6 lg:flex transition-all duration-300 ease-in-out ${
+      className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar py-6 md:flex transition-all duration-300 ease-in-out ${
         collapsed ? "w-[72px] px-2" : "w-64 px-4"
       }`}
     >

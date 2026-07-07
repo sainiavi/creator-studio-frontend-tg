@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/studio/PageHeader";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Play } from "lucide-react";
 import { gameTemplates } from "@/lib/templates";
 import { gradientClass } from "@/lib/games-data";
 import { gradientForId, templateEmoji, engineOf, getThumbnailUrl } from "@/lib/studio-meta";
@@ -23,6 +23,7 @@ const engines = [
 
 function Templates() {
   const { studio, openInStudio } = useStudioContext();
+  const navigate = useNavigate();
   const list = gameTemplates.filter((t: any) => engineOf(t) === studio.engine);
 
   return (
@@ -72,8 +73,14 @@ function Templates() {
               <h3 className="mt-1 font-display text-lg font-bold">{t.name}</h3>
               <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{t.mechanic}</p>
               <button
+                onClick={() => navigate({ to: "/play/$gameId", params: { gameId: t.id } })}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 py-2.5 text-xs font-bold uppercase tracking-wider text-primary transition-colors hover:border-primary hover:bg-primary/15"
+              >
+                Play Template <Play className="size-4" />
+              </button>
+              <button
                 onClick={() => openInStudio(t.id)}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[oklch(0.65_0.25_295)] py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground transition-opacity hover:opacity-90"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[oklch(0.65_0.25_295)] py-2.5 text-xs font-bold uppercase tracking-wider text-primary-foreground transition-opacity hover:opacity-90"
               >
                 Use Template <ArrowUpRight className="size-4" />
               </button>

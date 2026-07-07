@@ -15,7 +15,7 @@ function AppLayout() {
     <StudioProvider>
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar />
-        <main className={`flex-1 min-w-0 ${isPlayPage ? "pb-0" : "pb-24 lg:pb-0"}`}>
+        <main className={`flex-1 min-w-0 ${isPlayPage ? "pb-0" : "pb-24 md:pb-0"}`}>
           <Outlet />
         </main>
         <MobileNav />

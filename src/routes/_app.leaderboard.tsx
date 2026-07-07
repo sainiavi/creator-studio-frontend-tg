@@ -201,7 +201,6 @@ function Leaderboard() {
   const [activeTab, setActiveTab] = useState<LeaderboardTab>("creator");
   const [timeRange, setTimeRange] = useState<TimeRange>("weekly");
   const [creatorRows, setCreatorRows] = useState<CreatorRank[]>([]);
-  const [creatorPodiumRows, setCreatorPodiumRows] = useState<CreatorRank[]>([]);
   const [playerRows, setPlayerRows] = useState<PlayerRank[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -209,35 +208,46 @@ function Leaderboard() {
   const currentWallet = getWalletAddress();
   const isCreator = activeTab === "creator";
   const rows = isCreator ? creatorRows : playerRows;
-  const podiumRows = isCreator ? creatorPodiumRows : rows;
+  // The podium is always the selected range's real top 3 — no all-time fallback.
+  const podiumRows = rows;
   const tableRows = rows.slice(3);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    Promise.all([
-      fetchCreatorScoreLeaderboard(100, timeRange),
-      fetchKultPointsLeaderboard(100, timeRange),
-      timeRange === "allTime" ? null : fetchCreatorScoreLeaderboard(3, "allTime"),
-    ])
-      .then(([creatorLeaderboard, playerLeaderboard, allTimeCreatorLeaderboard]) => {
+    // Two-phase load: top 15 paints the podium and first rows immediately,
+    // then the full top 1000 swaps in behind it.
+    void (async () => {
+      let firstPhaseDone = false;
+      try {
+        const [creatorTop, playerTop] = await Promise.all([
+          fetchCreatorScoreLeaderboard(15, timeRange),
+          fetchKultPointsLeaderboard(15, timeRange),
+        ]);
         if (cancelled) return;
-        setCreatorRows(creatorLeaderboard.entries);
-        setCreatorPodiumRows(
-          creatorLeaderboard.entries.length >= 3
-            ? creatorLeaderboard.entries
-            : allTimeCreatorLeaderboard?.entries ?? creatorLeaderboard.entries,
-        );
-        setPlayerRows(playerLeaderboard.entries);
-      })
-      .catch((requestError) => {
+        setCreatorRows(creatorTop.entries);
+        setPlayerRows(playerTop.entries);
+        setLoading(false);
+        firstPhaseDone = true;
+
+        const [creatorFull, playerFull] = await Promise.all([
+          fetchCreatorScoreLeaderboard(1000, timeRange),
+          fetchKultPointsLeaderboard(1000, timeRange),
+        ]);
         if (cancelled) return;
-        setError(requestError instanceof Error ? requestError.message : "Unable to load leaderboard.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        setCreatorRows(creatorFull.entries);
+        setPlayerRows(playerFull.entries);
+      } catch (requestError) {
+        if (cancelled) return;
+        // Only surface an error when even the first phase failed — if the top
+        // 15 already rendered, keep them instead of blanking the page.
+        if (!firstPhaseDone) {
+          setError(requestError instanceof Error ? requestError.message : "Unable to load leaderboard.");
+          setLoading(false);
+        }
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -305,9 +315,9 @@ function Leaderboard() {
         />
 
         <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/55 shadow-card">
-          <div className="grid grid-cols-[64px_1fr_auto] gap-3 border-b border-border/50 px-4 py-3 text-left sm:grid-cols-[88px_1fr_180px] sm:px-5">
+          <div className="grid grid-cols-[64px_1fr_auto] gap-3 border-b border-border/50 px-4 py-3 text-left sm:grid-cols-3 sm:px-5">
             <span className="label-mono text-[10px] text-muted-foreground">Rank</span>
-            <span className="label-mono text-[10px] text-muted-foreground">Name</span>
+            <span className="label-mono text-[10px] text-muted-foreground sm:text-center">Name</span>
             <span className="label-mono text-right text-[10px] text-muted-foreground">
               {isCreator ? "Creator Score" : "KULT Points (KP)"}
             </span>
@@ -329,63 +339,29 @@ function Leaderboard() {
                 No ranked users yet.
               </div>
             )}
-            {!loading && !error && rows.length > 0 && rows.length < 3 && rows.map((row, index) => {
-              const score = getScore(row);
-              const isYou = isCurrentUserRow(row, currentUsername, currentWallet);
-              return (
-                <div
-                  key={`${activeTab}-${row.rank}`}
-                  className={`animate-float-up grid grid-cols-[64px_1fr_auto] items-center gap-3 px-4 py-3 transition sm:grid-cols-[88px_1fr_180px] sm:px-5 sm:py-4 ${
-                    isYou
-                      ? "bg-primary/10 shadow-[inset_3px_0_0_0_var(--color-primary)]"
-                      : "hover:bg-background/30"
-                  }`}
-                  style={{ animationDelay: `${index * 35}ms`, opacity: 0 }}
-                >
-                  <div className="flex items-center gap-2">
-                    <RankBadge rank={row.rank} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-display text-sm font-black sm:text-base">{row.name}</p>
-                      {isYou && (
-                        <span className="rounded-full bg-primary px-2 py-0.5 text-[9px] font-black text-primary-foreground">
-                          You
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 truncate font-mono text-[10px] font-bold text-muted-foreground sm:text-xs">
-                      {compactWallet(row)}
-                    </p>
-                  </div>
-                  <p
-                    className={`font-display text-right text-sm font-black sm:text-lg ${
-                      isCreator ? "text-amber-300" : "text-primary"
-                    }`}
-                  >
-                    {formatStat(score)}
-                  </p>
-                </div>
-              );
-            })}
+            {!loading && !error && rows.length > 0 && tableRows.length === 0 && (
+              <div className="px-5 py-10 text-center text-sm font-bold text-muted-foreground">
+                All ranked users are on the podium.
+              </div>
+            )}
             {tableRows.map((row, index) => {
               const score = getScore(row);
               const isYou = isCurrentUserRow(row, currentUsername, currentWallet);
               return (
                 <div
                   key={`${activeTab}-${row.rank}`}
-                  className={`animate-float-up grid grid-cols-[64px_1fr_auto] items-center gap-3 px-4 py-3 transition sm:grid-cols-[88px_1fr_180px] sm:px-5 sm:py-4 ${
+                  className={`animate-float-up grid grid-cols-[64px_1fr_auto] items-center gap-3 px-4 py-3 transition sm:grid-cols-3 sm:px-5 sm:py-4 ${
                     isYou
                       ? "bg-primary/10 shadow-[inset_3px_0_0_0_var(--color-primary)]"
                       : "hover:bg-background/30"
                   }`}
-                  style={{ animationDelay: `${index * 35}ms`, opacity: 0 }}
+                  style={{ animationDelay: `${Math.min(index, 20) * 35}ms`, opacity: 0 }}
                 >
                   <div className="flex items-center gap-2">
                     <RankBadge rank={row.rank} />
                   </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0 sm:text-center">
+                    <div className="flex items-center gap-2 sm:justify-center">
                       <p className="truncate font-display text-sm font-black sm:text-base">{row.name}</p>
                       {isYou && (
                         <span className="rounded-full bg-primary px-2 py-0.5 text-[9px] font-black text-primary-foreground">

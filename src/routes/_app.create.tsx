@@ -2,6 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Sparkles, Rocket, Bot, Loader2, Check, Play, Send, ArrowRight, BriefcaseBusiness, MessageSquareMore, Code2, Image as ImageIcon, Gamepad2, Wand2 } from "lucide-react";
 import { useStudioContext } from "@/context/StudioContext";
+import { api } from "@/lib/api";
+import { gameTemplates } from "@/lib/templates";
+import { engineOf, getThumbnailUrl, templateEmoji } from "@/lib/studio-meta";
 
 export const Route = createFileRoute("/_app/create")({
   head: () => ({
@@ -23,7 +26,18 @@ const ideas: Array<{ icon: string; text: string }> = [
 
 const vibeIdeas = ["Chill vibes", "World Cup energy", "Neon arcade", "Kids friendly"];
 
-const steps = ["Reading prompt", "Designing mechanics", "Generating assets", "Compiling playable build"];
+const steps = ["Submitting prompt", "Writing game code", "Testing & repairing", "Playable build ready"];
+
+// Maps the backend job's real progress stage to a step above — no more
+// timer-faked progress. Unknown/absent stage means the job hasn't streamed
+// its first progress report yet.
+const stageToStep: Record<string, number> = {
+  "writing-code": 1,
+  "editing-seed": 1,
+  "repairing": 2,
+  "fixing-syntax": 2,
+  "fixing-runtime": 2,
+};
 
 type ChatMessage = {
   role: "assistant" | "user";
@@ -81,6 +95,31 @@ function conceptFor(game: string, vibe: string) {
   return fallback ?? first;
 }
 
+// Asks the real background agent for a concept. Returns null on any failure so
+// the caller can fall back to the canned conceptFor() list.
+async function fetchConceptFromAgent(gameIdea: string, vibe: string): Promise<string | null> {
+  try {
+    const { data } = await api.post(
+      "/agents/background",
+      {
+        task: "game-concept",
+        input: {
+          instruction:
+            "Write ONE original browser mini-game concept for the given game idea and vibe. Reply with a single line of plain text, no markdown, formatted exactly as '<Catchy Title>: <two short sentences describing the playable mechanics and mood>'. Under 60 words.",
+          gameIdea,
+          vibe,
+        },
+      },
+      { timeout: 45000 },
+    );
+    const text = String(data?.result?.content ?? "").trim().replace(/^["'`]+|["'`]+$/g, "");
+    if (!/^[^:\n]{2,60}:\s.+/s.test(text)) return null;
+    return text.split("\n")[0].trim();
+  } catch {
+    return null;
+  }
+}
+
 function isCreateConfirmation(text: string) {
   return /^(ok|okay|yes|yep|sure|create it|build it|go ahead|start)(,?\s+)?(create|build|make|start)?\s*(it)?!?$/i.test(
     text.trim(),
@@ -90,6 +129,7 @@ function isCreateConfirmation(text: string) {
 function Create() {
   const { studio, addCreatedGame, removeCreatedGame } = useStudioContext();
   const navigate = useNavigate();
+  const [templateSeed, setTemplateSeed] = useState<any | null>(null);
   const [chatStage, setChatStage] = useState<ChatStage>("game");
   const [chatInput, setChatInput] = useState("");
   const [gameRequest, setGameRequest] = useState("");
@@ -113,6 +153,30 @@ function Create() {
   // even between 5s job polls.
   const [, setTick] = useState(0);
   useEffect(() => {
+    const templateId = sessionStorage.getItem("kult-create-template-id");
+    if (templateId) {
+      sessionStorage.removeItem("kult-create-template-id");
+      const template = gameTemplates.find((t: any) => t.id === templateId);
+      if (template) {
+        setTemplateSeed(template);
+        studio.setEngine(engineOf(template));
+        studio.setSelectedId(template.id);
+        const category = String(template.category ?? "arcade").toLowerCase();
+        const basePrompt = `Create a game like ${template.name}. Keep the core ${category} template feel: ${template.mechanic}`;
+        setGameRequest(basePrompt);
+        setChatStage("vibe");
+        setMessages([
+          {
+            role: "assistant",
+            text: `${template.name} is selected as your template. Tell me what theme, characters, rules, or difficulty changes you want.`,
+          },
+          { role: "user", text: basePrompt },
+        ]);
+        studio.setPrompt(basePrompt);
+        return;
+      }
+    }
+
     const remixPrompt = sessionStorage.getItem("kult-remix-prompt");
     if (remixPrompt) {
       sessionStorage.removeItem("kult-remix-prompt");
@@ -141,7 +205,9 @@ function Create() {
   }, [phase]);
   const elapsedSec = activeBuild ? Math.max(0, Math.floor((Date.now() - activeBuild.startedAt) / 1000)) : 0;
   const step =
-    phase === "building" ? Math.min(steps.length - 1, Math.floor(elapsedSec / 2)) : steps.length - 1;
+    phase === "building"
+      ? stageToStep[activeBuild?.progressStage ?? ""] ?? 0
+      : steps.length - 1;
 
   // What the user told the chat so far ("create a snake game. Chill vibes").
   // The strategy buttons must build THAT, not the stale studio.prompt default —
@@ -188,20 +254,28 @@ function Create() {
 
     if (chatStage === "vibe") {
       const game = gameKind(gameRequest || value);
-      const concept = conceptFor(game, value);
       setVibeRequest(value);
-      setSelectedConcept(concept);
       setChatStage("concept");
       setMessages((current) => [
         ...current,
         { role: "user", text: value },
-        { role: "assistant", text: `Perfect choice. Here is a ${value} idea:` },
-        { role: "assistant", text: concept },
-        {
-          role: "assistant",
-          text: "Say “Ok, create it!” to lock this concept in, then pick Hybrid Mode or Pure Agent Strategy to build it.",
-        },
+        { role: "assistant", text: `Perfect choice. Cooking up a ${value} concept…` },
       ]);
+      // Real concept from the background agent; canned list only as fallback
+      // when the backend or model is unreachable.
+      void (async () => {
+        const concept =
+          (await fetchConceptFromAgent(gameRequest || value, value)) ?? conceptFor(game, value);
+        setSelectedConcept(concept);
+        setMessages((current) => [
+          ...current,
+          { role: "assistant", text: concept },
+          {
+            role: "assistant",
+            text: "Say “Ok, create it!” to lock this concept in, then pick Hybrid Mode or Pure Agent Strategy to build it.",
+          },
+        ]);
+      })();
       return;
     }
 
@@ -310,6 +384,31 @@ function Create() {
           </div>
 
           <div className="p-3 sm:p-4">
+            {templateSeed && (
+              <div className="mb-3 flex flex-col gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-3 sm:flex-row sm:items-center">
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-secondary">
+                  {getThumbnailUrl(templateSeed.id) ? (
+                    <img src={getThumbnailUrl(templateSeed.id)} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="grid h-full place-items-center text-3xl">
+                      {templateEmoji[templateSeed.id] ?? "🎮"}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="label-mono text-[10px] tracking-[0.16em] text-primary">TEMPLATE SELECTED</p>
+                  <h2 className="truncate font-display text-lg font-black">{templateSeed.name}</h2>
+                  <p className="line-clamp-2 text-xs text-muted-foreground sm:text-sm">{templateSeed.mechanic}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/templates" })}
+                  className="rounded-xl border border-border/70 px-3 py-2 text-xs font-bold text-foreground transition hover:border-primary"
+                >
+                  Change
+                </button>
+              </div>
+            )}
             <div className="flex min-h-[210px] flex-col rounded-2xl [@media(max-height:780px)]:min-h-[170px] border border-border/50 bg-background/50 p-4">
               {freshChat ? (
                 /* Welcome state */
