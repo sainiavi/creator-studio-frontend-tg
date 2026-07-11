@@ -19,6 +19,7 @@ export function GameCard({
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(game.likes ?? 0);
   const [shares, setShares] = useState(game.shares ?? 0);
+  const [remixes, setRemixes] = useState(game.remixes ?? 0);
   const open = () => {
     if (game.playUrl) {
       window.location.href = game.playUrl;
@@ -27,6 +28,7 @@ export function GameCard({
     if (game.templateId) navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
   };
   const remix = () => {
+    setRemixes((value) => value + 1);
     const seed = [
       `Remix ${game.title}`,
       game.prompt || `${game.category} game by ${game.creator}`,
@@ -61,7 +63,7 @@ export function GameCard({
   return (
     <article
       onClick={open}
-      className={`animate-float-up group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-neon ${
+      className={`animate-float-up group relative overflow-hidden rounded-[1.5rem] border-2 border-fuchsia-200/80 bg-white/85 text-violet-950 shadow-[0_10px_24px_rgba(124,58,237,0.18),0_0_20px_rgba(217,70,239,0.18),inset_0_1px_10px_rgba(255,255,255,0.92)] backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-fuchsia-300 hover:shadow-[0_14px_30px_rgba(124,58,237,0.24),0_0_26px_rgba(217,70,239,0.32)] ${
         game.templateId || game.playUrl ? "cursor-pointer" : ""
       }`}
       style={{ animationDelay: `${index * 60}ms`, opacity: 0 }}
@@ -84,7 +86,7 @@ export function GameCard({
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/35" />
           </>
         )}
-        <span className="absolute left-3 top-3 label-mono rounded-md bg-black/35 px-2.5 py-1 text-[10px] text-white backdrop-blur">
+        <span className="absolute left-3 top-3 rounded-full bg-white/85 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-fuchsia-600 shadow-[0_2px_10px_rgba(124,58,237,0.18)] backdrop-blur">
           {game.category}
         </span>
         {onEdit && (
@@ -96,7 +98,7 @@ export function GameCard({
               e.stopPropagation();
               onEdit(game);
             }}
-            className="absolute right-3 top-3 z-10 grid size-8 place-items-center rounded-lg bg-black/55 text-white backdrop-blur transition hover:bg-primary hover:text-primary-foreground"
+            className="absolute right-3 top-3 z-10 grid size-8 place-items-center rounded-xl border border-fuchsia-200/70 bg-white/85 text-violet-800 shadow-[0_2px_10px_rgba(124,58,237,0.2)] backdrop-blur transition hover:bg-fuchsia-100 hover:text-fuchsia-600"
           >
             <Pencil className="size-3.5" />
           </button>
@@ -106,18 +108,18 @@ export function GameCard({
             {game.emoji}
           </div>
         )}
-        <span className="absolute bottom-3 left-3 label-mono rounded-md bg-black/45 px-2.5 py-1 text-[10px] text-white">
+        <span className="absolute bottom-3 left-3 rounded-full bg-white/85 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-violet-700 shadow-[0_2px_10px_rgba(124,58,237,0.18)] backdrop-blur">
           {game.plays} Plays
         </span>
-        <button className="absolute bottom-3 right-3 flex items-center gap-1 rounded-md bg-black/55 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white opacity-0 transition-opacity group-hover:opacity-100">
+        <button className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-[linear-gradient(135deg,#a855f7,#ec4899)] px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white opacity-0 shadow-[0_4px_12px_rgba(168,85,247,0.36)] transition-opacity group-hover:opacity-100">
           <Zap className="size-3" /> Instant Play
         </button>
       </div>
       <div className="space-y-3 p-4">
         <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="truncate font-display text-sm font-bold">{game.title}</h3>
-          <p className="label-mono mt-1 text-[9px] text-muted-foreground">{game.creator}</p>
+          <h3 className="truncate font-display text-sm font-black text-violet-950">{game.title}</h3>
+          <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-violet-500">{game.creator}</p>
         </div>
         <button
           type="button"
@@ -125,7 +127,7 @@ export function GameCard({
             e.stopPropagation();
             open();
           }}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/60 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-violet-300/70 bg-white/70 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-violet-700 shadow-[inset_0_1px_8px_rgba(255,255,255,0.9)] transition-colors hover:border-violet-500 hover:text-violet-950"
         >
           <Play className="size-3" /> Play <ArrowUpRight className="size-3" />
         </button>
@@ -137,7 +139,7 @@ export function GameCard({
               e.stopPropagation();
               void like();
             }}
-            className={`flex h-8 items-center justify-center gap-1 rounded-md border border-border/60 text-[10px] font-bold ${liked ? "bg-rose-500/15 text-rose-400" : "text-muted-foreground hover:text-foreground"}`}
+            className={`flex h-8 items-center justify-center gap-1 rounded-lg border border-violet-200/80 bg-white/65 text-[10px] font-black shadow-[inset_0_1px_6px_rgba(255,255,255,0.85)] ${liked ? "text-rose-500" : "text-violet-600 hover:text-violet-950"}`}
             title="Like"
           >
             <Heart className={`size-3 ${liked ? "fill-current" : ""}`} /> {likes}
@@ -148,10 +150,11 @@ export function GameCard({
               e.stopPropagation();
               remix();
             }}
-            className="flex h-8 items-center justify-center gap-1 rounded-md border border-border/60 text-[10px] font-bold text-muted-foreground hover:text-foreground"
+            aria-label="Remix"
+            className="flex h-8 items-center justify-center gap-1 rounded-lg border border-violet-200/80 bg-white/65 text-[10px] font-black text-violet-600 shadow-[inset_0_1px_6px_rgba(255,255,255,0.85)] hover:text-violet-950"
             title="Remix"
           >
-            <Repeat2 className="size-3" /> Remix
+            <Repeat2 className="size-3.5" /> {remixes}
           </button>
           <button
             type="button"
@@ -159,12 +162,12 @@ export function GameCard({
               e.stopPropagation();
               void share();
             }}
-            className="flex h-8 items-center justify-center gap-1 rounded-md border border-border/60 text-[10px] font-bold text-muted-foreground hover:text-foreground"
+            className="flex h-8 items-center justify-center gap-1 rounded-lg border border-violet-200/80 bg-white/65 text-[10px] font-black text-violet-600 shadow-[inset_0_1px_6px_rgba(255,255,255,0.85)] hover:text-violet-950"
             title="Share"
           >
             <Share2 className="size-3" /> {shares}
           </button>
-          <span className="flex h-8 items-center justify-center gap-1 rounded-md border border-border/60 text-[10px] font-bold text-muted-foreground" title="Creator Score earned">
+          <span className="flex h-8 items-center justify-center gap-1 rounded-lg border border-violet-200/80 bg-white/65 text-[10px] font-black text-violet-600 shadow-[inset_0_1px_6px_rgba(255,255,255,0.85)]" title="Creator Score earned">
             <Trophy className="size-3" /> {game.creatorScore ?? 0}
           </span>
         </div>

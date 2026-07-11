@@ -14,6 +14,7 @@ export type Game = {
   prompt?: string;
   likes?: number;
   shares?: number;
+  remixes?: number;
   creatorScore?: number;
   remixOf?: string;
   zeroGStorage?: ZeroGStoragePointer;

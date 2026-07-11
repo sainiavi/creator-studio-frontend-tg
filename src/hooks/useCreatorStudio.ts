@@ -20,6 +20,16 @@ const PROGRESS_STAGE_LABELS: Record<string, string> = {
   "fixing-runtime": "Testing & fixing the build",
 };
 
+function paidGenerationMessage(error: any) {
+  if (error?.response?.status !== 402 || error?.response?.data?.code !== "PAID_GENERATION_REQUIRED") {
+    return null;
+  }
+  const payment = error.response.data.payment;
+  const amount = payment?.amount ?? 2;
+  const currency = payment?.currency ?? "0G";
+  return `Your first game is free. Generate another game for ${amount} ${currency}.`;
+}
+
 // Polls an existing code job until it finishes. Separated from runCodeJob so a
 // build can be resumed after a page refresh from just its persisted jobId.
 export async function pollCodeJob(
@@ -436,7 +446,7 @@ export function useCreatorStudio() {
   }, [options, selectedTemplate]);
 
   const generateFromPrompt = useCallback(
-    async (strategy = "hybrid", promptOverride = "") => {
+    async (strategy = "hybrid", promptOverride = "", paymentTxHash = "") => {
       const effectivePrompt = promptOverride || prompt;
       const effectiveOptions = { ...options, prompt: effectivePrompt };
       const token = ++generationRef.current;
@@ -457,6 +467,23 @@ export function useCreatorStudio() {
       setAgentStatus(`Routing ${strategy === "pure-agent" ? "pure agent" : "hybrid"} request…`);
       setOrchestrationPlan(null);
       setAssetResult(null);
+      if (!paymentTxHash) {
+        try {
+          await api.get("/games/generation-access", { timeout: 15000 });
+        } catch (error: any) {
+          const paymentMessage = paidGenerationMessage(error);
+          if (paymentMessage) {
+            setStatus("Payment required");
+            setAgentStatus(paymentMessage);
+            updateActiveBuild({
+              phase: "failed",
+              statusText: paymentMessage,
+              game: null,
+            });
+          }
+          throw error;
+        }
+      }
       // A confident keyword match (e.g. "chess", "racing") — null for vague prompts.
       const localMatch = templateForPrompt(effectivePrompt);
       const promptTemplate = localMatch ?? selectedTemplate;
@@ -518,6 +545,7 @@ export function useCreatorStudio() {
               includeCode: false,
               includeAssets: false,
               strategy,
+              ...(paymentTxHash ? { paymentTxHash } : {}),
             },
             { timeout: 90000 },
           );
@@ -545,6 +573,17 @@ export function useCreatorStudio() {
               : "Template ready — generating AI build in the background…",
           );
         } catch (error: any) {
+          const paymentMessage = paidGenerationMessage(error);
+          if (paymentMessage) {
+            setStatus("Payment required");
+            setAgentStatus(paymentMessage);
+            updateActiveBuild({
+              phase: "failed",
+              statusText: paymentMessage,
+              game: null,
+            });
+            throw error;
+          }
           // Routing failed (offline/timeout) — keep the instant local build, still playable.
           baseGame = localGame;
           setStatus("Generated locally");
@@ -579,6 +618,7 @@ export function useCreatorStudio() {
               request: effectivePrompt,
               refinementLevel: customization,
               strategy,
+              ...(paymentTxHash ? { paymentTxHash } : {}),
             },
             maxWaitMs,
             (statusText, stage) => {
@@ -621,7 +661,7 @@ export function useCreatorStudio() {
           if (generationRef.current !== token) return;
           // Surface the real failure (e.g. "interrupted by a server restart",
           // "insufficient balance") instead of calling everything a timeout.
-          const detail = error.response?.data?.error ?? error?.message;
+          const detail = paidGenerationMessage(error) ?? error.response?.data?.error ?? error?.message;
           const fallback = strategy === "pure-agent" ? playableFallbackGame : baseGame;
           if (strategy === "pure-agent") {
             setGeneratedPackage(fallback);

@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { PageHeader } from "@/components/studio/PageHeader";
+
 import { Crown, Trophy, UserRound } from "lucide-react";
 import rankOneAvatar from "@/assets/leaderboard-rank-1.png";
 import rankTwoAvatar from "@/assets/leaderboard-rank-2.png";
 import rankThreeAvatar from "@/assets/leaderboard-rank-3.png";
+import profileBg from "@/assets/profile-bg.png";
 import { getCurrentUsername, getWalletAddress } from "@/lib/identity";
 import {
   fetchCreatorScoreLeaderboard,
@@ -73,7 +74,7 @@ const podiumStyle = {
     lift: "-translate-y-5",
     ring: "border-amber-300",
     glow: "shadow-[0_0_42px_-8px_oklch(0.86_0.19_85_/_0.9),0_18px_60px_-26px_rgba(250,204,21,0.95)]",
-    crown: "text-amber-300",
+    crown: "text-amber-600",
     halo: "bg-amber-300/20",
     rankBg: "bg-gradient-to-br from-amber-100 via-amber-300 to-yellow-500 text-background shadow-[0_0_22px_-6px_rgba(251,191,36,0.9)]",
   },
@@ -84,7 +85,7 @@ const podiumStyle = {
     lift: "translate-y-3",
     ring: "border-slate-200",
     glow: "shadow-[0_0_36px_-10px_oklch(0.86_0.02_270_/_0.75),0_18px_54px_-30px_rgba(226,232,240,0.9)]",
-    crown: "text-slate-200",
+    crown: "text-slate-500",
     halo: "bg-slate-200/16",
     rankBg: "bg-gradient-to-br from-white via-slate-200 to-slate-400 text-background shadow-[0_0_18px_-7px_rgba(226,232,240,0.9)]",
   },
@@ -95,7 +96,7 @@ const podiumStyle = {
     lift: "translate-y-4",
     ring: "border-orange-300",
     glow: "shadow-[0_0_36px_-10px_oklch(0.74_0.14_55_/_0.75),0_18px_54px_-30px_rgba(251,146,60,0.9)]",
-    crown: "text-orange-300",
+    crown: "text-orange-600",
     halo: "bg-orange-300/16",
     rankBg: "bg-gradient-to-br from-orange-100 via-orange-300 to-orange-500 text-background shadow-[0_0_18px_-7px_rgba(251,146,60,0.9)]",
   },
@@ -128,8 +129,8 @@ function Podium({
       : "grid min-h-44 grid-cols-3 items-center gap-2 sm:min-h-56 sm:gap-6";
 
   return (
-    <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-[oklch(0.045_0.018_282)] px-3 py-8 shadow-[0_24px_70px_-42px_rgba(0,0,0,0.95)] sm:px-6 sm:py-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,oklch(0.86_0.18_85_/_0.2),transparent_31%),radial-gradient(circle_at_24%_38%,oklch(0.64_0.22_282_/_0.16),transparent_30%),radial-gradient(circle_at_76%_40%,oklch(0.74_0.14_55_/_0.16),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_42%)]" />
+    <div className="relative mb-6 overflow-hidden rounded-[1.75rem] border-2 border-fuchsia-200/80 bg-white/80 px-3 py-8 text-violet-950 shadow-[0_12px_30px_rgba(124,58,237,0.2),0_0_26px_rgba(217,70,239,0.22),inset_0_1px_12px_rgba(255,255,255,0.92)] backdrop-blur sm:px-6 sm:py-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(250,204,21,0.26),transparent_31%),radial-gradient(circle_at_24%_38%,rgba(168,85,247,0.18),transparent_30%),radial-gradient(circle_at_76%_40%,rgba(251,146,60,0.18),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.36),transparent_42%)]" />
       <div className="pointer-events-none absolute inset-x-5 top-4 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
       <div className="pointer-events-none absolute inset-x-6 top-20 h-36 rounded-full bg-white/8 blur-3xl" />
       <div className="pointer-events-none absolute inset-x-12 bottom-8 h-12 rounded-full bg-cyan-300/12 blur-2xl" />
@@ -170,10 +171,10 @@ function Podium({
                     </span>
                   )}
                 </div>
-                <p className="mt-1 truncate font-mono text-[10px] font-bold text-muted-foreground sm:text-xs">
+                  <p className="mt-1 truncate font-mono text-[10px] font-bold text-violet-500 sm:text-xs">
                   {compactWallet(row)}
                 </p>
-                <p className={`mt-1 font-display text-sm font-black drop-shadow sm:text-base ${isCreator ? "text-amber-300" : "text-primary"}`}>
+                <p className={`mt-1 text-sm font-black drop-shadow-sm sm:text-base ${isCreator ? "text-violet-900 [text-shadow:0_0_8px_rgba(139,92,246,0.35)]" : "text-fuchsia-800 [text-shadow:0_0_8px_rgba(217,70,239,0.3)]"}`} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif", letterSpacing: "0.02em" }}>
                   {formatStat(getScore(row))}
                 </p>
               </div>
@@ -191,8 +192,8 @@ function RankBadge({ rank }: { rank: number }) {
     <div
       className={`grid size-9 shrink-0 place-items-center rounded-lg border font-display text-sm font-black ${
         isTopThree
-          ? "border-amber-300/35 bg-amber-300/12 text-amber-300"
-          : "border-border/55 bg-background/35 text-muted-foreground"
+          ? "border-amber-300/60 bg-amber-100 text-amber-600"
+          : "border-violet-200 bg-white/70 text-violet-600"
       }`}
     >
       {rank}
@@ -257,22 +258,38 @@ function Leaderboard() {
   }, [timeRange]);
 
   return (
-    <div>
-      <PageHeader
-        title="Leaderboard"
-        subtitle="Creator ranks by Creator Score · Player ranks by KULT Points"
-      />
+    <div className="relative min-h-screen overflow-hidden bg-[#f4ddff] text-violet-950">
+      <img src={profileBg} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover object-top" />
+      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_6%,rgba(255,255,255,0.62),transparent_26%),radial-gradient(circle_at_16%_38%,rgba(244,114,182,0.24),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.24),rgba(216,180,254,0.2))]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-56 bg-[linear-gradient(105deg,transparent_0%,rgba(255,255,255,0.5)_42%,transparent_62%)] opacity-70" />
 
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-10">
+
+
+      <div className="relative z-10 mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-10">
+        <section className="relative mb-5 overflow-hidden rounded-[1.65rem] border-2 border-fuchsia-200 bg-[#100528] px-4 py-3.5 text-white shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] backdrop-blur sm:px-6 sm:py-4">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(217,70,239,0.18),transparent_50%),radial-gradient(circle_at_10%_50%,rgba(139,92,246,0.15),transparent_50%)]" />
+          <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="grid size-10 place-items-center rounded-xl border border-amber-400/40 bg-amber-400/10 shadow-[0_0_16px_-4px_rgba(251,191,36,0.5)] sm:size-12 sm:rounded-2xl">
+                <Trophy className="size-5 text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.7)] sm:size-6" strokeWidth={2.4} />
+              </div>
+              <div>
+                <h1 className="font-display text-2xl font-black leading-none text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.45)] sm:text-3xl">Leaderboard</h1>
+                <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.22em] text-violet-200/80 sm:mt-1 sm:text-xs">Creator Score & KULT Points</p>
+              </div>
+            </div>
+          </div>
+        </section>
         <div className="mb-5 flex flex-col items-center justify-center gap-3">
-          <div className="inline-flex w-fit rounded-xl border border-border/60 bg-card/60 p-1 shadow-card">
+          <div className="inline-flex w-fit rounded-2xl border-2 border-violet-300/70 bg-white/70 p-1 shadow-[0_0_18px_rgba(168,85,247,0.24),inset_0_1px_8px_rgba(255,255,255,0.9)] backdrop-blur">
             <button
               type="button"
               onClick={() => setActiveTab("creator")}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-black transition ${
                 isCreator
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[linear-gradient(135deg,#a855f7,#ec4899)] text-white shadow-[0_4px_14px_rgba(168,85,247,0.45)]"
+                  : "text-violet-700 hover:text-violet-950"
               }`}
             >
               <Trophy className="size-4" />
@@ -283,8 +300,8 @@ function Leaderboard() {
               onClick={() => setActiveTab("player")}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-black transition ${
                 !isCreator
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[linear-gradient(135deg,#a855f7,#ec4899)] text-white shadow-[0_4px_14px_rgba(168,85,247,0.45)]"
+                  : "text-violet-700 hover:text-violet-950"
               }`}
             >
               <UserRound className="size-4" />
@@ -292,7 +309,7 @@ function Leaderboard() {
             </button>
           </div>
 
-          <div className="inline-flex w-fit rounded-xl border border-border/60 bg-background/35 p-1">
+          <div className="inline-flex w-fit rounded-2xl border-2 border-violet-300/70 bg-white/70 p-1 shadow-[0_0_18px_rgba(168,85,247,0.2),inset_0_1px_8px_rgba(255,255,255,0.9)] backdrop-blur">
             {timeRanges.map((range) => (
               <button
                 key={range.id}
@@ -300,8 +317,8 @@ function Leaderboard() {
                 onClick={() => setTimeRange(range.id)}
                 className={`rounded-lg px-3 py-2 text-xs font-black transition sm:px-4 ${
                   timeRange === range.id
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-violet-100 text-violet-950"
+                    : "text-violet-600 hover:text-violet-950"
                 }`}
               >
                 {range.label}
@@ -317,18 +334,18 @@ function Leaderboard() {
           currentWallet={currentWallet}
         />
 
-        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/55 shadow-card">
-          <div className="grid grid-cols-[64px_1fr_auto] gap-3 border-b border-border/50 px-4 py-3 text-left sm:grid-cols-3 sm:px-5">
-            <span className="label-mono text-[10px] text-muted-foreground">Rank</span>
-            <span className="label-mono text-[10px] text-muted-foreground sm:text-center">Name</span>
-            <span className="label-mono text-right text-[10px] text-muted-foreground">
+        <div className="overflow-hidden rounded-[1.5rem] border-2 border-fuchsia-200/80 bg-white/82 text-violet-950 shadow-[0_10px_24px_rgba(124,58,237,0.18),0_0_20px_rgba(217,70,239,0.18),inset_0_1px_10px_rgba(255,255,255,0.92)] backdrop-blur">
+          <div className="grid grid-cols-[64px_1fr_auto] gap-3 border-b border-violet-200/70 px-4 py-3 text-left sm:grid-cols-3 sm:px-5">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-violet-500">Rank</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-violet-500 sm:text-center">Name</span>
+            <span className="text-right text-[10px] font-black uppercase tracking-[0.14em] text-violet-500">
               {isCreator ? "Creator Score" : "KULT Points (KP)"}
             </span>
           </div>
 
-          <div className="max-h-[560px] divide-y divide-border/45 overflow-y-auto">
+          <div className="max-h-[560px] divide-y divide-violet-200/70 overflow-y-auto">
             {loading && (
-              <div className="px-5 py-10 text-center text-sm font-bold text-muted-foreground">
+              <div className="px-5 py-10 text-center text-sm font-bold text-violet-600">
                 Loading real leaderboard data...
               </div>
             )}
@@ -338,12 +355,12 @@ function Leaderboard() {
               </div>
             )}
             {!loading && !error && rows.length === 0 && (
-              <div className="px-5 py-10 text-center text-sm font-bold text-muted-foreground">
+              <div className="px-5 py-10 text-center text-sm font-bold text-violet-600">
                 No ranked users yet.
               </div>
             )}
             {!loading && !error && rows.length > 0 && tableRows.length === 0 && (
-              <div className="px-5 py-10 text-center text-sm font-bold text-muted-foreground">
+              <div className="px-5 py-10 text-center text-sm font-bold text-violet-600">
                 All ranked users are on the podium.
               </div>
             )}
@@ -355,8 +372,8 @@ function Leaderboard() {
                   key={`${activeTab}-${row.rank}`}
                   className={`animate-float-up grid grid-cols-[64px_1fr_auto] items-center gap-3 px-4 py-3 transition sm:grid-cols-3 sm:px-5 sm:py-4 ${
                     isYou
-                      ? "bg-primary/10 shadow-[inset_3px_0_0_0_var(--color-primary)]"
-                      : "hover:bg-background/30"
+                      ? "bg-fuchsia-100/80 shadow-[inset_3px_0_0_0_rgb(217,70,239)]"
+                      : "hover:bg-violet-50/70"
                   }`}
                   style={{ animationDelay: `${Math.min(index, 20) * 35}ms`, opacity: 0 }}
                 >
@@ -372,14 +389,15 @@ function Leaderboard() {
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 truncate font-mono text-[10px] font-bold text-muted-foreground sm:text-xs">
+                    <p className="mt-0.5 truncate font-mono text-[10px] font-bold text-violet-500 sm:text-xs">
                       {compactWallet(row)}
                     </p>
                   </div>
                   <p
-                    className={`font-display text-right text-sm font-black sm:text-lg ${
-                      isCreator ? "text-amber-300" : "text-primary"
+                    className={`text-right text-sm font-black sm:text-lg ${
+                      isCreator ? "text-violet-900 [text-shadow:0_0_6px_rgba(139,92,246,0.25)]" : "text-fuchsia-800 [text-shadow:0_0_6px_rgba(217,70,239,0.2)]"
                     }`}
+                    style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif", letterSpacing: "0.02em" }}
                   >
                     {formatStat(score)}
                   </p>
