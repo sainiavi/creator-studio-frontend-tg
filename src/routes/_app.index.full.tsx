@@ -65,6 +65,7 @@ import {
   type UserActivity,
 } from "@/lib/api/social";
 import { ShareGameModal } from "@/components/studio/ShareGameModal";
+import { TelegramSignInButton } from "@/components/studio/TelegramSignInButton";
 import { getCurrentUserId } from "@/lib/identity";
 import profileBg from "@/assets/profile-bg.png";
 import mobileHomeBg from "@/assets/mobile-bg.png";
@@ -81,7 +82,6 @@ import heroFrame from "@/assets/hero-frame.png";
 //   }),
 //   component: Home,
 // });
-
 
 // Maps a real backend activity type to the icon/color used in the feed.
 const activityStyle: Partial<
@@ -588,8 +588,18 @@ export function Home() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#d8cff8_0%,#c4b6f2_42%,#9f87e7_100%)] text-violet-950 sm:bg-[#f4ddff]">
-      <img src={mobileHomeBg} alt="" aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 z-0 h-auto w-[101%] max-w-none -translate-x-1/2 object-contain sm:hidden" />
-      <img src={mobileHomeBottomBg} alt="" aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[clamp(590px,184.6vw,800px)] z-0 h-[calc(100%_-_clamp(590px,184.6vw,800px))] w-[101%] max-w-none -translate-x-1/2 object-fill sm:hidden" />
+      <img
+        src={mobileHomeBg}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-0 z-0 h-auto w-[101%] max-w-none -translate-x-1/2 object-contain sm:hidden"
+      />
+      <img
+        src={mobileHomeBottomBg}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-[clamp(590px,184.6vw,800px)] z-0 h-[calc(100%_-_clamp(590px,184.6vw,800px))] w-[101%] max-w-none -translate-x-1/2 object-fill sm:hidden"
+      />
       <div className="pointer-events-none absolute left-1/2 top-[clamp(87px,27.2vw,118px)] z-[20] w-[58%] -translate-x-1/2 text-center sm:hidden">
         <p className="font-display text-[clamp(7px,2.3vw,10px)] font-black uppercase tracking-[0.1em] text-violet-800 drop-shadow-[0_1px_0_rgba(255,255,255,1)] [text-shadow:0_1px_0_rgba(255,255,255,1),0_0_8px_rgba(124,58,237,0.45)]">
           ✧ You Imagine. AI Builds. ✧
@@ -611,7 +621,12 @@ export function Home() {
         <br />
         agents, and world.
       </p>
-      <img src={heroFrame} alt="" aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[clamp(160px,50vw,217px)] z-[1] h-auto w-[108%] max-w-none -translate-x-1/2 object-contain sm:hidden" />
+      <img
+        src={heroFrame}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-[clamp(160px,50vw,217px)] z-[1] h-auto w-[108%] max-w-none -translate-x-1/2 object-contain sm:hidden"
+      />
       <section className="pointer-events-auto absolute left-1/2 top-[clamp(316px,98.8vw,428px)] z-[60] w-[51%] -translate-x-1/2 rounded-md bg-[#090018] px-[clamp(6px,2.05vw,9px)] py-[clamp(8px,2.56vw,11px)] text-center shadow-[0_0_16px_rgba(124,58,237,0.5),inset_0_1px_10px_rgba(255,255,255,0.08)] sm:hidden">
         <p className="mb-1 font-display text-[clamp(5px,1.54vw,7px)] font-black uppercase tracking-[0.08em] text-fuchsia-400 [text-shadow:0_0_8px_rgba(217,70,239,0.85)]">
           What do you want to create?
@@ -674,7 +689,11 @@ export function Home() {
         <div className="grid grid-cols-4 divide-x divide-violet-300/70">
           {[
             { title: "1. Describe", body: "Share your idea in simple words.", icon: MessageCircle },
-            { title: "2. AI Builds", body: "Artificial intelligence builds agents & world.", icon: Sparkles },
+            {
+              title: "2. AI Builds",
+              body: "Artificial intelligence builds agents & world.",
+              icon: Sparkles,
+            },
             { title: "3. Playtest", body: "Test instantly in play mode.", icon: Gamepad2 },
             { title: "4. Publish", body: "Launch your game to the world.", icon: Rocket },
           ].map((step) => {
@@ -685,23 +704,32 @@ export function Home() {
                   <Icon className="size-5" />
                 </span>
                 <p className="text-[10px] font-black leading-tight text-violet-950">{step.title}</p>
-                <p className="mt-1 text-[8px] font-bold leading-tight text-violet-900/90">{step.body}</p>
+                <p className="mt-1 text-[8px] font-bold leading-tight text-violet-900/90">
+                  {step.body}
+                </p>
               </div>
             );
           })}
         </div>
       </section>
-      <img src={profileBg} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full object-cover object-top sm:block" />
+      <img
+        src={profileBg}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full object-cover object-top sm:block"
+      />
       <div className="absolute inset-0 z-0 hidden bg-[radial-gradient(circle_at_50%_6%,rgba(255,255,255,0.62),transparent_26%),radial-gradient(circle_at_16%_38%,rgba(244,114,182,0.24),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.24),rgba(216,180,254,0.2))] sm:block" />
       <div className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden h-56 bg-[linear-gradient(105deg,transparent_0%,rgba(255,255,255,0.5)_42%,transparent_62%)] opacity-70 sm:block" />
       <header className="relative z-10 m-3 flex min-h-16 items-center justify-between gap-3 rounded-[1.65rem] border-2 border-fuchsia-200 bg-[#100528] px-4 py-3 text-white shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] backdrop-blur sm:gap-4 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
           <div className="min-w-0">
-            <p className="font-display text-3xl font-black leading-none text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.45)]">KULT</p>
+            <p className="font-display text-3xl font-black leading-none text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.45)]">
+              KULT
+            </p>
             <p className="mt-1 text-xs font-black uppercase tracking-[0.22em] text-white">Games</p>
           </div>
           <p className="hidden shrink-0 text-sm font-semibold text-violet-100 sm:block">
-             <span className="font-black text-white"></span>
+            <span className="font-black text-white"></span>
           </p>
           <label className="hidden h-10 w-full max-w-md items-center gap-2 rounded-xl border border-fuchsia-200/30 bg-white/10 px-3 shadow-[inset_0_1px_8px_rgba(255,255,255,0.12)] transition focus-within:border-fuchsia-200 sm:flex">
             <Search className="size-4 shrink-0 text-violet-100" />
@@ -715,6 +743,7 @@ export function Home() {
           </label>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <TelegramSignInButton responsive />
           <label className="grid size-10 shrink-0 place-items-center rounded-full border border-fuchsia-200/30 bg-white/10 transition focus-within:border-fuchsia-200 sm:hidden">
             <Search className="size-4 shrink-0 text-white" />
             <input
@@ -820,7 +849,6 @@ export function Home() {
                 />
               ) : (
                 <>
-
                   <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     <div className="flex min-w-max items-center gap-7 border-b border-violet-700/25">
                       {homeFeedTabs.map((tab) => {
@@ -864,7 +892,9 @@ export function Home() {
                     />
 
                     <section>
-                      <h2 className="mb-3 font-display text-2xl font-black text-violet-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">Browse by Category</h2>
+                      <h2 className="mb-3 font-display text-2xl font-black text-violet-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
+                        Browse by Category
+                      </h2>
                       <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                         {browseCategories.map((category) => {
                           const Icon = category.icon;
@@ -879,9 +909,7 @@ export function Home() {
                                 <Icon className={`size-5 ${category.iconColor}`} />
                               </span>
                               <span className="min-w-0">
-                                <span
-                                  className="block whitespace-nowrap text-base font-black text-white"
-                                >
+                                <span className="block whitespace-nowrap text-base font-black text-white">
                                   {category.name}
                                 </span>
                                 <span className="block whitespace-nowrap text-sm font-bold text-violet-200/80">
@@ -936,72 +964,71 @@ export function Home() {
               />
             ))}
           </div>
-
         </main>
 
         <aside className="hidden space-y-3 min-[1190px]:block">
           <Panel title="Creator Dashboard">
-              <div className="grid grid-cols-2 gap-2">
-                <Metric
-                  label="Games Created"
-                  value={formatStat(creatorStats?.games ?? createdGames.length)}
-                  icon={Gamepad2}
-                  color="text-neon-violet"
-                />
-                <Metric
-                  label="Total Plays"
-                  value={formatStat(creatorStats?.plays)}
-                  icon={Play}
-                  color="text-neon-cyan"
-                />
-                <Metric
-                  label="Creator Score"
-                  value={formatStat(creatorStats?.creatorScore)}
-                  icon={Trophy}
-                  color="text-neon-green"
-                />
-                <Metric
-                  label="Kult Points"
-                  value={formatStat(creatorStats?.lifetimePoints)}
-                  icon={Zap}
-                  color="text-neon-pink"
-                />
+            <div className="grid grid-cols-2 gap-2">
+              <Metric
+                label="Games Created"
+                value={formatStat(creatorStats?.games ?? createdGames.length)}
+                icon={Gamepad2}
+                color="text-neon-violet"
+              />
+              <Metric
+                label="Total Plays"
+                value={formatStat(creatorStats?.plays)}
+                icon={Play}
+                color="text-neon-cyan"
+              />
+              <Metric
+                label="Creator Score"
+                value={formatStat(creatorStats?.creatorScore)}
+                icon={Trophy}
+                color="text-neon-green"
+              />
+              <Metric
+                label="Kult Points"
+                value={formatStat(creatorStats?.lifetimePoints)}
+                icon={Zap}
+                color="text-neon-pink"
+              />
+            </div>
+            <div className="mt-2 flex items-end justify-between rounded-md bg-background/50 p-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Followers</p>
+                <strong className="mt-1 block text-2xl">
+                  {formatStat(creatorStats?.followers)}
+                </strong>
               </div>
-              <div className="mt-2 flex items-end justify-between rounded-md bg-background/50 p-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Followers</p>
-                  <strong className="mt-1 block text-2xl">
-                    {formatStat(creatorStats?.followers)}
-                  </strong>
-                </div>
-                <svg viewBox="0 0 120 38" className="h-12 w-36" aria-hidden="true">
-                  <polyline
-                    points="0,31 18,22 35,25 52,14 70,20 87,10 103,15 120,6"
-                    fill="none"
-                    stroke="oklch(0.85 0.2 150)"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
-            </Panel>
+              <svg viewBox="0 0 120 38" className="h-12 w-36" aria-hidden="true">
+                <polyline
+                  points="0,31 18,22 35,25 52,14 70,20 87,10 103,15 120,6"
+                  fill="none"
+                  stroke="oklch(0.85 0.2 150)"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+          </Panel>
 
-            <Panel
-              title="Recent Events"
-              action="View all"
-              onActionClick={() => setRecentEventsOpen(true)}
-            >
-              {recentEventsPreview.length === 0 ? (
-                <p className="py-4 text-xs text-muted-foreground">
-                  No platform events yet — created and published games will show up here.
-                </p>
-              ) : (
-                <div className="divide-y divide-border/40">
-                  {recentEventsPreview.map((item) => (
-                    <ActivityEventRow key={item._id} item={item} />
-                  ))}
-                </div>
-              )}
-            </Panel>
+          <Panel
+            title="Recent Events"
+            action="View all"
+            onActionClick={() => setRecentEventsOpen(true)}
+          >
+            {recentEventsPreview.length === 0 ? (
+              <p className="py-4 text-xs text-muted-foreground">
+                No platform events yet — created and published games will show up here.
+              </p>
+            ) : (
+              <div className="divide-y divide-border/40">
+                {recentEventsPreview.map((item) => (
+                  <ActivityEventRow key={item._id} item={item} />
+                ))}
+              </div>
+            )}
+          </Panel>
         </aside>
 
         <div className="hidden min-w-0 space-y-3 min-[1190px]:block xl:col-span-2">
@@ -1337,7 +1364,9 @@ function MobileShelf({
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-2xl font-black text-violet-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">{title}</h2>
+        <h2 className="font-display text-2xl font-black text-violet-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
+          {title}
+        </h2>
         <button
           type="button"
           onClick={onViewAll}
@@ -1408,7 +1437,9 @@ function TopCreatorsRow({
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-2xl font-black text-violet-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">👑 Top Creators</h2>
+        <h2 className="font-display text-2xl font-black text-violet-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
+          👑 Top Creators
+        </h2>
         <button
           type="button"
           onClick={onViewAll}

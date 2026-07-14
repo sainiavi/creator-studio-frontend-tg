@@ -1,12 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
-// import { useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
 import { useEffect } from "react";
-// import { Loader2, MessageCircle, WalletCards } from "lucide-react";
 
 import { reportLovableError } from "../lib/lovable-error-reporting";
-// import { PRIVY_APP_ID } from "../lib/privyConfig";
-// import { syncPrivyIdentity } from "../lib/privyIdentity";
+import { syncPrivyIdentity } from "../lib/privyIdentity";
 
 function NotFoundComponent() {
   return (
@@ -29,17 +27,6 @@ function NotFoundComponent() {
     </div>
   );
 }
-
-/*
-function AccessDeniedComponent() {
-  const { login } = usePrivy();
-  const { login: loginWithTelegram, state } = useLoginWithTelegram();
-  ...
-}
-
-function PrivyMissingConfigComponent() { ... }
-function PrivyLoadingComponent() { ... }
-*/
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
@@ -85,24 +72,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { ready, authenticated, user } = usePrivy();
 
-  // TEMP: Privy auth bypass — uncomment block below to re-enable
+  useEffect(() => {
+    if (ready) syncPrivyIdentity(authenticated ? user : null);
+  }, [authenticated, ready, user]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
     </QueryClientProvider>
   );
-
-  // const { ready, authenticated, user } = usePrivy();
-  // useEffect(() => {
-  //   if (ready) syncPrivyIdentity(authenticated ? user : null);
-  // }, [authenticated, ready, user]);
-  // if (!PRIVY_APP_ID) return <PrivyMissingConfigComponent />;
-  // if (!ready) return <PrivyLoadingComponent />;
-  // if (!authenticated) return <AccessDeniedComponent />;
-  // return (
-  //   <QueryClientProvider client={queryClient}>
-  //     <Outlet />
-  //   </QueryClientProvider>
-  // );
 }
