@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { ArrowUpRight, Play } from "lucide-react";
-import { gameTemplates } from "@/lib/templates";
 import { gradientClass } from "@/lib/games-data";
 import { gradientForId, templateEmoji, engineOf, getThumbnailUrl } from "@/lib/studio-meta";
 import { useStudioContext } from "@/context/StudioContext";
+import { useGameTemplates } from "@/hooks/useGameTemplates";
+import { TemplatesGridSkeleton } from "@/components/studio/PageSkeletons";
 import profileBg from "@/assets/profile-bg.png";
 
 export const Route = createFileRoute("/_app/templates")({
+  pendingComponent: TemplatesGridSkeleton,
   head: () => ({
     meta: [
       { title: "Templates — Creator Studio" },
@@ -25,7 +27,10 @@ const engines = [
 function Templates() {
   const { studio, openInStudio } = useStudioContext();
   const navigate = useNavigate();
+  const { gameTemplates, loading } = useGameTemplates();
   const list = gameTemplates.filter((t: any) => engineOf(t) === studio.engine);
+
+  if (loading) return <TemplatesGridSkeleton />;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#f4ddff] text-violet-950">

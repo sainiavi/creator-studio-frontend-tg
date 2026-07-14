@@ -29,11 +29,12 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useGameTemplates } from "@/hooks/useGameTemplates";
 import { GamePreview } from "@/components/studio/GamePreview";
 import { Html5Preview } from "@/components/studio/Html5Preview";
 import { SimpleAgentGame } from "@/components/studio/SimpleAgentGame";
 import { NeonSudokuGame } from "@/components/studio/NeonSudokuGame";
-import { gameTemplates } from "@/lib/templates";
+import { PlayPageSkeleton } from "@/components/studio/PageSkeletons";
 import { engineOf, templateEmoji, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
 import { localPackage } from "@/hooks/useCreatorStudio";
 import { gradientClass } from "@/lib/games-data";
@@ -50,15 +51,13 @@ import type { SharePlatform } from "@/lib/api/social";
 import { qualifyReferral } from "@/lib/api/referral";
 
 export const Route = createFileRoute("/_app/play/$gameId")({
-  head: ({ params }) => {
-    const template = gameTemplates.find((t: any) => t.id === params.gameId);
-    return {
-      meta: [
-        { title: `${template?.name ?? "Play"} - Creator Studio` },
-        { name: "description", content: "Play this game instantly from the social feed." },
-      ],
-    };
-  },
+  pendingComponent: PlayPageSkeleton,
+  head: ({ params }) => ({
+    meta: [
+      { title: `${params.gameId} - Creator Studio` },
+      { name: "description", content: "Play this game instantly from the social feed." },
+    ],
+  }),
   component: PlayFeed,
 });
 
@@ -257,8 +256,10 @@ function PlayFeed() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
   const { setSidebarCollapsed, studio, createdGames, refreshCreatedGames } = useStudioContext();
+  const { gameTemplates, themePresets, loading: templatesLoading } = useGameTemplates();
   const isSimpleAgentGame = gameId === "simple-agent-game";
   const isNeonSudoku = gameId === "neon-sudoku";
+
   const isTemplateRoute = gameTemplates.some((template: any) => template.id === gameId);
   const generatedPackageMatches =
     !isTemplateRoute &&
@@ -419,7 +420,7 @@ function PlayFeed() {
         difficulty: "normal",
         customization: "light",
         extra: "none",
-      });
+      }, themePresets);
   const isCustomCreation = Boolean(generatedPackageMatches || customGame);
   const isShareable = !isCustomCreation || pkg?.publish?.published === true;
   const baseRemixCount = Number((customGame as any)?.remixes ?? (pkg as any)?.remixes ?? 0);
@@ -814,14 +815,11 @@ function PlayFeed() {
     gameTemplates.some((candidate: any) => candidate.id === gameId);
 
   if (!isKnownGame && (publicLoadState === "idle" || publicLoadState === "loading")) {
-    return (
-      <div className="grid h-[100dvh] place-items-center bg-black text-white">
-        <div className="text-center">
-          <Loader2 className="mx-auto size-8 animate-spin text-primary" />
-          <p className="mt-4 text-sm font-bold">Loading published game...</p>
-        </div>
-      </div>
-    );
+    return <PlayPageSkeleton />;
+  }
+
+  if (templatesLoading && !isSimpleAgentGame && !isNeonSudoku) {
+    return <PlayPageSkeleton />;
   }
 
   if (!isKnownGame && publicLoadState === "not-found") {

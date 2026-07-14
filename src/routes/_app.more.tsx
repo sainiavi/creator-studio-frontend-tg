@@ -3,13 +3,11 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { GameRow } from "@/components/studio/GameRow";
+import { LazyVideo } from "@/components/studio/LazyVideo";
+import { MorePageSkeleton } from "@/components/studio/PageSkeletons";
 import { type Game } from "@/lib/games-data";
-import arenaVideo from "@/assets/IMG_9260.MOV";
-import stepTwoVideo from "@/assets/step2.mp4";
-import stepThreeVideo from "@/assets/step3.mp4";
 import momentsOne from "@/assets/moments-1.jpg";
 import momentsTwo from "@/assets/moments2.jpg";
-import momentsThree from "@/assets/moments3.mp4";
 import warzoneWarriors from "@/assets/game1.png";
 import highwayHustle from "@/assets/game2.png";
 import zeroGPool from "@/assets/game3.png";
@@ -19,19 +17,19 @@ import roboWars from "@/assets/game6.png";
 
 const arenaVideos = [
   {
-    src: arenaVideo,
+    loadSrc: () => import("@/assets/IMG_9260.MOV"),
     title: "Enter The Arena",
     category: "AI Arena",
     description: "Create your contender and get ready for the first challenge.",
   },
   {
-    src: stepTwoVideo,
+    loadSrc: () => import("@/assets/step2.mp4"),
     title: "Build Your Game",
     category: "Creator Studio",
     description: "Shape the mechanics, style, and action with AI-powered tools.",
   },
   {
-    src: stepThreeVideo,
+    loadSrc: () => import("@/assets/step3.mp4"),
     title: "Play And Compete",
     category: "Community",
     description: "Launch your game, challenge players, and climb the arena.",
@@ -39,9 +37,14 @@ const arenaVideos = [
 ];
 
 const moments = [
-  { src: momentsOne, title: "Arena Highlights", label: "Featured Moment", type: "image" },
-  { src: momentsTwo, title: "Behind The Build", label: "Creator Moment", type: "image" },
-  { src: momentsThree, title: "Ready To Launch", label: "Studio Moment", type: "video" },
+  { src: momentsOne, title: "Arena Highlights", label: "Featured Moment", type: "image" as const },
+  { src: momentsTwo, title: "Behind The Build", label: "Creator Moment", type: "image" as const },
+  {
+    loadSrc: () => import("@/assets/moments3.mp4"),
+    title: "Ready To Launch",
+    label: "Studio Moment",
+    type: "video" as const,
+  },
 ];
 
 const featuredGames: Game[] = [
@@ -108,6 +111,7 @@ const featuredGames: Game[] = [
 ];
 
 export const Route = createFileRoute("/_app/more")({
+  pendingComponent: MorePageSkeleton,
   head: () => ({
     meta: [
       { title: "More — Creator Studio" },
@@ -185,18 +189,19 @@ function More() {
         <div className="grid gap-5 md:grid-cols-2">
           {visibleVideos.map((video, index) => (
             <article
-              key={`${video.src}-${activeIndex}`}
+              key={`${video.title}-${activeIndex}`}
               className="group relative h-[260px] overflow-hidden rounded-2xl border border-white/15 bg-[#070711] shadow-[0_24px_70px_-32px_rgba(126,34,206,0.8)] lg:h-[300px]"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <video
+              <LazyVideo
                 className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                src={video.src}
+                loadSrc={video.loadSrc}
+                skeletonClassName="absolute inset-0 h-full w-full rounded-none"
                 autoPlay
                 muted
                 loop
                 playsInline
-                preload="metadata"
+                preload="none"
                 aria-label={video.title}
               />
               <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-[#090314]/10 to-[#05030b]/95" />
@@ -242,16 +247,18 @@ function More() {
                   className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
                   src={moment.src}
                   alt={moment.title}
+                  loading="lazy"
                 />
               ) : (
-                <video
+                <LazyVideo
                   className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                  src={moment.src}
+                  loadSrc={moment.loadSrc}
+                  skeletonClassName="absolute inset-0 h-full w-full rounded-none"
                   autoPlay
                   muted
                   loop
                   playsInline
-                  preload="metadata"
+                  preload="none"
                   aria-label={moment.title}
                 />
               )}

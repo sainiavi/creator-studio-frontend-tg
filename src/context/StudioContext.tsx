@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCreatorStudio } from "@/hooks/useCreatorStudio";
 import { api } from "@/lib/api";
 import { engineOf } from "@/lib/studio-meta";
-import { gameTemplates } from "@/lib/templates";
+import { findGameTemplate } from "@/lib/templates-loader";
 import { getCurrentUserId, ownsGame } from "@/lib/identity";
 
 type Studio = ReturnType<typeof useCreatorStudio>;
@@ -163,24 +163,27 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     isTemplateSyncPaused,
     selectedId,
     theme,
+    templatesReady,
   } = studio;
 
   // Keep the generated package in sync whenever the selection or options change.
   // Skipped while a prompt generation is updating the selection itself —
   // otherwise this would overwrite the AI-designed package with a template one.
   useEffect(() => {
+    if (!templatesReady) return;
     if (isTemplateSyncPaused()) return;
     createFromTemplate();
-  }, [createFromTemplate, customization, difficulty, extra, isTemplateSyncPaused, selectedId, theme]);
+  }, [createFromTemplate, customization, difficulty, extra, isTemplateSyncPaused, selectedId, templatesReady, theme]);
 
   // "Use Template" selects the template, tags it for the Create page, and lets
   // the user describe how the generated game should differ from the base.
   const openInStudio = (templateId: string) => {
-    const template = gameTemplates.find((t: any) => t.id === templateId);
-    if (template) studio.setEngine(engineOf(template));
-    studio.setSelectedId(templateId);
-    sessionStorage.setItem("kult-create-template-id", templateId);
-    navigate({ to: "/create" });
+    void findGameTemplate(templateId).then((template) => {
+      if (template) studio.setEngine(engineOf(template));
+      studio.setSelectedId(templateId);
+      sessionStorage.setItem("kult-create-template-id", templateId);
+      navigate({ to: "/create" });
+    });
   };
 
   return (

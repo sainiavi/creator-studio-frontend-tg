@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getAccessToken, getIdentityToken } from "@privy-io/react-auth";
+// import { getAccessToken, getIdentityToken } from "@privy-io/react-auth";
 import { getCurrentUserId } from "./identity";
 
 const rawBaseUrl = import.meta.env.VITE_API_URL ?? "";
@@ -33,10 +33,12 @@ function currentIdentity(): string | undefined {
 async function fetchToken(): Promise<string | null> {
   try {
     const userId = currentIdentity();
-    const [privyAccessToken, privyIdentityToken] = await Promise.all([
-      getAccessToken().catch(() => null),
-      getIdentityToken().catch(() => null),
-    ]);
+    const privyAccessToken = null;
+    const privyIdentityToken = null;
+    // const [privyAccessToken, privyIdentityToken] = await Promise.all([
+    //   getAccessToken().catch(() => null),
+    //   getIdentityToken().catch(() => null),
+    // ]);
     // Plain axios: must not run through the interceptor that awaits the token.
     const response = await axios.post(
       `${baseURL}/auth/token`,

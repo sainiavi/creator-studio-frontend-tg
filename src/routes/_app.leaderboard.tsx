@@ -6,6 +6,8 @@ import rankOneAvatar from "@/assets/leaderboard-rank-1.png";
 import rankTwoAvatar from "@/assets/leaderboard-rank-2.png";
 import rankThreeAvatar from "@/assets/leaderboard-rank-3.png";
 import profileBg from "@/assets/profile-bg.png";
+import { LeaderboardSkeleton } from "@/components/studio/PageSkeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentUsername, getWalletAddress } from "@/lib/identity";
 import {
   fetchCreatorScoreLeaderboard,
@@ -15,6 +17,7 @@ import {
 } from "@/lib/api/leaderboards";
 
 export const Route = createFileRoute("/_app/leaderboard")({
+  pendingComponent: LeaderboardSkeleton,
   head: () => ({
     meta: [
       { title: "Leaderboard - Creator Studio" },
@@ -344,11 +347,17 @@ function Leaderboard() {
           </div>
 
           <div className="max-h-[560px] divide-y divide-violet-200/70 overflow-y-auto">
-            {loading && (
-              <div className="px-5 py-10 text-center text-sm font-bold text-violet-600">
-                Loading real leaderboard data...
-              </div>
-            )}
+            {loading &&
+              Array.from({ length: 8 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-[64px_1fr_auto] gap-3 px-4 py-4 sm:grid-cols-3 sm:px-5"
+                >
+                  <Skeleton className="h-5 w-8" />
+                  <Skeleton className="h-5 w-40 sm:mx-auto" />
+                  <Skeleton className="h-5 w-16 justify-self-end" />
+                </div>
+              ))}
             {!loading && error && (
               <div className="px-5 py-10 text-center text-sm font-bold text-destructive">
                 {error}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { gameTemplates, themePresets } from "../lib/templates";
+import { loadTemplateModule } from "../lib/templates-loader";
 import { api } from "../lib/api";
 import { engineOf } from "../lib/studio-meta";
 import { getCurrentUserId } from "@/lib/identity";
@@ -128,7 +128,7 @@ function notifyBuildReadyOnce(game: any, jobId?: string) {
   });
 }
 
-function templateForPrompt(prompt: string) {
+function templateForPrompt(prompt: string, gameTemplates: any[]) {
   const text = prompt.toLowerCase();
   const match = (ids: string[], terms: string[]) =>
     terms.some((term: string) => text.includes(term))
@@ -179,7 +179,7 @@ function recentCreationContext() {
   }
 }
 
-export function localPackage(template: any, options: any) {
+export function localPackage(template: any, options: any, themePresets: any) {
   const theme = themePresets[options.theme as keyof typeof themePresets] ?? themePresets.neon;
   const tuning = template.difficulty[options.difficulty] ?? template.difficulty.normal;
   const slug = `${template.id}-${options.theme}-${Date.now().toString(36)}`;
@@ -230,7 +230,7 @@ export function localPackage(template: any, options: any) {
   };
 }
 
-function localTemplateExport() {
+function localTemplateExport(gameTemplates: any[], themePresets: any) {
   return {
     name: "kult-template-pack",
     version: "1.0.0",
@@ -265,6 +265,16 @@ function localTemplateExport() {
 
 export function useCreatorStudio() {
   const generationRef = useRef(0);
+  const [templatesModule, setTemplatesModule] = useState<Awaited<ReturnType<typeof loadTemplateModule>> | null>(
+    null,
+  );
+  const gameTemplates = templatesModule?.gameTemplates ?? [];
+  const themePresets = templatesModule?.themePresets ?? { neon: { label: "Neon", mood: "", colors: [] } };
+  const templatesReady = templatesModule !== null;
+
+  useEffect(() => {
+    void loadTemplateModule().then(setTemplatesModule);
+  }, []);
   // While a prompt generation programmatically changes engine/selection, the
   // StudioContext "sync package to selection" effect must not run — it would
   // overwrite the AI-designed package with a plain template package.
@@ -286,15 +296,28 @@ export function useCreatorStudio() {
   const [agentStatus, setAgentStatus] = useState("Agents idle");
   const [orchestrationPlan, setOrchestrationPlan] = useState<any>(null);
   const [assetResult, setAssetResult] = useState<any>(null);
-  const [generatedPackage, setGeneratedPackage] = useState(() =>
-    localPackage(gameTemplates[0], {
-      prompt: defaultPrompt,
-      theme: "neon",
-      difficulty: "normal",
-      customization: "light",
-      extra: "none",
-    }),
-  );
+  const [generatedPackage, setGeneratedPackage] = useState<any>(() => ({
+    id: "boot",
+    tier: "template",
+    title: "Creator Studio",
+    templateId: "flappy",
+    category: "Arcade",
+    gameplay: { mechanic: "", controls: "" },
+    visuals: { mood: "", colors: [], assets: "" },
+  }));
+
+  useEffect(() => {
+    if (!templatesModule) return;
+    setGeneratedPackage(
+      localPackage(templatesModule.gameTemplates[0], {
+        prompt: defaultPrompt,
+        theme: "neon",
+        difficulty: "normal",
+        customization: "light",
+        extra: "none",
+      }, templatesModule.themePresets),
+    );
+  }, [templatesModule]);
   const [activeBuild, setActiveBuild] = useState<ActiveBuild | null>(() => readActiveBuild());
 
   const updateActiveBuild = useCallback((patch: Partial<ActiveBuild> | null) => {
@@ -440,10 +463,11 @@ export function useCreatorStudio() {
   // fake "Created game" activity on every page load. Real backend packages
   // are only created by actual builds (generateFromPrompt).
   const createFromTemplate = useCallback(() => {
+    if (!selectedTemplate) return;
     setPackageMode("Tier 1");
-    setGeneratedPackage(localPackage(selectedTemplate, options));
+    setGeneratedPackage(localPackage(selectedTemplate, options, themePresets));
     setStatus("Generated");
-  }, [options, selectedTemplate]);
+  }, [options, selectedTemplate, themePresets]);
 
   const generateFromPrompt = useCallback(
     async (strategy = "hybrid", promptOverride = "", paymentTxHash = "") => {
@@ -485,7 +509,7 @@ export function useCreatorStudio() {
         }
       }
       // A confident keyword match (e.g. "chess", "racing") — null for vague prompts.
-      const localMatch = templateForPrompt(effectivePrompt);
+      const localMatch = templateForPrompt(effectivePrompt, gameTemplates);
       const promptTemplate = localMatch ?? selectedTemplate;
       // Lock the matched template for hybrid so the routing agent can't drift to a different
       // game. Pure-agent always goes to the backend (it designs from scratch, no template).
@@ -495,7 +519,7 @@ export function useCreatorStudio() {
       pauseTemplateSync();
       setEngine(engineOf(promptTemplate));
       setSelectedId(promptTemplate.id);
-      const playableFallbackGame = localPackage(promptTemplate, effectiveOptions);
+      const playableFallbackGame = localPackage(promptTemplate, effectiveOptions, themePresets);
       const localGame = { ...playableFallbackGame };
       if (strategy === "pure-agent") {
         localGame.title = titleFromPrompt(effectivePrompt);
@@ -779,9 +803,9 @@ export function useCreatorStudio() {
       const response = await api.get("/templates/export");
       return response.data;
     } catch {
-      return localTemplateExport();
+      return localTemplateExport(gameTemplates, themePresets);
     }
-  }, []);
+  }, [gameTemplates, themePresets]);
 
   return {
     templates: filteredTemplates,
@@ -817,5 +841,6 @@ export function useCreatorStudio() {
     orchestrateBuild,
     generateAssets,
     getTemplateExport,
+    templatesReady,
   };
 }

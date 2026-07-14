@@ -3,14 +3,16 @@ import { useEffect, useState } from "react";
 import { Rocket, Bot, Loader2, Check, Play, Send, ArrowRight, BriefcaseBusiness, MessageSquareMore, Wand2 } from "lucide-react";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
-import { gameTemplates } from "@/lib/templates";
+import { findGameTemplate } from "@/lib/templates-loader";
 import { engineOf, getThumbnailUrl, templateEmoji } from "@/lib/studio-meta";
 import { sendZeroGGenerationPayment } from "@/lib/zeroGPayment";
+import { CreatePageSkeleton } from "@/components/studio/PageSkeletons";
 import profileBg from "@/assets/profile-bg.png";
 import cyberpunkSuggestion from "@/assets/create-suggestion-cyberpunk.png";
 import farmSuggestion from "@/assets/create-suggestion-farm.png";
 
 export const Route = createFileRoute("/_app/create")({
+  pendingComponent: CreatePageSkeleton,
   head: () => ({
     meta: [
       { title: "Create — Creator Studio" },
@@ -162,8 +164,8 @@ function Create() {
     const templateId = sessionStorage.getItem("kult-create-template-id");
     if (templateId) {
       sessionStorage.removeItem("kult-create-template-id");
-      const template = gameTemplates.find((t: any) => t.id === templateId);
-      if (template) {
+      void findGameTemplate(templateId).then((template) => {
+        if (!template) return;
         setTemplateSeed(template);
         studio.setEngine(engineOf(template));
         studio.setSelectedId(template.id);
@@ -179,8 +181,8 @@ function Create() {
           { role: "user", text: basePrompt },
         ]);
         studio.setPrompt(basePrompt);
-        return;
-      }
+      });
+      return;
     }
 
     const remixPrompt = sessionStorage.getItem("kult-remix-prompt");
@@ -195,14 +197,13 @@ function Create() {
       studio.setPrompt(remixPrompt);
       return;
     }
-    // Idea typed into the home hero box: pre-fill the chat input so the user
-    // just hits send (or edits it first).
+
     const heroPrompt = sessionStorage.getItem("kult-create-prompt");
     if (heroPrompt) {
       sessionStorage.removeItem("kult-create-prompt");
       setChatInput(heroPrompt);
     }
-  }, []);
+  }, [studio]);
 
   useEffect(() => {
     if (phase !== "building") return;

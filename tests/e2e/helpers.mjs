@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 
-export const FRONTEND = process.env.E2E_FRONTEND_URL ?? "http://localhost:5173/studio";
+export const FRONTEND = process.env.E2E_FRONTEND_URL ?? "http://localhost:5173";
 export const BACKEND = process.env.E2E_BACKEND_URL ?? "http://localhost:3001";
 
 export async function withBrowser(fn) {

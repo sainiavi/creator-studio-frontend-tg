@@ -22,9 +22,11 @@ import { api } from "@/lib/api";
 import { runCodeJob } from "@/hooks/useCreatorStudio";
 import { useStudioContext } from "@/context/StudioContext";
 import { GamePreview } from "@/components/studio/GamePreview";
+import { EditPageSkeleton } from "@/components/studio/PageSkeletons";
 import { ownsGame } from "@/lib/identity";
 
 export const Route = createFileRoute("/_app/edit/$gameId")({
+  pendingComponent: EditPageSkeleton,
   head: () => ({
     meta: [
       { title: "Edit Game — Creator Studio" },
@@ -263,13 +265,7 @@ function GameEditor() {
   };
 
   if (!game) {
-    return (
-      <div className="grid min-h-[60vh] place-items-center text-muted-foreground">
-        <div className="flex items-center gap-3">
-          <Loader2 className="size-5 animate-spin" /> Loading game…
-        </div>
-      </div>
-    );
+    return <EditPageSkeleton />;
   }
 
   const hasBuild = Boolean(game.refinement?.generatedCode);

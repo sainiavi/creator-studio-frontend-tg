@@ -1,5 +1,10 @@
+import { lazy, Suspense } from "react";
 import { GeneratedGameFrame } from "./GeneratedGameFrame";
-import { ThreePreview } from "./ThreePreview";
+import { PreviewSkeleton } from "@/components/studio/PageSkeletons";
+
+const ThreePreview = lazy(() =>
+  import("./ThreePreview").then((module) => ({ default: module.ThreePreview })),
+);
 
 type AnyPackage = Record<string, unknown> & {
   title?: string;
@@ -61,5 +66,9 @@ export function GamePreview({
       </div>
     );
   }
-  return <ThreePreview gamePackage={gamePackage} onScoreSubmit={onScoreSubmit} />;
+  return (
+    <Suspense fallback={<PreviewSkeleton />}>
+      <ThreePreview gamePackage={gamePackage} onScoreSubmit={onScoreSubmit} />
+    </Suspense>
+  );
 }

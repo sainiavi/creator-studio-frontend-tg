@@ -33,7 +33,8 @@ import {
 } from "@/lib/api/social";
 import { getCurrentUserId, getCurrentUsername, getWalletAddress, setCurrentUsername } from "@/lib/identity";
 import { api } from "@/lib/api";
-import { gameTemplates } from "@/lib/templates";
+import { useGameTemplates } from "@/hooks/useGameTemplates";
+import { ActivityListSkeleton, ProfileSkeleton } from "@/components/studio/PageSkeletons";
 import profileBg from "@/assets/profile-bg.png";
 import { useStudioContext } from "@/context/StudioContext";
 import {
@@ -75,6 +76,7 @@ import {
 import { fetchReferralSummary, type ReferralSummary } from "@/lib/api/referral";
 
 export const Route = createFileRoute("/_app/profile")({
+  pendingComponent: ProfileSkeleton,
   head: () => ({
     meta: [
       { title: "Profile — Creator Studio" },
@@ -287,6 +289,7 @@ type TimeFilter = "today" | "week" | "month" | "all";
 function Profile() {
   const navigate = useNavigate();
   const { createdGames } = useStudioContext();
+  const { gameTemplates } = useGameTemplates();
   const [activities, setActivities] = useState<UserActivity[]>([]);
   // Real info (title, cover, views) for any game referenced by likes,
   // favorites, or history — fetched from the backend, never guessed.
@@ -381,7 +384,7 @@ function Profile() {
       thumbnailUrl: getThumbnail(gameId),
       templateId: gameId,
     };
-  }, [createdGames, gameInfo, getThumbnail]);
+  }, [createdGames, gameInfo, gameTemplates, getThumbnail]);
 
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
@@ -422,8 +425,7 @@ function Profile() {
         setGameInfo(map);
       })
       .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [likedIds, favoriteIds, activities]);
+  }, [likedIds, favoriteIds, activities, createdGames, gameTemplates]);
 
   useEffect(() => {
     setLikedGames(likedIds.map((id) => mapActivityToGame(id, "")));
@@ -1293,10 +1295,7 @@ function Profile() {
           
           <div className="relative mt-4 overflow-hidden rounded-[1.55rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1c0846,#0b0224)] p-3 shadow-[0_0_34px_rgba(217,70,239,0.72),inset_0_1px_18px_rgba(255,255,255,0.15)] backdrop-blur-sm sm:mt-6 sm:rounded-2xl sm:border sm:border-border/60 sm:bg-card/40 sm:p-6 sm:shadow-card sm:backdrop-blur-none">
             {activitiesLoading ? (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <Loader2 className="size-8 animate-spin text-primary" />
-                <p className="mt-2 text-sm">Loading activity history...</p>
-              </div>
+              <ActivityListSkeleton />
             ) : filteredActivities.length > 0 ? (
               <>
                 <div className="relative max-h-56 space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(232,121,249,0.65)_transparent] sm:max-h-96 sm:space-y-8">
