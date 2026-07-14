@@ -1,19 +1,19 @@
 import { Link } from "@tanstack/react-router";
 import { useStudioContext } from "@/context/StudioContext";
+import { PrivyAccountControls } from "@/components/studio/PrivyAccountControls";
 import {
   Home,
   Gamepad2,
   Wand2,
   Trophy,
   User,
-  LogIn,
   Grid3x3,
   ChevronsLeft,
   ChevronsRight,
   ArrowLeft,
 } from "lucide-react";
 
-export const BROWSER_URL =
+const BROWSER_URL =
   import.meta.env.VITE_BROWSER_URL ?? "https://kult-browser-rust-l2lwg.ondigitalocean.app/";
 
 const nav = [
@@ -48,9 +48,7 @@ export function Sidebar() {
           )}
         </h1>
         {!collapsed && (
-          <p className="label-mono mt-3 text-[10px] text-violet-500">
-            Prompt to Playable Game
-          </p>
+          <p className="label-mono mt-3 text-[10px] text-violet-500">Prompt to Playable Game</p>
         )}
       </Link>
 
@@ -62,9 +60,7 @@ export function Sidebar() {
             to={to}
             activeOptions={{ exact: to === "/" }}
             className={`group flex items-center rounded-xl text-sm font-semibold text-violet-700 transition-all hover:bg-white/80 hover:text-violet-950 hover:shadow-[0_2px_8px_rgba(168,85,247,0.08)] ${
-              collapsed
-                ? "justify-center px-0 py-3"
-                : "gap-4 px-4 py-3"
+              collapsed ? "justify-center px-0 py-3" : "gap-4 px-4 py-3"
             }`}
             activeProps={{
               className:
@@ -73,13 +69,12 @@ export function Sidebar() {
             title={collapsed ? label : undefined}
           >
             <Icon className="size-5 shrink-0 transition-colors group-hover:text-primary" />
-            {!collapsed && (
-              <span className="label-mono text-xs">{label}</span>
-            )}
+            {!collapsed && <span className="label-mono text-xs">{label}</span>}
           </Link>
         ))}
-
       </nav>
+
+      <PrivyAccountControls collapsed={collapsed} />
 
       {/* Collapse toggle */}
       <div className={`flex ${collapsed ? "justify-center" : "justify-end px-2"}`}>
@@ -88,11 +83,7 @@ export function Sidebar() {
           className="flex size-8 items-center justify-center rounded-lg border border-violet-200/70 bg-white/60 text-violet-500 transition-all hover:bg-white hover:text-violet-800 hover:border-violet-300 hover:shadow-[0_2px_8px_rgba(168,85,247,0.1)]"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {collapsed ? (
-            <ChevronsRight className="size-4" />
-          ) : (
-            <ChevronsLeft className="size-4" />
-          )}
+          {collapsed ? <ChevronsRight className="size-4" /> : <ChevronsLeft className="size-4" />}
         </button>
       </div>
 

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getAccessToken, getIdentityToken } from "@privy-io/react-auth";
 import { getCurrentUserId } from "./identity";
 
 const rawBaseUrl = import.meta.env.VITE_API_URL ?? "";
@@ -32,11 +33,19 @@ function currentIdentity(): string | undefined {
 async function fetchToken(): Promise<string | null> {
   try {
     const userId = currentIdentity();
+    const [privyAccessToken, privyIdentityToken] = await Promise.all([
+      getAccessToken().catch(() => null),
+      getIdentityToken().catch(() => null),
+    ]);
     // Plain axios: must not run through the interceptor that awaits the token.
-    const response = await axios.post(`${baseURL}/auth/token`, { userId }, {
-      timeout: 10000,
-      withCredentials: true,
-    });
+    const response = await axios.post(
+      `${baseURL}/auth/token`,
+      { userId, privyAccessToken, privyIdentityToken },
+      {
+        timeout: 10000,
+        withCredentials: true,
+      },
+    );
     const token: string | null = response.data?.token ?? null;
     if (token) {
       localStorage.setItem(TOKEN_KEY, token);
@@ -83,5 +92,5 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
