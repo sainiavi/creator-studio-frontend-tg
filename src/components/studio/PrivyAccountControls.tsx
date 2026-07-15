@@ -8,6 +8,7 @@ import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 import {
   formatTonAddress,
+  getStoredTonWallet,
   getTonWallet,
   getTonWalletErrorMessage,
   toTonWallet,
@@ -27,7 +28,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   const [tonErrorMessage, setTonErrorMessage] = useState("");
   const lastTonActivationAt = useRef(0);
   const identity = getCurrentUsername();
-  const tonWallet = getTonWallet(user) ?? createdTonWallet;
+  const tonWallet = getTonWallet(user) ?? createdTonWallet ?? getStoredTonWallet();
 
   const signInWithTelegram = async () => {
     if (!canUseTelegramLogin) {

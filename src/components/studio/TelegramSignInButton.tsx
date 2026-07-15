@@ -9,6 +9,7 @@ import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 import {
   formatTonAddress,
+  getStoredTonWallet,
   getTonWallet,
   getTonWalletErrorMessage,
   toTonWallet,
@@ -38,7 +39,7 @@ export function TelegramSignInButton({
   const [tonErrorMessage, setTonErrorMessage] = useState("");
   const lastTonActivationAt = useRef(0);
   const identity = getCurrentUsername();
-  const tonWallet = getTonWallet(user) ?? createdTonWallet;
+  const tonWallet = getTonWallet(user) ?? createdTonWallet ?? getStoredTonWallet();
 
   const signInWithTelegram = async () => {
     if (!canUseTelegramLogin) {
@@ -131,7 +132,15 @@ export function TelegramSignInButton({
       : tonLoading
         ? "Creating"
         : "Create TON";
-    const mobileLabel = tonLoading ? "..." : tonStatus === "error" ? "!" : "TON";
+    const mobileLabel = tonLoading
+      ? "..."
+      : tonStatus === "copied"
+        ? "✓"
+        : tonStatus === "error"
+          ? "!"
+          : tonWallet?.address
+            ? "OK"
+            : "TON";
 
     return (
       <div className={`inline-flex h-9 shrink-0 items-center gap-1 ${className}`}>

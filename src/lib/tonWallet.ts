@@ -1,5 +1,7 @@
 import type { User } from "@privy-io/react-auth";
 
+import { getTonWalletAddress } from "@/lib/identity";
+
 export type TonWallet = {
   address: string;
   id?: string | null;
@@ -30,6 +32,19 @@ export function getTonWallet(user: User | null | undefined): TonWallet | null {
   );
 
   return toTonWallet(wallet);
+}
+
+export function getStoredTonWallet(): TonWallet | null {
+  const address = getTonWalletAddress();
+  if (!address) {
+    return null;
+  }
+
+  return {
+    address,
+    chainType: "ton",
+    type: "wallet",
+  };
 }
 
 export function formatTonAddress(address: string): string {
