@@ -1,6 +1,6 @@
 import { useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
 import { useCreateWallet } from "@privy-io/react-auth/extended-chains";
-import { Loader2, LogOut, Wallet } from "lucide-react";
+import { Loader2, Wallet } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { getCurrentUsername } from "@/lib/identity";
@@ -27,7 +27,7 @@ export function TelegramSignInButton({
   responsive = false,
   className = "",
 }: TelegramSignInButtonProps) {
-  const { ready, authenticated, login, logout, user } = usePrivy();
+  const { ready, authenticated, login, user } = usePrivy();
   const { login: loginWithTelegram, state } = useLoginWithTelegram();
   const { createWallet } = useCreateWallet();
   const telegramLoading = state.status === "loading";
@@ -173,14 +173,6 @@ export function TelegramSignInButton({
               </span>
             </>
           )}
-        </button>
-        <button
-          type="button"
-          onClick={() => void logout()}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white"
-          title="Disconnect"
-        >
-          <LogOut className="size-3.5" />
         </button>
       </div>
     );
