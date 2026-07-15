@@ -7,7 +7,13 @@ import { getCurrentUsername } from "@/lib/identity";
 import { VITE_PRIVY_APP_ID } from "@/lib/privyConfig";
 import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
-import { formatTonAddress, getTonWallet, toTonWallet, type TonWallet } from "@/lib/tonWallet";
+import {
+  formatTonAddress,
+  getTonWallet,
+  getTonWalletErrorMessage,
+  toTonWallet,
+  type TonWallet,
+} from "@/lib/tonWallet";
 
 type TelegramSignInButtonProps = {
   compact?: boolean;
@@ -29,6 +35,7 @@ export function TelegramSignInButton({
   const [authStatus, setAuthStatus] = useState<"idle" | "openTelegram" | "error">("idle");
   const [tonLoading, setTonLoading] = useState(false);
   const [tonStatus, setTonStatus] = useState<"idle" | "copied" | "error">("idle");
+  const [tonErrorMessage, setTonErrorMessage] = useState("");
   const identity = getCurrentUsername();
   const tonWallet = getTonWallet(user) ?? createdTonWallet;
 
@@ -73,15 +80,23 @@ export function TelegramSignInButton({
     try {
       setTonLoading(true);
       setTonStatus("idle");
+      setTonErrorMessage("");
       const { user: nextUser, wallet } = await createWallet({ chainType: "ton" });
       const nextWallet = toTonWallet(wallet) ?? getTonWallet(nextUser);
       setCreatedTonWallet(nextWallet);
       syncPrivyIdentity(nextUser);
       if (!nextWallet) {
+        const message = "Privy returned successfully, but no TON wallet was found on the user.";
+        setTonErrorMessage(message);
         setTonStatus("error");
+        window.alert(message);
       }
-    } catch {
+    } catch (error) {
+      const message = getTonWalletErrorMessage(error);
+      console.error("[privy] TON wallet creation failed", error);
+      setTonErrorMessage(message);
       setTonStatus("error");
+      window.alert(`TON wallet failed: ${message}`);
       window.setTimeout(() => setTonStatus("idle"), 2000);
     } finally {
       setTonLoading(false);
@@ -106,6 +121,7 @@ export function TelegramSignInButton({
       : tonLoading
         ? "Creating"
         : "Create TON";
+    const mobileLabel = tonLoading ? "..." : tonStatus === "error" ? "!" : "TON";
 
     return (
       <div className={`inline-flex h-9 shrink-0 items-center gap-1 ${className}`}>
@@ -114,12 +130,14 @@ export function TelegramSignInButton({
           onClick={() => void handleTonWallet()}
           disabled={tonLoading}
           className={`inline-flex h-9 items-center justify-center gap-2 rounded-full border border-sky-200/35 bg-white/12 text-xs font-black uppercase text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-70 ${
-            compact || responsive ? "w-9 px-0 sm:w-auto sm:px-3" : "px-3"
+            compact ? "w-9 px-0" : responsive ? "w-auto px-2 sm:px-3" : "px-3"
           }`}
           title={
             tonWallet?.address
               ? `TON wallet ${tonWallet.address}. Click to copy.`
-              : `Signed in as ${identity}. Click to create TON wallet.`
+              : tonErrorMessage
+                ? `TON wallet error: ${tonErrorMessage}`
+                : `Signed in as ${identity}. Click to create TON wallet.`
           }
         >
           {tonLoading ? (
@@ -128,9 +146,12 @@ export function TelegramSignInButton({
             <Wallet className="size-4 text-[#55c2ff]" />
           )}
           {!compact && (
-            <span className={`${responsive ? "hidden sm:inline" : ""} max-w-28 truncate`}>
-              {tonStatus === "copied" ? "Copied" : tonStatus === "error" ? "Try again" : label}
-            </span>
+            <>
+              <span className={responsive ? "inline sm:hidden" : "hidden"}>{mobileLabel}</span>
+              <span className={`${responsive ? "hidden sm:inline" : ""} max-w-28 truncate`}>
+                {tonStatus === "copied" ? "Copied" : tonStatus === "error" ? "Try again" : label}
+              </span>
+            </>
           )}
         </button>
         <button

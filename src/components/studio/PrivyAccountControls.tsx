@@ -6,7 +6,13 @@ import { useState } from "react";
 import { getCurrentUsername } from "@/lib/identity";
 import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
-import { formatTonAddress, getTonWallet, toTonWallet, type TonWallet } from "@/lib/tonWallet";
+import {
+  formatTonAddress,
+  getTonWallet,
+  getTonWalletErrorMessage,
+  toTonWallet,
+  type TonWallet,
+} from "@/lib/tonWallet";
 
 export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   const { ready, authenticated, logout, user } = usePrivy();
@@ -18,6 +24,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   const [authStatus, setAuthStatus] = useState<"idle" | "openTelegram" | "error">("idle");
   const [tonLoading, setTonLoading] = useState(false);
   const [tonStatus, setTonStatus] = useState<"idle" | "copied" | "error">("idle");
+  const [tonErrorMessage, setTonErrorMessage] = useState("");
   const identity = getCurrentUsername();
   const tonWallet = getTonWallet(user) ?? createdTonWallet;
 
@@ -53,15 +60,23 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
     try {
       setTonLoading(true);
       setTonStatus("idle");
+      setTonErrorMessage("");
       const { user: nextUser, wallet } = await createWallet({ chainType: "ton" });
       const nextWallet = toTonWallet(wallet) ?? getTonWallet(nextUser);
       setCreatedTonWallet(nextWallet);
       syncPrivyIdentity(nextUser);
       if (!nextWallet) {
+        const message = "Privy returned successfully, but no TON wallet was found on the user.";
+        setTonErrorMessage(message);
         setTonStatus("error");
+        window.alert(message);
       }
-    } catch {
+    } catch (error) {
+      const message = getTonWalletErrorMessage(error);
+      console.error("[privy] TON wallet creation failed", error);
+      setTonErrorMessage(message);
       setTonStatus("error");
+      window.alert(`TON wallet failed: ${message}`);
       window.setTimeout(() => setTonStatus("idle"), 2000);
     } finally {
       setTonLoading(false);
@@ -122,7 +137,9 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
         title={
           tonWallet?.address
             ? `TON wallet ${tonWallet.address}. Click to copy.`
-            : "Create TON wallet"
+            : tonErrorMessage
+              ? `TON wallet error: ${tonErrorMessage}`
+              : "Create TON wallet"
         }
       >
         {tonLoading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
@@ -131,7 +148,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
             {tonStatus === "copied"
               ? "TON COPIED"
               : tonStatus === "error"
-                ? "TON ERROR"
+                ? tonErrorMessage || "TON ERROR"
                 : tonWallet?.address
                   ? formatTonAddress(tonWallet.address)
                   : "CREATE TON WALLET"}

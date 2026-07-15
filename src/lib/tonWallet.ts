@@ -39,3 +39,15 @@ export function formatTonAddress(address: string): string {
 
   return `${address.slice(0, 6)}...${address.slice(-6)}`;
 }
+
+export function getTonWalletErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  if (isRecord(error) && typeof error.message === "string" && error.message.trim()) {
+    return error.message;
+  }
+
+  return "Privy could not create a TON wallet for this account.";
+}
