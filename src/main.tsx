@@ -1,40 +1,25 @@
-import ReactDOM from "react-dom/client";
+import { createRoot } from "react-dom/client";
+import { RouterProvider } from "@tanstack/react-router";
+import { PrivyProvider } from "@privy-io/react-auth";
+import { getRouter } from "./router";
+import { VITE_PRIVY_APP_ID, PRIVY_CLIENT_ID, privyConfig } from "./lib/privyConfig";
 
-function BootShell() {
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        background: "#0f172a",
-        color: "#e2e8f0",
-        fontFamily: "system-ui, sans-serif",
-        padding: 24,
-        textAlign: "center",
-      }}
-    >
-      <div>
-        <p style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Loading Creator Studio…</p>
-        <p style={{ margin: "8px 0 0", fontSize: 13, opacity: 0.7 }}>
-          Styles compile in the background — first load can take 1–2 minutes
-        </p>
-      </div>
-    </div>
-  );
+// One CSS stack: Tailwind v4 (+ tw-animate-css). In dev, Tailwind runs via CLI
+// (`npm run dev:css`) because @tailwindcss/vite blocks the dev server on first compile.
+if (import.meta.env.DEV) {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "/dev-styles.css";
+  document.head.appendChild(link);
+} else {
+  await import("./styles.css");
 }
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("#root not found");
 
-window.__creatorStudioRoot = ReactDOM.createRoot(rootEl);
-window.__creatorStudioRoot.render(<BootShell />);
-
-void import("./bootstrap").catch((error) => {
-  console.error("[boot] failed", error);
-  window.__creatorStudioRoot?.render(
-    <div style={{ padding: 24, color: "#fecaca", background: "#450a0a", minHeight: "100vh" }}>
-      Boot failed: {error instanceof Error ? error.message : String(error)}
-    </div>,
-  );
-});
+createRoot(rootEl).render(
+  <PrivyProvider appId={VITE_PRIVY_APP_ID} clientId={PRIVY_CLIENT_ID} config={privyConfig}>
+    <RouterProvider router={getRouter()} />
+  </PrivyProvider>,
+);

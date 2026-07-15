@@ -105,7 +105,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       // Only the current user's creations belong in My Creations.
       const response = await api.get("/games/list", {
         timeout: 15000,
-        params: { creatorId: getCurrentUserId() },
+        params: { creatorId: getCurrentUserId(), limit: 20 },
       });
       const remote: any[] = response.data?.games ?? [];
       if (!remote.length) return;

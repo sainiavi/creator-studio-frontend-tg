@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Crown, Trophy, UserRound } from "lucide-react";
 import rankOneAvatar from "@/assets/leaderboard-rank-1.png";
@@ -8,6 +8,8 @@ import rankThreeAvatar from "@/assets/leaderboard-rank-3.png";
 import profileBg from "@/assets/profile-bg.png";
 import { LeaderboardSkeleton } from "@/components/studio/PageSkeletons";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { LEADERBOARD_PAGE_SIZE } from "@/lib/pagination";
 import { getCurrentUsername, getWalletAddress } from "@/lib/identity";
 import {
   fetchCreatorScoreLeaderboard,
@@ -209,13 +211,15 @@ function Leaderboard() {
   const [timeRange, setTimeRange] = useState<TimeRange>("weekly");
   const [creatorRows, setCreatorRows] = useState<CreatorRank[]>([]);
   const [playerRows, setPlayerRows] = useState<PlayerRank[]>([]);
+  const [rowLimit, setRowLimit] = useState(LEADERBOARD_PAGE_SIZE);
+  const [hasMoreRows, setHasMoreRows] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const currentUsername = getCurrentUsername();
   const currentWallet = getWalletAddress();
   const isCreator = activeTab === "creator";
   const rows = isCreator ? creatorRows : playerRows;
-  // The podium is always the selected range's real top 3 — no all-time fallback.
   const podiumRows = rows;
   const tableRows = rows.slice(3);
 
@@ -223,42 +227,54 @@ function Leaderboard() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    // Two-phase load: top 15 paints the podium and first rows immediately,
-    // then the full top 1000 swaps in behind it.
+    setRowLimit(LEADERBOARD_PAGE_SIZE);
     void (async () => {
-      let firstPhaseDone = false;
       try {
         const [creatorTop, playerTop] = await Promise.all([
-          fetchCreatorScoreLeaderboard(15, timeRange),
-          fetchKultPointsLeaderboard(15, timeRange),
+          fetchCreatorScoreLeaderboard(LEADERBOARD_PAGE_SIZE, timeRange),
+          fetchKultPointsLeaderboard(LEADERBOARD_PAGE_SIZE, timeRange),
         ]);
         if (cancelled) return;
         setCreatorRows(creatorTop.entries);
         setPlayerRows(playerTop.entries);
-        setLoading(false);
-        firstPhaseDone = true;
-
-        const [creatorFull, playerFull] = await Promise.all([
-          fetchCreatorScoreLeaderboard(1000, timeRange),
-          fetchKultPointsLeaderboard(1000, timeRange),
-        ]);
-        if (cancelled) return;
-        setCreatorRows(creatorFull.entries);
-        setPlayerRows(playerFull.entries);
+        setHasMoreRows(
+          creatorTop.entries.length >= LEADERBOARD_PAGE_SIZE ||
+            playerTop.entries.length >= LEADERBOARD_PAGE_SIZE,
+        );
       } catch (requestError) {
         if (cancelled) return;
-        // Only surface an error when even the first phase failed — if the top
-        // 15 already rendered, keep them instead of blanking the page.
-        if (!firstPhaseDone) {
-          setError(requestError instanceof Error ? requestError.message : "Unable to load leaderboard.");
-          setLoading(false);
-        }
+        setError(requestError instanceof Error ? requestError.message : "Unable to load leaderboard.");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [timeRange]);
+
+  const loadMoreRows = useCallback(() => {
+    if (loadingMore || !hasMoreRows) return;
+    const nextLimit = rowLimit + LEADERBOARD_PAGE_SIZE;
+    setLoadingMore(true);
+    void (async () => {
+      try {
+        const board = isCreator
+          ? await fetchCreatorScoreLeaderboard(nextLimit, timeRange)
+          : await fetchKultPointsLeaderboard(nextLimit, timeRange);
+        if (isCreator) setCreatorRows(board.entries);
+        else setPlayerRows(board.entries);
+        setRowLimit(nextLimit);
+        setHasMoreRows(board.entries.length >= nextLimit);
+      } catch {
+        setHasMoreRows(false);
+      } finally {
+        setLoadingMore(false);
+      }
+    })();
+  }, [hasMoreRows, isCreator, loadingMore, rowLimit, timeRange]);
+
+  const loadMoreRef = useInfiniteScroll(loadMoreRows, hasMoreRows && !loading && tableRows.length > 0);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#f4ddff] text-violet-950">
@@ -413,6 +429,14 @@ function Leaderboard() {
                 </div>
               );
             })}
+            {(hasMoreRows || loadingMore) && (
+              <div
+                ref={loadMoreRef}
+                className="px-5 py-4 text-center text-xs font-semibold text-violet-600"
+              >
+                {loadingMore ? "Loading more ranks…" : ""}
+              </div>
+            )}
           </div>
         </div>
       </div>

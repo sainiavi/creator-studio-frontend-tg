@@ -17,19 +17,19 @@ import roboWars from "@/assets/game6.png";
 
 const arenaVideos = [
   {
-    loadSrc: () => import("@/assets/IMG_9260.MOV"),
+    directSrc: "/media/IMG_9260.MOV",
     title: "Enter The Arena",
     category: "AI Arena",
     description: "Create your contender and get ready for the first challenge.",
   },
   {
-    loadSrc: () => import("@/assets/step2.mp4"),
+    directSrc: "/media/step2.mp4",
     title: "Build Your Game",
     category: "Creator Studio",
     description: "Shape the mechanics, style, and action with AI-powered tools.",
   },
   {
-    loadSrc: () => import("@/assets/step3.mp4"),
+    directSrc: "/media/step3.mp4",
     title: "Play And Compete",
     category: "Community",
     description: "Launch your game, challenge players, and climb the arena.",
@@ -40,7 +40,7 @@ const moments = [
   { src: momentsOne, title: "Arena Highlights", label: "Featured Moment", type: "image" as const },
   { src: momentsTwo, title: "Behind The Build", label: "Creator Moment", type: "image" as const },
   {
-    loadSrc: () => import("@/assets/moments3.mp4"),
+    directSrc: "/media/moments3.mp4",
     title: "Ready To Launch",
     label: "Studio Moment",
     type: "video" as const,
@@ -195,7 +195,7 @@ function More() {
             >
               <LazyVideo
                 className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                loadSrc={video.loadSrc}
+                directSrc={video.directSrc}
                 skeletonClassName="absolute inset-0 h-full w-full rounded-none"
                 autoPlay
                 muted
@@ -252,7 +252,7 @@ function More() {
               ) : (
                 <LazyVideo
                   className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                  loadSrc={moment.loadSrc}
+                  directSrc={moment.directSrc}
                   skeletonClassName="absolute inset-0 h-full w-full rounded-none"
                   autoPlay
                   muted

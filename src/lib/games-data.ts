@@ -17,6 +17,7 @@ export type Game = {
   remixes?: number;
   creatorScore?: number;
   remixOf?: string;
+  createdAt?: string;
   zeroGStorage?: ZeroGStoragePointer;
   thumbnailZeroGStorage?: ZeroGStoragePointer;
 };

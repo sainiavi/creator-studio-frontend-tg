@@ -40,6 +40,9 @@ import {
   Zap,
 } from "lucide-react";
 import { resolveGameThumbnail } from "@/lib/studio-meta";
+import { fetchGamesPage } from "@/lib/api/games";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { VIEWS_TOP_LIMIT } from "@/lib/pagination";
 import {
   gradientClass,
   trending as demoTrending,
@@ -418,50 +421,68 @@ export function Home() {
   // Real view counts drive the Trending order: most viewed first.
   const [viewsMap, setViewsMap] = useState<Record<string, number>>({});
   const [communityGames, setCommunityGames] = useState<Game[]>([]);
-  // Real published games, newest first — drives the Latest shelf.
-  const [latestGames, setLatestGames] = useState<Game[]>([]);
+  const [gamesOffset, setGamesOffset] = useState(0);
+  const [hasMoreGames, setHasMoreGames] = useState(true);
+  const [loadingMoreGames, setLoadingMoreGames] = useState(false);
+
+  const mergeCommunityGames = useCallback((incoming: Game[], append: boolean) => {
+    setCommunityGames((current) => {
+      const merged = append ? [...current, ...incoming] : incoming;
+      return uniqueGames(merged);
+    });
+  }, []);
+
+  const loadGamesPage = useCallback(
+    async (offset: number, append: boolean) => {
+      const { games, hasMore } = await fetchGamesPage(offset);
+      mergeCommunityGames(games, append);
+      setGamesOffset(offset + games.length);
+      setHasMoreGames(hasMore);
+    },
+    [mergeCommunityGames],
+  );
+
   useEffect(() => {
     api
-      .get("/social/views-top", { params: { limit: 500 } })
+      .get("/social/views-top", { params: { limit: VIEWS_TOP_LIMIT } })
       .then((res) => {
         const map: Record<string, number> = {};
         for (const g of res.data?.games ?? []) map[g.gameId] = g.views;
         setViewsMap(map);
       })
       .catch(() => {});
-    // Trending is platform-wide: every creator's games compete by views.
-    api
-      .get("/games/list", { params: { limit: 100 } })
-      .then((res) => {
-        const games: any[] = (res.data?.games ?? []).filter((g: any) => g?.title);
-        const toGame = (g: any, index: number): Game => ({
-          title: g.title,
-          category: g.category ?? "Game",
-          plays: "New",
-          emoji: "🎮",
-          gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
-          creator: g.creatorId?.startsWith("0x")
-            ? `${g.creatorId.slice(0, 6)}…${g.creatorId.slice(-4)}`
-            : "community",
-          creatorId: g.creatorId,
-          thumbnailUrl: resolveGameThumbnail(g),
-          templateId: g.id ?? g.templateId,
-          likes: Number(g.points?.likes ?? 0),
-          shares: Number(g.points?.shares ?? 0),
-          creatorScore: Number(g.creatorScore ?? g.points?.total ?? 0),
-          remixOf: g.remixOf,
-        });
-        setCommunityGames(games.map(toGame));
-        setLatestGames(
-          [...games]
-            .sort(
-              (a: any, b: any) =>
-                (Date.parse(b?.createdAt ?? "") || 0) - (Date.parse(a?.createdAt ?? "") || 0),
-            )
-            .map(toGame),
-        );
-      })
-      .catch(() => {});
+    void loadGamesPage(0, false).catch(() => {});
+  }, [loadGamesPage]);
+
+  const loadMoreGames = useCallback(() => {
+    if (!hasMoreGames || loadingMoreGames) return;
+    setLoadingMoreGames(true);
+    void loadGamesPage(gamesOffset, true)
+      .catch(() => {})
+      .finally(() => setLoadingMoreGames(false));
+  }, [gamesOffset, hasMoreGames, loadGamesPage, loadingMoreGames]);
+
+  const gamesLoadMoreRef = useInfiniteScroll(
+    loadMoreGames,
+    hasMoreGames && !searchQuery.trim(),
+  );
+
+  const latestGames = useMemo(
+    () =>
+      [...communityGames].sort(
+        (first, second) =>
+          (Date.parse(second.createdAt ?? "") || 0) - (Date.parse(first.createdAt ?? "") || 0),
+      ),
+    [communityGames],
+  );
+
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = mobileHomeBg;
+    document.head.appendChild(link);
+    return () => link.remove();
   }, []);
 
   const realGames = useMemo(
@@ -934,6 +955,9 @@ export function Home() {
                     games={feedTabGames}
                     onOpen={openGame}
                     emptyText={`No ${mobileFeedTab} games yet — be the first to create one!`}
+                    onLoadMore={loadMoreGames}
+                    hasMore={hasMoreGames}
+                    loadingMore={loadingMoreGames}
                   />
                 ))}
             </div>
@@ -946,6 +970,9 @@ export function Home() {
                 title={shelf.title}
                 games={shelf.games}
                 cardsPerRow={4}
+                onLoadMore={loadMoreGames}
+                hasMore={hasMoreGames}
+                loadingMore={loadingMoreGames}
                 onDeleteGame={
                   shelf.title === "My Creations"
                     ? (game) => {
@@ -1037,6 +1064,9 @@ export function Home() {
               key={shelf.title}
               title={shelf.title}
               games={shelf.games}
+              onLoadMore={loadMoreGames}
+              hasMore={hasMoreGames}
+              loadingMore={loadingMoreGames}
               onDeleteGame={
                 shelf.title === "My Creations"
                   ? (game) => {
@@ -1054,6 +1084,14 @@ export function Home() {
               }
             />
           ))}
+          {(hasMoreGames || loadingMoreGames) && !searchQuery.trim() && (
+            <div
+              ref={gamesLoadMoreRef}
+              className="py-6 text-center text-xs font-semibold text-violet-600"
+            >
+              {loadingMoreGames ? "Loading more games…" : ""}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1104,15 +1142,25 @@ function GameShelf({
   cardsPerRow,
   onDeleteGame,
   onEditGame,
+  onLoadMore,
+  hasMore,
+  loadingMore,
 }: {
   title: string;
   games: Game[];
   cardsPerRow?: number;
   onDeleteGame?: (game: Game) => void;
   onEditGame?: (game: Game) => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }) {
   const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
+  const modalLoadMoreRef = useInfiniteScroll(
+    () => onLoadMore?.(),
+    Boolean(showAll && hasMore && onLoadMore),
+  );
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     dragFree: true,
@@ -1267,6 +1315,14 @@ function GameShelf({
                   ),
                 )}
               </div>
+              {(hasMore || loadingMore) && onLoadMore && (
+                <div
+                  ref={modalLoadMoreRef}
+                  className="py-4 text-center text-xs font-semibold text-violet-600"
+                >
+                  {loadingMore ? "Loading more games…" : ""}
+                </div>
+              )}
             </div>
           </section>
         </div>
@@ -1393,11 +1449,19 @@ function FeedGrid({
   games,
   onOpen,
   emptyText,
+  onLoadMore,
+  hasMore,
+  loadingMore,
 }: {
   games: Game[];
   onOpen: (game: Game) => void;
   emptyText: string;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 }) {
+  const loadMoreRef = useInfiniteScroll(() => onLoadMore?.(), Boolean(onLoadMore && hasMore));
+
   if (games.length === 0) {
     return <p className="py-12 text-center text-sm font-semibold text-violet-700">{emptyText}</p>;
   }
@@ -1410,6 +1474,14 @@ function FeedGrid({
           onOpen={() => onOpen(game)}
         />
       ))}
+      {(hasMore || loadingMore) && onLoadMore && (
+        <div
+          ref={loadMoreRef}
+          className="col-span-full py-4 text-center text-xs font-semibold text-violet-600"
+        >
+          {loadingMore ? "Loading more games…" : ""}
+        </div>
+      )}
     </div>
   );
 }

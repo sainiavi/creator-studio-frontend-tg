@@ -58,17 +58,17 @@ export type ZeroGStoragePointer = {
   byteLength: number;
 };
 
-export async function fetchLeaderboard(gameId: string, limit = 500) {
+export async function fetchLeaderboard(gameId: string, limit = 20) {
   const { data } = await api.get(`/leaderboards/${gameId}`, { params: { limit } });
   return data as Leaderboard;
 }
 
-export async function fetchCreatorScoreLeaderboard(limit = 100, range: LeaderboardRange = "allTime") {
+export async function fetchCreatorScoreLeaderboard(limit = 20, range: LeaderboardRange = "allTime") {
   const { data } = await api.get("/leaderboards/creators", { params: { limit, range } });
   return data as AggregateLeaderboard<CreatorScoreEntry>;
 }
 
-export async function fetchKultPointsLeaderboard(limit = 100, range: LeaderboardRange = "allTime") {
+export async function fetchKultPointsLeaderboard(limit = 20, range: LeaderboardRange = "allTime") {
   const { data } = await api.get("/leaderboards/kult-points", { params: { limit, range } });
   return data as AggregateLeaderboard<KultPointsEntry>;
 }

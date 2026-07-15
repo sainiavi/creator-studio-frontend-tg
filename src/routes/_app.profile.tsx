@@ -417,7 +417,7 @@ function Profile() {
     const missing = [...referenced].filter((id) => id && !known.has(id));
     if (missing.length === 0) return;
     api
-      .get("/games/list", { params: { ids: missing.join(","), limit: 100 } })
+      .get("/games/list", { params: { ids: missing.join(","), limit: 20 } })
       .then((res) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const map: Record<string, any> = {};
