@@ -1,16 +1,55 @@
 import { useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
-import { LogOut, MessageCircle } from "lucide-react";
+import { useCreateWallet } from "@privy-io/react-auth/extended-chains";
+import { Loader2, LogOut, Wallet } from "lucide-react";
+import { useState } from "react";
 
 import { getCurrentUsername } from "@/lib/identity";
+import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
+import { formatTonAddress, getTonWallet, toTonWallet, type TonWallet } from "@/lib/tonWallet";
 
 export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
-  const { ready, authenticated, logout } = usePrivy();
+  const { ready, authenticated, logout, user } = usePrivy();
   const { login: loginWithTelegram, state } = useLoginWithTelegram();
+  const { createWallet } = useCreateWallet();
   const telegramLoading = state.status === "loading";
+  const canUseTelegramLogin = isTelegramMiniApp();
+  const [createdTonWallet, setCreatedTonWallet] = useState<TonWallet | null>(null);
+  const [tonLoading, setTonLoading] = useState(false);
+  const [tonStatus, setTonStatus] = useState<"idle" | "copied" | "error">("idle");
   const identity = getCurrentUsername();
+  const tonWallet = getTonWallet(user) ?? createdTonWallet;
 
   const signInWithTelegram = async () => {
+    if (!canUseTelegramLogin) {
+      return;
+    }
+
     await loginWithTelegram();
+  };
+
+  const handleTonWallet = async () => {
+    if (tonWallet?.address) {
+      try {
+        await navigator.clipboard?.writeText(tonWallet.address);
+        setTonStatus("copied");
+      } catch {
+        setTonStatus("error");
+      }
+      window.setTimeout(() => setTonStatus("idle"), 1600);
+      return;
+    }
+
+    try {
+      setTonLoading(true);
+      setTonStatus("idle");
+      const { wallet } = await createWallet({ chainType: "ton" });
+      setCreatedTonWallet(toTonWallet(wallet));
+    } catch {
+      setTonStatus("error");
+      window.setTimeout(() => setTonStatus("idle"), 2000);
+    } finally {
+      setTonLoading(false);
+    }
   };
 
   if (!ready) {
@@ -26,13 +65,13 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
       <button
         type="button"
         onClick={() => void signInWithTelegram()}
-        disabled={telegramLoading}
+        disabled={telegramLoading || !canUseTelegramLogin}
         className={`mb-4 flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 ${
           collapsed ? "size-10" : "gap-2 px-3 py-2"
         }`}
-        title="Sign in with Telegram"
+        title={canUseTelegramLogin ? "Sign in with Telegram" : "Open in Telegram to sign in"}
       >
-        <MessageCircle className="size-4" />
+        <Wallet className="size-4" />
         {!collapsed && (
           <span className="label-mono text-xs font-bold">
             {telegramLoading ? "CONNECTING..." : "TELEGRAM SIGN IN"}
@@ -50,6 +89,33 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
           <p className="mt-1 truncate font-mono text-xs font-bold">{identity}</p>
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={() => void handleTonWallet()}
+        disabled={tonLoading}
+        className={`flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white hover:text-sky-950 disabled:cursor-not-allowed disabled:opacity-70 ${
+          collapsed ? "size-10" : "w-full gap-2 px-3 py-2"
+        }`}
+        title={
+          tonWallet?.address
+            ? `TON wallet ${tonWallet.address}. Click to copy.`
+            : "Create TON wallet"
+        }
+      >
+        {tonLoading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
+        {!collapsed && (
+          <span className="label-mono truncate text-xs font-bold">
+            {tonStatus === "copied"
+              ? "TON COPIED"
+              : tonStatus === "error"
+                ? "TON ERROR"
+                : tonWallet?.address
+                  ? formatTonAddress(tonWallet.address)
+                  : "CREATE TON WALLET"}
+          </span>
+        )}
+      </button>
 
       <button
         type="button"
