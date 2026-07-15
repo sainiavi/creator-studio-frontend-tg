@@ -4,6 +4,7 @@ import { Loader2, LogOut, Wallet } from "lucide-react";
 import { useState } from "react";
 
 import { getCurrentUsername } from "@/lib/identity";
+import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 import { formatTonAddress, getTonWallet, toTonWallet, type TonWallet } from "@/lib/tonWallet";
 
@@ -14,6 +15,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   const telegramLoading = state.status === "loading";
   const canUseTelegramLogin = isTelegramMiniApp();
   const [createdTonWallet, setCreatedTonWallet] = useState<TonWallet | null>(null);
+  const [authStatus, setAuthStatus] = useState<"idle" | "openTelegram" | "error">("idle");
   const [tonLoading, setTonLoading] = useState(false);
   const [tonStatus, setTonStatus] = useState<"idle" | "copied" | "error">("idle");
   const identity = getCurrentUsername();
@@ -21,10 +23,19 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
 
   const signInWithTelegram = async () => {
     if (!canUseTelegramLogin) {
+      setAuthStatus("openTelegram");
+      window.alert("Open this app inside Telegram to sign in.");
+      window.setTimeout(() => setAuthStatus("idle"), 2000);
       return;
     }
 
-    await loginWithTelegram();
+    try {
+      setAuthStatus("idle");
+      await loginWithTelegram();
+    } catch {
+      setAuthStatus("error");
+      window.setTimeout(() => setAuthStatus("idle"), 2000);
+    }
   };
 
   const handleTonWallet = async () => {
@@ -42,8 +53,13 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
     try {
       setTonLoading(true);
       setTonStatus("idle");
-      const { wallet } = await createWallet({ chainType: "ton" });
-      setCreatedTonWallet(toTonWallet(wallet));
+      const { user: nextUser, wallet } = await createWallet({ chainType: "ton" });
+      const nextWallet = toTonWallet(wallet) ?? getTonWallet(nextUser);
+      setCreatedTonWallet(nextWallet);
+      syncPrivyIdentity(nextUser);
+      if (!nextWallet) {
+        setTonStatus("error");
+      }
     } catch {
       setTonStatus("error");
       window.setTimeout(() => setTonStatus("idle"), 2000);
@@ -65,7 +81,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
       <button
         type="button"
         onClick={() => void signInWithTelegram()}
-        disabled={telegramLoading || !canUseTelegramLogin}
+        disabled={telegramLoading}
         className={`mb-4 flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 ${
           collapsed ? "size-10" : "gap-2 px-3 py-2"
         }`}
@@ -74,7 +90,13 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
         <Wallet className="size-4" />
         {!collapsed && (
           <span className="label-mono text-xs font-bold">
-            {telegramLoading ? "CONNECTING..." : "TELEGRAM SIGN IN"}
+            {telegramLoading
+              ? "CONNECTING..."
+              : authStatus === "openTelegram"
+                ? "OPEN TELEGRAM"
+                : authStatus === "error"
+                  ? "TRY AGAIN"
+                  : "TELEGRAM SIGN IN"}
           </span>
         )}
       </button>
@@ -123,10 +145,10 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
         className={`flex items-center justify-center rounded-xl border border-sky-200 bg-white/60 text-sky-700 transition hover:bg-white hover:text-sky-950 ${
           collapsed ? "size-10" : "w-full gap-2 px-3 py-2"
         }`}
-        title="Sign out"
+        title="Disconnect"
       >
         <LogOut className="size-4" />
-        {!collapsed && <span className="label-mono text-xs font-bold">SIGN OUT</span>}
+        {!collapsed && <span className="label-mono text-xs font-bold">DISCONNECT</span>}
       </button>
     </div>
   );

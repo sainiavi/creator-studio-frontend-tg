@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { getCurrentUsername } from "@/lib/identity";
 import { VITE_PRIVY_APP_ID } from "@/lib/privyConfig";
+import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 import { formatTonAddress, getTonWallet, toTonWallet, type TonWallet } from "@/lib/tonWallet";
 
@@ -25,6 +26,7 @@ export function TelegramSignInButton({
   const telegramLoading = state.status === "loading";
   const canUseTelegramLogin = isTelegramMiniApp();
   const [createdTonWallet, setCreatedTonWallet] = useState<TonWallet | null>(null);
+  const [authStatus, setAuthStatus] = useState<"idle" | "openTelegram" | "error">("idle");
   const [tonLoading, setTonLoading] = useState(false);
   const [tonStatus, setTonStatus] = useState<"idle" | "copied" | "error">("idle");
   const identity = getCurrentUsername();
@@ -32,13 +34,22 @@ export function TelegramSignInButton({
 
   const signInWithTelegram = async () => {
     if (!canUseTelegramLogin) {
+      setAuthStatus("openTelegram");
+      window.alert("Open this app inside Telegram to sign in.");
+      window.setTimeout(() => setAuthStatus("idle"), 2000);
       return;
     }
 
     try {
+      setAuthStatus("idle");
       await loginWithTelegram();
     } catch {
-      login({ loginMethods: ["telegram"] });
+      try {
+        login({ loginMethods: ["telegram"] });
+      } catch {
+        setAuthStatus("error");
+        window.setTimeout(() => setAuthStatus("idle"), 2000);
+      }
     }
   };
 
@@ -62,8 +73,13 @@ export function TelegramSignInButton({
     try {
       setTonLoading(true);
       setTonStatus("idle");
-      const { wallet } = await createWallet({ chainType: "ton" });
-      setCreatedTonWallet(toTonWallet(wallet));
+      const { user: nextUser, wallet } = await createWallet({ chainType: "ton" });
+      const nextWallet = toTonWallet(wallet) ?? getTonWallet(nextUser);
+      setCreatedTonWallet(nextWallet);
+      syncPrivyIdentity(nextUser);
+      if (!nextWallet) {
+        setTonStatus("error");
+      }
     } catch {
       setTonStatus("error");
       window.setTimeout(() => setTonStatus("idle"), 2000);
@@ -120,8 +136,8 @@ export function TelegramSignInButton({
         <button
           type="button"
           onClick={() => void logout()}
-          className={`${responsive ? "hidden sm:inline-flex" : "inline-flex"} h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white`}
-          title="Sign out"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white"
+          title="Disconnect"
         >
           <LogOut className="size-3.5" />
         </button>
@@ -133,7 +149,7 @@ export function TelegramSignInButton({
     <button
       type="button"
       onClick={() => void signInWithTelegram()}
-      disabled={telegramLoading || !canUseTelegramLogin}
+      disabled={telegramLoading}
       className={`inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full bg-[#2aabee] text-xs font-black uppercase tracking-wide text-white shadow-[0_0_18px_rgba(42,171,238,0.35)] transition hover:bg-[#229ed9] disabled:cursor-not-allowed disabled:opacity-70 ${
         compact || responsive ? "w-9 px-0 sm:w-auto sm:px-3" : "px-3"
       } ${className}`}
@@ -144,7 +160,15 @@ export function TelegramSignInButton({
       ) : (
         <Wallet className="size-4" />
       )}
-      {!compact && <span className={responsive ? "hidden sm:inline" : ""}>Telegram Sign In</span>}
+      {!compact && (
+        <span className={responsive ? "hidden sm:inline" : ""}>
+          {authStatus === "openTelegram"
+            ? "Open Telegram"
+            : authStatus === "error"
+              ? "Try again"
+              : "Telegram Sign In"}
+        </span>
+      )}
     </button>
   );
 }
