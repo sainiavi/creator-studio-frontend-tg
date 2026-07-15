@@ -1,11 +1,25 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Rocket, Bot, Loader2, Check, Play, Send, ArrowRight, BriefcaseBusiness, MessageSquareMore, Wand2 } from "lucide-react";
+import {
+  Rocket,
+  Bot,
+  Loader2,
+  Check,
+  Play,
+  Send,
+  ArrowRight,
+  BriefcaseBusiness,
+  MessageSquareMore,
+  Wand2,
+} from "lucide-react";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
 import { findGameTemplate } from "@/lib/templates-loader";
 import { engineOf, getThumbnailUrl, templateEmoji } from "@/lib/studio-meta";
-import { sendZeroGGenerationPayment } from "@/lib/zeroGPayment";
+import { sendTonGenerationPayment } from "@/lib/tonPayment";
+import { getTonWallet } from "@/lib/tonWallet";
+import { usePrivy } from "@privy-io/react-auth";
+import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
 import { CreatePageSkeleton } from "@/components/studio/PageSkeletons";
 import profileBg from "@/assets/profile-bg.png";
 import cyberpunkSuggestion from "@/assets/create-suggestion-cyberpunk.png";
@@ -16,7 +30,10 @@ export const Route = createFileRoute("/_app/create")({
   head: () => ({
     meta: [
       { title: "Create — Creator Studio" },
-      { name: "description", content: "Describe your game in a prompt and let the agent build a playable version." },
+      {
+        name: "description",
+        content: "Describe your game in a prompt and let the agent build a playable version.",
+      },
     ],
   }),
   component: Create,
@@ -32,7 +49,13 @@ const ideas: Array<{ icon: string; text: string; image?: string }> = [
 
 const vibeIdeas = ["Chill vibes", "World Cup energy", "Neon arcade", "Kids friendly"];
 
-const steps = ["Submitting prompt", "Writing game code", "Testing & repairing", "Playable build ready"];
+const steps = [
+  "Submitting prompt",
+  "Writing game code",
+  "Testing & repairing",
+  "Playable build ready",
+];
+const PENDING_TON_GENERATION_PAYMENT_KEY = "kult-pending-ton-generation-payment";
 
 // Maps the backend job's real progress stage to a step above — no more
 // timer-faked progress. Unknown/absent stage means the job hasn't streamed
@@ -40,7 +63,7 @@ const steps = ["Submitting prompt", "Writing game code", "Testing & repairing", 
 const stageToStep: Record<string, number> = {
   "writing-code": 1,
   "editing-seed": 1,
-  "repairing": 2,
+  repairing: 2,
   "fixing-syntax": 2,
   "fixing-runtime": 2,
 };
@@ -118,7 +141,9 @@ async function fetchConceptFromAgent(gameIdea: string, vibe: string): Promise<st
       },
       { timeout: 45000 },
     );
-    const text = String(data?.result?.content ?? "").trim().replace(/^["'`]+|["'`]+$/g, "");
+    const text = String(data?.result?.content ?? "")
+      .trim()
+      .replace(/^["'`]+|["'`]+$/g, "");
     if (!/^[^:\n]{2,60}:\s.+/s.test(text)) return null;
     return text.split("\n")[0].trim();
   } catch {
@@ -134,6 +159,8 @@ function isCreateConfirmation(text: string) {
 
 function Create() {
   const { studio, addCreatedGame, removeCreatedGame } = useStudioContext();
+  const { user } = usePrivy();
+  const { signRawHash } = useSignRawHash();
   const navigate = useNavigate();
   const [templateSeed, setTemplateSeed] = useState<any | null>(null);
   const [chatStage, setChatStage] = useState<ChatStage>("game");
@@ -210,11 +237,11 @@ function Create() {
     const interval = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(interval);
   }, [phase]);
-  const elapsedSec = activeBuild ? Math.max(0, Math.floor((Date.now() - activeBuild.startedAt) / 1000)) : 0;
+  const elapsedSec = activeBuild
+    ? Math.max(0, Math.floor((Date.now() - activeBuild.startedAt) / 1000))
+    : 0;
   const step =
-    phase === "building"
-      ? stageToStep[activeBuild?.progressStage ?? ""] ?? 0
-      : steps.length - 1;
+    phase === "building" ? (stageToStep[activeBuild?.progressStage ?? ""] ?? 0) : steps.length - 1;
 
   // What the user told the chat so far ("create a snake game. Chill vibes").
   // The strategy buttons must build THAT, not the stale studio.prompt default —
@@ -235,23 +262,57 @@ function Create() {
     } catch (error: any) {
       const payment = error?.response?.data?.payment;
       if (error?.response?.status === 402 && payment) {
-        const amount = payment.amount ?? 2;
-        const currency = payment.currency ?? "0G";
+        const amount = payment.amount ?? 1;
+        const currency = payment.currency ?? "TON";
         try {
+          const tonWallet = getTonWallet(user);
+          if (!tonWallet) {
+            throw new Error("Connect your TON wallet before generating another game.");
+          }
           setIsPaying(true);
-          setGenerationNotice(`Confirm ${amount} ${currency} in your wallet to generate another game.`);
-          const paymentTxHash = await sendZeroGGenerationPayment(amount);
-          setGenerationNotice("Payment sent. Verifying on 0G mainnet...");
-          const game = await studio.generateFromPrompt(strategy, buildPrompt, paymentTxHash);
+          let paymentTxHash = sessionStorage.getItem(PENDING_TON_GENERATION_PAYMENT_KEY) ?? "";
+          if (!paymentTxHash) {
+            setGenerationNotice(
+              `Confirm ${amount} ${currency} in your wallet to generate another game.`,
+            );
+            paymentTxHash = await sendTonGenerationPayment({
+              wallet: tonWallet,
+              amountTon: amount,
+              signRawHash,
+            });
+            sessionStorage.setItem(PENDING_TON_GENERATION_PAYMENT_KEY, paymentTxHash);
+          }
+          setGenerationNotice("Payment sent. Verifying on TON mainnet...");
+          let game = null;
+          for (let attempt = 1; attempt <= 2; attempt += 1) {
+            try {
+              game = await studio.generateFromPrompt(strategy, buildPrompt, paymentTxHash);
+              break;
+            } catch (verifyError: any) {
+              const waitingForTon =
+                verifyError?.response?.status === 402 &&
+                verifyError?.response?.data?.code === "PAYMENT_NOT_CONFIRMED";
+              if (!waitingForTon || attempt === 2) throw verifyError;
+              setGenerationNotice("Payment sent. Waiting for TON confirmation...");
+              await new Promise((resolve) => setTimeout(resolve, 5000));
+            }
+          }
           if (game) addCreatedGame(game);
+          sessionStorage.removeItem(PENDING_TON_GENERATION_PAYMENT_KEY);
           setGenerationNotice("");
         } catch (paymentError: any) {
-          setGenerationNotice(paymentError?.response?.data?.error ?? paymentError?.message ?? `Could not complete ${currency} payment.`);
+          setGenerationNotice(
+            paymentError?.response?.data?.error ??
+              paymentError?.message ??
+              `Could not complete ${currency} payment.`,
+          );
         } finally {
           setIsPaying(false);
         }
       } else {
-        setGenerationNotice(error?.response?.data?.error ?? error?.message ?? "Could not start generation.");
+        setGenerationNotice(
+          error?.response?.data?.error ?? error?.message ?? "Could not start generation.",
+        );
       }
     }
   };
@@ -312,7 +373,9 @@ function Create() {
 
     if (chatStage === "concept") {
       const extraPrompt = isCreateConfirmation(value) ? "" : value;
-      const prompt = [gameRequest, vibeRequest, selectedConcept, extraPrompt].filter(Boolean).join(". ");
+      const prompt = [gameRequest, vibeRequest, selectedConcept, extraPrompt]
+        .filter(Boolean)
+        .join(". ");
       studio.setPrompt(prompt);
       setFinalPrompt(prompt);
       setChatStage("ready");
@@ -383,15 +446,25 @@ function Create() {
           <div className="mb-4 flex gap-3 rounded-[1.5rem] border-2 border-fuchsia-200 bg-white/80 p-3 text-violet-950 shadow-[0_0_18px_rgba(168,85,247,0.3)] backdrop-blur">
             <div className="relative size-16 shrink-0 overflow-hidden rounded-2xl border border-violet-200 bg-violet-100">
               {getThumbnailUrl(templateSeed.id) ? (
-                <img src={getThumbnailUrl(templateSeed.id)} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={getThumbnailUrl(templateSeed.id)}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               ) : (
-                <span className="grid h-full place-items-center text-3xl">{templateEmoji[templateSeed.id] ?? "🎮"}</span>
+                <span className="grid h-full place-items-center text-3xl">
+                  {templateEmoji[templateSeed.id] ?? "🎮"}
+                </span>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-600">Template selected</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-600">
+                Template selected
+              </p>
               <h2 className="truncate font-display text-lg font-black">{templateSeed.name}</h2>
-              <p className="line-clamp-2 text-xs font-semibold text-violet-700">{templateSeed.mechanic}</p>
+              <p className="line-clamp-2 text-xs font-semibold text-violet-700">
+                {templateSeed.mechanic}
+              </p>
             </div>
             <button
               type="button"
@@ -409,7 +482,9 @@ function Create() {
               <Bot className="size-11 text-cyan-200 drop-shadow-[0_0_10px_rgba(103,232,249,0.95)]" />
             </span>
             <h1 className="mt-4 font-display text-4xl font-black">Hey there! 👋</h1>
-            <p className="mt-1 text-base font-bold text-violet-200">What kind of game do you want to create?</p>
+            <p className="mt-1 text-base font-bold text-violet-200">
+              What kind of game do you want to create?
+            </p>
           </div>
 
           {freshChat ? (
@@ -422,12 +497,19 @@ function Create() {
                 >
                   <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-fuchsia-200/50 bg-[radial-gradient(circle,#c084fc,#4c1d95_74%)] text-3xl shadow-[inset_0_2px_10px_rgba(255,255,255,0.22)]">
                     {idea.image ? (
-                      <img src={idea.image} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      <img
+                        src={idea.image}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
                     ) : (
                       idea.icon
                     )}
                   </span>
-                  <span className="min-w-0 flex-1 text-lg font-black leading-tight text-white">{idea.text}</span>
+                  <span className="min-w-0 flex-1 text-lg font-black leading-tight text-white">
+                    {idea.text}
+                  </span>
                   <ArrowRight className="size-7 shrink-0 text-fuchsia-300 transition group-hover:translate-x-1" />
                 </button>
               ))}
@@ -436,7 +518,10 @@ function Create() {
             <>
               <div className="mt-5 max-h-[36vh] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(232,121,249,0.75)_transparent]">
                 {messages.map((message, index) => (
-                  <div key={`${message.role}-${index}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    key={`${message.role}-${index}`}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
                     <div
                       className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm font-semibold leading-relaxed ${
                         message.role === "user"
@@ -478,7 +563,11 @@ function Create() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") submitComposerPrompt();
               }}
-              placeholder={chatStage === "game" ? "Type soccer, runner, racing..." : "Type a prompt or command..."}
+              placeholder={
+                chatStage === "game"
+                  ? "Type soccer, runner, racing..."
+                  : "Type a prompt or command..."
+              }
               className="min-w-0 flex-1 bg-transparent text-base font-bold text-white outline-none placeholder:text-violet-300/70"
             />
             <button
@@ -504,11 +593,19 @@ function Create() {
             <span className="min-w-0 flex-1">
               <span className="block font-display text-2xl font-black text-white">HYBRID MODE</span>
               <span className="mt-1 block text-sm font-bold text-violet-100">
-                {isPaying ? "Waiting for payment..." : buildingStrategy === "hybrid" ? "Building your game..." : "Best of both worlds."}
+                {isPaying
+                  ? "Waiting for payment..."
+                  : buildingStrategy === "hybrid"
+                    ? "Building your game..."
+                    : "Best of both worlds."}
               </span>
             </span>
             <span className="grid size-12 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
-              {buildingStrategy === "hybrid" || isPaying ? <Loader2 className="size-5 animate-spin" /> : <ArrowRight className="size-6" />}
+              {buildingStrategy === "hybrid" || isPaying ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                <ArrowRight className="size-6" />
+              )}
             </span>
           </button>
 
@@ -523,11 +620,19 @@ function Create() {
             <span className="min-w-0 flex-1">
               <span className="block font-display text-xl font-black text-white">PURE AGENT</span>
               <span className="mt-1 block text-sm font-bold text-pink-100">
-                {isPaying ? "Waiting for payment..." : buildingStrategy === "pure-agent" ? "Building your game..." : "AI handles everything."}
+                {isPaying
+                  ? "Waiting for payment..."
+                  : buildingStrategy === "pure-agent"
+                    ? "Building your game..."
+                    : "AI handles everything."}
               </span>
             </span>
             <span className="grid size-12 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
-              {buildingStrategy === "pure-agent" || isPaying ? <Loader2 className="size-5 animate-spin" /> : <ArrowRight className="size-6" />}
+              {buildingStrategy === "pure-agent" || isPaying ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                <ArrowRight className="size-6" />
+              )}
             </span>
           </button>
         </div>
@@ -544,11 +649,15 @@ function Create() {
               <div>
                 <h3 className="font-display text-lg font-bold">
                   Build Console
-                  {builtGame?.title ? <span className="text-muted-foreground"> · {builtGame.title}</span> : null}
+                  {builtGame?.title ? (
+                    <span className="text-muted-foreground"> · {builtGame.title}</span>
+                  ) : null}
                 </h3>
                 <p className="label-mono mt-1 text-[10px] text-muted-foreground">
                   {activeBuild?.statusText ?? studio.agentStatus}
-                  {phase === "building" ? ` · ${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s` : ""}
+                  {phase === "building"
+                    ? ` · ${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s`
+                    : ""}
                 </p>
               </div>
               {phase === "building" ? (
@@ -582,7 +691,11 @@ function Create() {
                         <span className="size-1.5 rounded-full bg-muted-foreground" />
                       )}
                     </span>
-                    <span className={complete || active ? "text-foreground" : "text-muted-foreground"}>{s}</span>
+                    <span
+                      className={complete || active ? "text-foreground" : "text-muted-foreground"}
+                    >
+                      {s}
+                    </span>
                   </li>
                 );
               })}
@@ -593,7 +706,8 @@ function Create() {
                 {activeBuild?.statusText ?? "The AI build failed."}
                 {builtGame?.id && activeBuild?.strategy !== "pure-agent" ? (
                   <span className="mt-1 block text-destructive/80">
-                    The playable template version is still in My Creations — run the build again to retry the AI version.
+                    The playable template version is still in My Creations — run the build again to
+                    retry the AI version.
                   </span>
                 ) : (
                   <span className="mt-1 block text-destructive/80">
@@ -605,7 +719,9 @@ function Create() {
 
             {phase === "done" && (
               <div className="mt-6 rounded-xl border border-primary/40 bg-gradient-to-br from-[oklch(0.72_0.27_340)] to-[oklch(0.65_0.25_295)] p-5">
-                <p className="label-mono text-[10px] text-white/80">{activeBuild?.statusText ?? studio.status}</p>
+                <p className="label-mono text-[10px] text-white/80">
+                  {activeBuild?.statusText ?? studio.status}
+                </p>
                 <h4 className="mt-1 font-display text-xl font-black text-white">
                   {builtGame?.title ?? studio.generatedPackage.title} 🎮
                 </h4>
@@ -638,7 +754,10 @@ function Create() {
                         to: "/play/$gameId",
                         params: {
                           gameId:
-                            builtGame?.id ?? builtGame?.templateId ?? studio.generatedPackage.templateId ?? "flappy",
+                            builtGame?.id ??
+                            builtGame?.templateId ??
+                            studio.generatedPackage.templateId ??
+                            "flappy",
                         },
                       })
                     }

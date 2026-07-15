@@ -96,10 +96,10 @@ function getAnonymousId(): string {
 /** The current user id: wallet address when connected, anonymous id otherwise. */
 export function getCurrentUserId(): string {
   return (
+    readStorage(PRIVY_USER_KEY) ??
     getTonWalletAddress() ??
     getWalletAddress() ??
     getTelegramUserId() ??
-    readStorage(PRIVY_USER_KEY) ??
     getAnonymousId()
   );
 }
@@ -138,5 +138,11 @@ export function setCurrentUsername(name: string): string {
 /** True when `creatorId` belongs to the current user (or is unset/legacy). */
 export function ownsGame(creatorId: string | null | undefined): boolean {
   if (!creatorId) return true; // legacy games without attribution
-  return creatorId === getCurrentUserId();
+  return [
+    getCurrentUserId(),
+    readStorage(PRIVY_USER_KEY),
+    getTonWalletAddress(),
+    getWalletAddress(),
+    getTelegramUserId(),
+  ].includes(creatorId);
 }

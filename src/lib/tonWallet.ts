@@ -5,6 +5,7 @@ import { getTonWalletAddress } from "@/lib/identity";
 export type TonWallet = {
   address: string;
   id?: string | null;
+  publicKey?: string | null;
   chainType: "ton";
   type?: "wallet";
 };
@@ -21,6 +22,7 @@ export function toTonWallet(value: unknown): TonWallet | null {
   return {
     address: value.address,
     id: typeof value.id === "string" || value.id === null ? value.id : undefined,
+    publicKey: typeof value.publicKey === "string" ? value.publicKey : undefined,
     chainType: "ton",
     type: "wallet",
   };

@@ -44,7 +44,6 @@ export function TelegramSignInButton({
   const signInWithTelegram = async () => {
     if (!canUseTelegramLogin) {
       setAuthStatus("openTelegram");
-      window.alert("Open this app inside Telegram to sign in.");
       window.setTimeout(() => setAuthStatus("idle"), 2000);
       return;
     }
@@ -139,7 +138,7 @@ export function TelegramSignInButton({
         : tonStatus === "error"
           ? "!"
           : tonWallet?.address
-            ? "OK"
+            ? "TON ON"
             : "TON";
 
     return (
