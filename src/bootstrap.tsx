@@ -1,6 +1,6 @@
 import { RouterProvider } from "@tanstack/react-router";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { PRIVY_APP_ID, PRIVY_CLIENT_ID, privyConfig } from "./lib/privyConfig";
+import { VITE_PRIVY_APP_ID, PRIVY_CLIENT_ID, privyConfig } from "./lib/privyConfig";
 
 function loadDevStylesheet(): Promise<void> {
   return new Promise((resolve) => {
@@ -38,7 +38,7 @@ async function boot() {
 
   const { getRouter } = await import("./router");
   root.render(
-    <PrivyProvider appId={PRIVY_APP_ID} clientId={PRIVY_CLIENT_ID} config={privyConfig}>
+    <PrivyProvider appId={VITE_PRIVY_APP_ID} clientId={PRIVY_CLIENT_ID} config={privyConfig}>
       <RouterProvider router={getRouter()} />
     </PrivyProvider>,
   );

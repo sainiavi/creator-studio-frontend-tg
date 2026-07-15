@@ -2,7 +2,7 @@ import { useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
 import { Loader2, LogOut, MessageCircle } from "lucide-react";
 
 import { getCurrentUsername } from "@/lib/identity";
-import { PRIVY_APP_ID } from "@/lib/privyConfig";
+import { VITE_PRIVY_APP_ID } from "@/lib/privyConfig";
 
 type TelegramSignInButtonProps = {
   compact?: boolean;
@@ -28,7 +28,7 @@ export function TelegramSignInButton({
     }
   };
 
-  if (!PRIVY_APP_ID) {
+  if (!VITE_PRIVY_APP_ID) {
     return null;
   }
 
