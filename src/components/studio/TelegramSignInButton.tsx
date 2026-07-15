@@ -1,7 +1,7 @@
 import { useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
 import { useCreateWallet } from "@privy-io/react-auth/extended-chains";
 import { Loader2, LogOut, Wallet } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { getCurrentUsername } from "@/lib/identity";
 import { VITE_PRIVY_APP_ID } from "@/lib/privyConfig";
@@ -36,6 +36,7 @@ export function TelegramSignInButton({
   const [tonLoading, setTonLoading] = useState(false);
   const [tonStatus, setTonStatus] = useState<"idle" | "copied" | "error">("idle");
   const [tonErrorMessage, setTonErrorMessage] = useState("");
+  const lastTonActivationAt = useRef(0);
   const identity = getCurrentUsername();
   const tonWallet = getTonWallet(user) ?? createdTonWallet;
 
@@ -103,6 +104,15 @@ export function TelegramSignInButton({
     }
   };
 
+  const activateTonWallet = () => {
+    const now = Date.now();
+    if (tonLoading || now - lastTonActivationAt.current < 500) {
+      return;
+    }
+    lastTonActivationAt.current = now;
+    void handleTonWallet();
+  };
+
   if (!VITE_PRIVY_APP_ID) {
     return null;
   }
@@ -127,7 +137,9 @@ export function TelegramSignInButton({
       <div className={`inline-flex h-9 shrink-0 items-center gap-1 ${className}`}>
         <button
           type="button"
-          onClick={() => void handleTonWallet()}
+          onClick={activateTonWallet}
+          onPointerUp={activateTonWallet}
+          onTouchEnd={activateTonWallet}
           disabled={tonLoading}
           className={`inline-flex h-9 items-center justify-center gap-2 rounded-full border border-sky-200/35 bg-white/12 text-xs font-black uppercase text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-70 ${
             compact ? "w-9 px-0" : responsive ? "w-auto px-2 sm:px-3" : "px-3"

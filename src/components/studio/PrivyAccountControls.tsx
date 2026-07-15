@@ -1,7 +1,7 @@
 import { useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
 import { useCreateWallet } from "@privy-io/react-auth/extended-chains";
 import { Loader2, LogOut, Wallet } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { getCurrentUsername } from "@/lib/identity";
 import { syncPrivyIdentity } from "@/lib/privyIdentity";
@@ -25,6 +25,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   const [tonLoading, setTonLoading] = useState(false);
   const [tonStatus, setTonStatus] = useState<"idle" | "copied" | "error">("idle");
   const [tonErrorMessage, setTonErrorMessage] = useState("");
+  const lastTonActivationAt = useRef(0);
   const identity = getCurrentUsername();
   const tonWallet = getTonWallet(user) ?? createdTonWallet;
 
@@ -83,6 +84,15 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
     }
   };
 
+  const activateTonWallet = () => {
+    const now = Date.now();
+    if (tonLoading || now - lastTonActivationAt.current < 500) {
+      return;
+    }
+    lastTonActivationAt.current = now;
+    void handleTonWallet();
+  };
+
   if (!ready) {
     return (
       <div className={`mb-4 ${collapsed ? "px-0" : "px-2"}`}>
@@ -129,7 +139,9 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
 
       <button
         type="button"
-        onClick={() => void handleTonWallet()}
+        onClick={activateTonWallet}
+        onPointerUp={activateTonWallet}
+        onTouchEnd={activateTonWallet}
         disabled={tonLoading}
         className={`flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white hover:text-sky-950 disabled:cursor-not-allowed disabled:opacity-70 ${
           collapsed ? "size-10" : "w-full gap-2 px-3 py-2"
