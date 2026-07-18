@@ -4,6 +4,7 @@ type TelegramWebAppWindow = Window & {
       initData?: string;
       platform?: string;
       version?: string;
+      openInvoice?: (url: string, callback?: (status: string) => void) => void;
     };
   };
 };
@@ -27,4 +28,21 @@ export function isTelegramMiniApp(): boolean {
   return (
     hasTelegramLaunchParams(window.location.search) || hasTelegramLaunchParams(window.location.hash)
   );
+}
+
+export function openTelegramInvoice(url: string): Promise<string> {
+  const webApp = typeof window === "undefined"
+    ? undefined
+    : (window as TelegramWebAppWindow).Telegram?.WebApp;
+  if (!webApp?.openInvoice) {
+    return Promise.reject(new Error("Open this in Telegram to pay with Stars."));
+  }
+
+  return new Promise((resolve, reject) => {
+    try {
+      webApp.openInvoice(url, (status) => resolve(status));
+    } catch (error) {
+      reject(error);
+    }
+  });
 }

@@ -19,11 +19,13 @@ import {
   X,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { createLaunchBoostOrder, fetchStarsOrder, type StarsOrder } from "@/lib/api/stars";
 import { runCodeJob } from "@/hooks/useCreatorStudio";
 import { useStudioContext } from "@/context/StudioContext";
 import { GamePreview } from "@/components/studio/GamePreview";
 import { EditPageSkeleton } from "@/components/studio/PageSkeletons";
 import { ownsGame } from "@/lib/identity";
+import { openTelegramInvoice } from "@/lib/telegramMiniApp";
 
 export const Route = createFileRoute("/_app/edit/$gameId")({
   pendingComponent: EditPageSkeleton,
@@ -58,6 +60,9 @@ function GameEditor() {
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [publishError, setPublishError] = useState("");
   const [publishPoints, setPublishPoints] = useState<number | null>(null);
+  const [boosting, setBoosting] = useState(false);
+  const [boostStatus, setBoostStatus] = useState("");
+  const [boostError, setBoostError] = useState("");
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<"settings" | "code">("settings");
   // Mobile shows one panel at a time, switched by the bottom control bar
@@ -203,6 +208,55 @@ function GameEditor() {
     }
   };
 
+  const pollBoostOrder = async (order: StarsOrder) => {
+    for (let attempt = 0; attempt < 24; attempt += 1) {
+      const latest = await fetchStarsOrder(order.id);
+      if (latest.status === "FULFILLED") {
+        setBoostStatus("Launch Boost is active for 48 hours.");
+        void refreshCreatedGames();
+        return latest;
+      }
+      if (["FAILED", "REFUNDED", "EXPIRED", "PRECHECKOUT_REJECTED"].includes(latest.status)) {
+        throw new Error(`Payment ${latest.status.toLowerCase().replaceAll("_", " ")}.`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+    }
+    throw new Error("Payment is still pending. Check again in a moment.");
+  };
+
+  const buyLaunchBoost = async () => {
+    if (!game || boosting) return;
+    setBoosting(true);
+    setBoostError("");
+    setBoostStatus("Creating Telegram Stars invoice...");
+    try {
+      const order = await createLaunchBoostOrder(gameId);
+      if (!order.invoiceUrl) throw new Error("Telegram did not return an invoice link.");
+      setBoostStatus("Opening Telegram checkout...");
+      const invoiceStatus = await openTelegramInvoice(order.invoiceUrl);
+      if (invoiceStatus === "cancelled" || invoiceStatus === "failed") {
+        throw new Error(invoiceStatus === "cancelled" ? "Payment cancelled." : "Payment failed.");
+      }
+      setBoostStatus("Payment received by Telegram. Waiting for backend confirmation...");
+      await pollBoostOrder(order);
+      setGame((prev: any) => prev
+        ? {
+            ...prev,
+            launchBoost: {
+              ...(prev.launchBoost ?? {}),
+              active: true,
+              starsAmount: order.starsAmount,
+            },
+          }
+        : prev);
+    } catch (error: any) {
+      setBoostError(error?.response?.data?.error ?? error?.message ?? "Could not start Launch Boost.");
+      setBoostStatus("");
+    } finally {
+      setBoosting(false);
+    }
+  };
+
   const sendWish = async (text: string) => {
     const request = text.trim();
     if (!request || building || !game?.refinement?.generatedCode) return;
@@ -272,6 +326,8 @@ function GameEditor() {
   // Wallet identity = user. Only the creator can change their game.
   const isOwner = ownsGame(game.creatorId);
   const isPublished = game.publish?.published === true;
+  const boostEndsAt = game.launchBoost?.endsAt ? new Date(game.launchBoost.endsAt) : null;
+  const hasActiveBoost = Boolean(game.launchBoost?.active && boostEndsAt && boostEndsAt.getTime() > Date.now());
   const base = (import.meta.env.BASE_URL ?? "/").replace(/\/?$/, "/");
   const publicUrl =
     typeof window === "undefined"
@@ -602,6 +658,31 @@ function GameEditor() {
                     +{publishPoints} Creator Score. You are now on the New leaderboard.
                   </div>
                 )}
+                <div className="mt-4 rounded-xl border border-amber-300/35 bg-amber-300/10 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-amber-100">Launch Boost</p>
+                      <p className="mt-1 text-xs leading-5 text-amber-100/75">
+                        249 Telegram Stars for 48 hours of extra distribution.
+                      </p>
+                      {hasActiveBoost && boostEndsAt && (
+                        <p className="mt-1 text-xs font-bold text-emerald-300">
+                          Active until {boostEndsAt.toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => void buyLaunchBoost()}
+                      disabled={!isOwner || boosting || hasActiveBoost}
+                      className="flex items-center gap-1.5 rounded-lg bg-amber-300 px-3 py-2 text-xs font-black uppercase tracking-wider text-black transition hover:opacity-90 disabled:opacity-50"
+                    >
+                      {boosting ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                      {hasActiveBoost ? "Boost Active" : "Boost 249 Stars"}
+                    </button>
+                  </div>
+                  {boostStatus && <p className="mt-3 text-xs font-bold text-amber-100">{boostStatus}</p>}
+                  {boostError && <p className="mt-3 text-xs font-bold text-red-300">{boostError}</p>}
+                </div>
                 <div className="mt-5 flex gap-2 rounded-xl border border-border/60 bg-background/60 p-2 pl-3">
                   <input
                     readOnly
