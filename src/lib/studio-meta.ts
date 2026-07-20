@@ -247,8 +247,8 @@ export function gradientForId(id: string): Game["gradient"] {
 
 export type TemplateEngine = "threejs" | "construct";
 
-export function engineOf(template: { engine?: string }): TemplateEngine {
-  if (template.engine === "construct") return "construct";
+export function engineOf(template: { engine?: string } | null | undefined): TemplateEngine {
+  if (template?.engine === "construct") return "construct";
   return "threejs";
 }
 
@@ -260,14 +260,24 @@ export function playCount(_index: number): string {
 
 // Adapts a raw gameTemplate into the design-system Game shape used by GameCard.
 export function templateToGame(template: any, index = 0): Game {
+  if (!template?.id && !template?.name) {
+    return {
+      title: "Loading…",
+      category: "Game",
+      plays: playCount(index),
+      emoji: "🎮",
+      gradient: "violet",
+      creator: "studio",
+    };
+  }
   return {
-    title: template.name,
-    category: template.category,
+    title: String(template.name ?? "Untitled"),
+    category: typeof template.category === "string" ? template.category : "Game",
     plays: playCount(index),
     emoji: templateEmoji[template.id] ?? "🎮",
-    gradient: gradientForId(template.id),
+    gradient: gradientForId(String(template.id ?? index)),
     creator: engineOf(template) === "construct" ? "Construct Template" : "3D Web Game",
-    thumbnailUrl: getThumbnailUrl(template.id),
-    templateId: template.id,
+    thumbnailUrl: template.id ? getThumbnailUrl(template.id) : undefined,
+    templateId: template.id ? String(template.id) : undefined,
   };
 }

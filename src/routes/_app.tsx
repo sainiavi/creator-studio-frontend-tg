@@ -18,7 +18,7 @@ function AppLayout() {
         <main className={`flex-1 min-w-0 ${isPlayPage ? "pb-0" : "pb-24 md:pb-0"}`}>
           <Outlet />
         </main>
-        <MobileNav />
+        {!isPlayPage && <MobileNav />}
       </div>
     </StudioProvider>
   );

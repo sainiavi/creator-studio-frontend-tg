@@ -16,7 +16,6 @@ import {
   MoreVertical,
   Play,
   Plus,
-  RotateCcw,
   Send,
   Shuffle,
   Maximize2,
@@ -323,10 +322,10 @@ function PlayFeed() {
     0,
     gameTemplates.findIndex((t: any) => t.id === gameId),
   );
-  const baseTemplate = gameTemplates[index] ?? gameTemplates[0];
+  const baseTemplate = gameTemplates[index] ?? gameTemplates[0] ?? null;
   const template = isNeonSudoku
     ? {
-        ...baseTemplate,
+        ...(baseTemplate ?? {}),
         id: "neon-sudoku",
         name: "Neon Sudoku",
         category: "Puzzle",
@@ -335,7 +334,7 @@ function PlayFeed() {
       }
     : isSimpleAgentGame
       ? {
-          ...baseTemplate,
+          ...(baseTemplate ?? {}),
           id: "simple-agent-game",
           name: "Simple Agent Game",
           category: "Agent Arcade",
@@ -353,7 +352,7 @@ function PlayFeed() {
           }
         : customGame
           ? {
-              id: customGame.templateId || "pure-agent",
+              id: customGame.id || customGame.templateId || "pure-agent",
               name: customGame.title || "AI Custom Game",
               category: customGame.category || "Casual",
               mechanic: customGame.gameplay?.mechanic || "custom gameplay mechanics",
@@ -362,18 +361,20 @@ function PlayFeed() {
               // template family they were routed from.
               engine: "threejs"
             }
-          : baseTemplate;
+          : isTemplateRoute
+            ? baseTemplate
+            : null;
 
   const game = isNeonSudoku
     ? {
-        ...templateToGame(baseTemplate, index),
+        ...templateToGame(template, index),
         title: template.name,
         category: template.category,
         emoji: "🔢",
       }
     : isSimpleAgentGame
       ? {
-          ...templateToGame(baseTemplate, index),
+          ...templateToGame(template, index),
           title: template.name,
           category: template.category,
           emoji: "🎯",
@@ -387,7 +388,7 @@ function PlayFeed() {
             gradient: "from-purple-900 to-indigo-950",
             creator: "0G AI Agent",
             thumbnailUrl: (studio.generatedPackage as any).thumbnailUrl || "/thumbnails/chess-cover.png",
-            templateId: studio.generatedPackage.templateId,
+            templateId: studio.generatedPackage.id || studio.generatedPackage.templateId,
           }
         : customGame
           ? {
@@ -398,7 +399,7 @@ function PlayFeed() {
               gradient: "from-purple-900 to-indigo-950",
               creator: "you",
               thumbnailUrl: resolveGameThumbnail(customGame),
-              templateId: customGame.templateId,
+              templateId: customGame.id ?? customGame.templateId,
             }
           : templateToGame(template, index);
 
@@ -414,13 +415,19 @@ function PlayFeed() {
   const pkg = generatedPackageMatches
     ? studio.generatedPackage
     : customGame ??
-      localPackage(template, {
-        prompt: `${template.name} playable feed session`,
-        theme: "neon",
-        difficulty: "normal",
-        customization: "light",
-        extra: "none",
-      }, themePresets);
+      (template
+        ? localPackage(
+            template,
+            {
+              prompt: `${template.name} playable feed session`,
+              theme: "neon",
+              difficulty: "normal",
+              customization: "light",
+              extra: "none",
+            },
+            themePresets,
+          )
+        : null);
   const isCustomCreation = Boolean(generatedPackageMatches || customGame);
   const isShareable = !isCustomCreation || pkg?.publish?.published === true;
   const baseRemixCount = Number((customGame as any)?.remixes ?? (pkg as any)?.remixes ?? 0);
@@ -455,14 +462,16 @@ function PlayFeed() {
   const handleRemix = useCallback(() => {
     const seed = [
       `Remix ${game.title}`,
-      (pkg as any)?.gameplay?.mechanic || template.mechanic || `${template.category ?? "Arcade"} game`,
+      (pkg as any)?.gameplay?.mechanic ||
+        template?.mechanic ||
+        `${template?.category ?? game.category ?? "Arcade"} game`,
       "Keep the core mechanics, physics, controls, and pacing.",
       "Change the theme, characters, visual style, and one gameplay twist.",
     ].join(". ");
     sessionStorage.setItem("kult-remix-prompt", seed);
     setRemixCount((count) => count + 1);
     navigate({ to: "/create" });
-  }, [game.title, navigate, pkg, template.category, template.mechanic]);
+  }, [game.category, game.title, navigate, pkg, template?.category, template?.mechanic]);
   if (viewCount != null) game.plays = viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}K` : String(viewCount);
   const isMobile = useIsMobile();
   const leaderboard = useLeaderboard(gameId);
@@ -589,6 +598,7 @@ function PlayFeed() {
 
   const getTabGameList = useCallback(
     (tab: string) => {
+      if (!gameTemplates.length) return [];
       const neonSudokuTemplate = {
         ...gameTemplates[0],
         id: "neon-sudoku",
@@ -622,7 +632,7 @@ function PlayFeed() {
           return templates;
       }
     },
-    [trendingIds, agentIds, friendsIds, newCreationsIds, isMobile],
+    [gameTemplates, trendingIds, friendsIds, newCreationsIds],
   );
 
   const [activeTab, setActiveTab] = useState(() => {
@@ -642,7 +652,13 @@ function PlayFeed() {
     }
   }, [gameId, activeTab, getTabGameList, newCreationsIds, friendsIds, trendingIds]);
 
-  const activeGamesList = useMemo(() => getTabGameList(activeTab), [activeTab, getTabGameList]);
+  const activeGamesList = useMemo(() => {
+    const list = getTabGameList(activeTab) as any[];
+    if (template && !list.some((t) => t?.id === gameId)) {
+      return [template, ...list];
+    }
+    return list;
+  }, [activeTab, getTabGameList, gameId, template]);
 
   const handleTabClick = useCallback(
     (tabLabel: string, defaultGameId: string) => {
@@ -707,7 +723,8 @@ function PlayFeed() {
       target.closest("a") ||
       target.closest("input") ||
       target.closest("textarea") ||
-      target.closest(".feed-game-frame")
+      target.closest("[data-reel-actions]") ||
+      (isGameActive && target.closest(".feed-game-frame"))
     ) {
       return;
     }
@@ -722,6 +739,10 @@ function PlayFeed() {
     const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
     const deltaY = clientY - startY.current;
     setDragY(deltaY * 0.8);
+    // Prevent the page from bouncing while swiping the reel feed.
+    if (Math.abs(deltaY) > 8 && "touches" in e) {
+      e.preventDefault();
+    }
   };
 
   const handleDragEnd = () => {
@@ -744,7 +765,8 @@ function PlayFeed() {
       if (
         target.closest(".comments-panel") ||
         target.closest(".leaderboard-panel") ||
-        target.closest(".feed-game-frame")
+        target.closest("[data-reel-actions]") ||
+        (isGameActive && target.closest(".feed-game-frame"))
       ) {
         return;
       }
@@ -754,6 +776,7 @@ function PlayFeed() {
       const now = Date.now();
       if (now - lastWheelTime < 1000) return;
 
+      e.preventDefault();
       if (e.deltaY > 0) {
         lastWheelTime = now;
         triggerNextGame();
@@ -765,7 +788,7 @@ function PlayFeed() {
 
     window.addEventListener("wheel", handleWheel, { passive: false });
     return () => window.removeEventListener("wheel", handleWheel);
-  }, [triggerNextGame, triggerPrevGame]);
+  }, [triggerNextGame, triggerPrevGame, isGameActive]);
 
   const socialButtons = (
     <>
@@ -814,11 +837,12 @@ function PlayFeed() {
     Boolean(customGame) ||
     gameTemplates.some((candidate: any) => candidate.id === gameId);
 
-  if (!isKnownGame && (publicLoadState === "idle" || publicLoadState === "loading")) {
+  // Wait for templates and/or the public game payload before rendering play UI.
+  if (templatesLoading && !isSimpleAgentGame && !isNeonSudoku && !customGame && !generatedPackageMatches) {
     return <PlayPageSkeleton />;
   }
 
-  if (templatesLoading && !isSimpleAgentGame && !isNeonSudoku) {
+  if (!isKnownGame && (publicLoadState === "idle" || publicLoadState === "loading")) {
     return <PlayPageSkeleton />;
   }
 
@@ -842,8 +866,29 @@ function PlayFeed() {
     );
   }
 
+  // Still resolving game metadata — avoid rendering against a null template/pkg.
+  if (!template || !pkg) {
+    return <PlayPageSkeleton />;
+  }
+
   return (
-    <div className="relative h-[calc(100dvh-56px)] lg:h-[100dvh] w-full bg-black overflow-hidden touch-none text-white">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-black touch-none text-white">
+      {/* Mobile back */}
+      <button
+        type="button"
+        onClick={() => {
+          if (typeof window !== "undefined" && window.history.length > 1) {
+            window.history.back();
+            return;
+          }
+          navigate({ to: "/" });
+        }}
+        aria-label="Go back"
+        className="absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-50 grid size-10 place-items-center rounded-full border border-white/20 bg-black/55 text-white shadow-lg backdrop-blur-md transition active:scale-95 lg:hidden"
+      >
+        <ChevronLeft className="size-6" strokeWidth={2.4} />
+      </button>
+
       {isCustomCreation && !isShareable && (
         <div className="absolute left-1/2 top-3 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-full border border-amber-300/25 bg-black/80 px-4 py-2 text-xs font-bold text-amber-200 backdrop-blur">
           Draft preview
@@ -893,10 +938,10 @@ function PlayFeed() {
         }}
       >
         <div
-          className={`absolute inset-0 bg-gradient-to-br ${gradientClass[gradientForId(template.id)]} opacity-30`}
+          className={`absolute inset-0 bg-gradient-to-br ${gradientClass[gradientForId(String(template?.id ?? gameId))]} opacity-30`}
         />
         <img
-          src={game?.thumbnailUrl || getThumbnailUrl(template.id)}
+          src={game?.thumbnailUrl || getThumbnailUrl(String(template?.id ?? gameId))}
           alt=""
           onError={(event) => {
             event.currentTarget.style.display = "none";
@@ -905,7 +950,7 @@ function PlayFeed() {
         />
         
         {/* Game Container Wrapper */}
-        <div className={`absolute inset-0 pb-[60px] lg:pb-0 z-10 flex items-center justify-center pointer-events-none transition-all duration-500 ease-out ${leaderboardOpen ? "lg:pr-[420px]" : ""}`}>
+        <div className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-all duration-500 ease-out lg:pb-0 ${leaderboardOpen ? "lg:pr-[420px]" : ""}`}>
           <div className="relative flex items-center justify-center w-full h-full lg:w-auto lg:h-full">
             <div
               ref={frameRef}
@@ -919,7 +964,7 @@ function PlayFeed() {
                 ) : isSimpleAgentGame ? (
                   <SimpleAgentGame onScoreSubmit={handleScoreSubmit} />
                 ) : engine === "construct" ? (
-                  <Html5Preview templateId={template.id} />
+                  <Html5Preview templateId={String(template?.id ?? gameId)} />
                 ) : (
                   <GamePreview gamePackage={pkg} onScoreSubmit={handleScoreSubmit} />
                 )}
@@ -973,53 +1018,82 @@ function PlayFeed() {
             </div>
 
             {/* Desktop Right Actions (Floating next to game frame) */}
-            <aside className={`hidden lg:flex flex-col items-center gap-6 ml-6 pb-6 pointer-events-auto transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+            <aside className={`hidden lg:flex flex-col items-center gap-5 ml-6 pb-6 pointer-events-auto transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
               {socialButtons}
             </aside>
           </div>
         </div>
       </main>
 
-      {/* Mobile Bottom Bar */}
-      <div className={`absolute bottom-0 left-0 right-0 h-[60px] bg-black flex lg:hidden items-center justify-between px-4 z-40 transition-opacity duration-300`}>
-         <div className="flex items-center gap-4">
-           <div className="relative">
-              <div className="grid size-8 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 font-display text-sm font-black shadow-lg">
-                {profile.avatar}
-              </div>
-              <button onClick={() => setIsFollowing(!isFollowing)} className="absolute -bottom-1 -right-1 size-4 bg-white rounded-full flex items-center justify-center text-black">
-                 {isFollowing ? <Check size={10} /> : <Plus size={10} strokeWidth={3} />}
-              </button>
-           </div>
-           <button onClick={() => window.location.reload()} className="text-white">
-             <RotateCcw size={20} strokeWidth={2.5} />
-           </button>
-         </div>
-
-         <div className="flex items-center gap-5 text-white">
-            <button onClick={social.handleLike} className="flex items-center gap-1.5 text-[11px] font-bold">
-              <Heart size={20} className={social.liked ? "fill-rose-500 text-rose-500" : ""} /> {formatCount(social.likeCount)}
-            </button>
-            <button onClick={() => social.setCommentsOpen(true)} className="flex items-center gap-1.5 text-[11px] font-bold">
-              <MessageCircle size={20} /> {formatCount(social.commentCount)}
-            </button>
-            <button onClick={social.handleFavorite}>
-              <Bookmark size={20} className={social.favorited ? "fill-yellow-400 text-yellow-400" : ""} />
-            </button>
+      {/* Mobile reel actions — stacked up from bottom-right */}
+      <aside
+        data-reel-actions
+        className={`absolute bottom-[max(4.25rem,calc(env(safe-area-inset-bottom)+3.25rem))] right-2 z-40 flex flex-col-reverse items-center gap-2.5 lg:hidden transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+      >
+        <ActionButton
+          icon={<MoreVertical className="size-5" />}
+          label="More"
+          onClick={() => setDetailsModalOpen(true)}
+        />
+        <ActionButton
+          icon={<Trophy className="size-5" />}
+          label="Ranks"
+          onClick={() => setLeaderboardOpen(true)}
+          active={leaderboardOpen}
+        />
+        <ShareButton
+          count={social.shareCount}
+          open={social.shareMenuOpen}
+          onToggle={() => social.setShareMenuOpen(!social.shareMenuOpen)}
+          onShare={social.handleShare}
+          template={template}
+          game={game}
+          gameId={gameId}
+          disabled={!isShareable}
+        />
+        <FavoriteButton
+          favorited={social.favorited}
+          count={social.favoriteCount}
+          onToggle={social.handleFavorite}
+          animating={social.favoriteAnimating}
+        />
+        <ActionButton
+          icon={<MessageCircle className="size-5" />}
+          label={social.commentCount > 0 ? formatCount(social.commentCount) : "0"}
+          onClick={() => social.setCommentsOpen(!social.commentsOpen)}
+          active={social.commentsOpen}
+        />
+        <LikeButton
+          liked={social.liked}
+          count={social.likeCount}
+          onToggle={social.handleLike}
+          animating={social.likeAnimating}
+        />
+        <div className="relative mb-0.5">
+          <div className="grid size-10 place-items-center rounded-full border border-white/25 bg-white/10 font-display text-sm font-black shadow-lg backdrop-blur-md">
+            {profile.avatar}
+          </div>
+          {!follow.isSelf && (
             <button
-              onClick={() => isShareable && social.setShareMenuOpen(true)}
-              disabled={!isShareable}
-              className="disabled:opacity-35"
+              type="button"
+              onClick={() => setIsFollowing(!isFollowing)}
+              className="absolute -bottom-1 left-1/2 grid size-5 -translate-x-1/2 place-items-center rounded-full bg-[#a855f7] text-white shadow-md"
+              aria-label={isFollowing ? "Unfollow" : "Follow"}
             >
-              <Send size={20} />
+              {isFollowing ? <Check size={11} strokeWidth={3} /> : <Plus size={11} strokeWidth={3} />}
             </button>
-            <button onClick={() => setLeaderboardOpen(true)}>
-              <Trophy size={20} className={leaderboardOpen ? "text-yellow-400" : ""} />
-            </button>
-            <button onClick={() => setDetailsModalOpen(true)}>
-              <MoreVertical size={20} />
-            </button>
-         </div>
+          )}
+        </div>
+      </aside>
+
+      {/* Mobile creator strip (bottom-left, reel style) */}
+      <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-3 right-20 z-40 lg:hidden">
+        <div className="max-w-[70%]">
+          <p className="truncate text-sm font-black text-white drop-shadow">{game.title}</p>
+          <p className="mt-0.5 truncate text-xs font-semibold text-white/70">
+            {profile.name} · {game.category}
+          </p>
+        </div>
       </div>
 
       {/* Details Modal */}
@@ -1257,7 +1331,7 @@ function ShareButton({
 
   // Link to THIS game (its real id), honoring the app's base path (/studio/).
   const base = (import.meta.env.BASE_URL ?? "/").replace(/\/?$/, "/");
-  const path = `${base}play/${gameId ?? template.id}`;
+  const path = `${base}play/${gameId ?? template?.id ?? ""}`;
   const url = typeof window === "undefined" ? path : `${window.location.origin}${path}`;
 
   const handleCopy = async () => {
@@ -1420,8 +1494,8 @@ function ShareButton({
               <div className="mb-6 flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
                 <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white/10 text-3xl shadow-inner">
                   <img
-                    src={game?.thumbnailUrl || getThumbnailUrl(gameId ?? template.id)}
-                    alt={game?.title ?? template.name}
+                    src={game?.thumbnailUrl || getThumbnailUrl(gameId ?? template?.id)}
+                    alt={game?.title ?? template?.name}
                     onError={(event) => {
                       // missing cover: show the emoji tile instead of a broken icon
                       event.currentTarget.style.display = "none";
@@ -1430,12 +1504,12 @@ function ShareButton({
                     }}
                     className="size-full object-cover"
                   />
-                  <span style={{ display: "none" }}>{templateEmoji[template.id] || "🎮"}</span>
+                  <span style={{ display: "none" }}>{templateEmoji[template?.id] || "🎮"}</span>
                 </div>
                 <div className="min-w-0">
-                  <h4 className="truncate text-base font-black text-white">{game?.title ?? template.name}</h4>
+                  <h4 className="truncate text-base font-black text-white">{game?.title ?? template?.name}</h4>
                   <p className="truncate text-xs font-bold uppercase text-white/40">
-                    {game?.category ?? template.category} - HTML5 Game
+                    {game?.category ?? template?.category} - HTML5 Game
                   </p>
                 </div>
               </div>
@@ -1696,14 +1770,14 @@ function DetailsModal({
   const navigate = useNavigate();
   if (!open) return null;
 
-  const title = generatedPackageMatches ? pkg.title : template.name;
-  const description = generatedPackageMatches ? pkg.gameplay?.mechanic : template.mechanic;
+  const title = generatedPackageMatches ? pkg?.title : template?.name;
+  const description = generatedPackageMatches ? pkg?.gameplay?.mechanic : template?.mechanic;
   // The game's own cover when it has one, else the template cover.
-  const thumbnailSrc = (pkg as any)?.thumbnailUrl || getThumbnailUrl(template.id);
+  const thumbnailSrc = (pkg as any)?.thumbnailUrl || (template?.id ? getThumbnailUrl(template.id) : undefined);
   const remix = () => {
     const seed = [
       `Remix ${title}`,
-      description || `${template.category ?? "Arcade"} game`,
+      description || `${template?.category ?? "Arcade"} game`,
       "Keep the core mechanics, physics, controls, and pacing.",
       "Change the theme, characters, visual style, and one gameplay twist.",
     ].join(". ");
@@ -1737,7 +1811,7 @@ function DetailsModal({
               className="size-full object-cover"
             />
             <div style={{ display: "none" }} className="size-full place-items-center text-6xl">
-              {templateEmoji[template.id] || "🎮"}
+              {templateEmoji[template?.id] || "🎮"}
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
             

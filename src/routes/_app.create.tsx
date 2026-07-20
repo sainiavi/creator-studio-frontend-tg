@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Rocket, Bot, Loader2, Check, Play, ArrowRight, BriefcaseBusiness, Wand2 } from "lucide-react";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
@@ -164,7 +164,12 @@ function Create() {
   // builds until one of the two mode buttons is clicked.
   const [finalPrompt, setFinalPrompt] = useState("");
   const [generationNotice, setGenerationNotice] = useState("");
+  const [generationNoticeKind, setGenerationNoticeKind] = useState<"info" | "payment" | "error">(
+    "info",
+  );
   const [isPaying, setIsPaying] = useState(false);
+  const strategySectionRef = useRef<HTMLDivElement>(null);
+  const noticeRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "assistant", text: "Hey there! What kind of game do you want to create?" },
   ]);
@@ -225,10 +230,19 @@ function Create() {
   }, [studio]);
 
   useEffect(() => {
+    if (chatStage !== "ready" || phase !== "idle") return;
+    const timer = window.setTimeout(() => {
+      strategySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [chatStage, phase]);
+
+  useEffect(() => {
     if (phase !== "building") return;
     const interval = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(interval);
   }, [phase]);
+
   const elapsedSec = activeBuild
     ? Math.max(0, Math.floor((Date.now() - activeBuild.startedAt) / 1000))
     : 0;
@@ -240,6 +254,47 @@ function Create() {
   // chat only writes studio.prompt at the final "Ok, create it!" step.
   const chatPrompt = [gameRequest, vibeRequest].filter(Boolean).join(". ");
 
+  const showNotice = (
+    message: string,
+    kind: "info" | "payment" | "error" = "info",
+  ) => {
+    setGenerationNotice(message);
+    setGenerationNoticeKind(kind);
+    requestAnimationFrame(() => {
+      noticeRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  useEffect(() => {
+    if (phase !== "failed") return;
+    const statusText = activeBuild?.statusText ?? studio.agentStatus ?? "";
+    if (!statusText) return;
+    if (/free game|TON|payment required|generate another/i.test(statusText)) {
+      setGenerationNotice(statusText);
+      setGenerationNoticeKind("payment");
+    } else if (!generationNotice) {
+      setGenerationNotice(statusText);
+      setGenerationNoticeKind("error");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, activeBuild?.statusText]);
+
+  const formatPaidGenerationNotice = (error: any) => {
+    const data = error?.response?.data;
+    const payment = data?.payment;
+    const amount = payment?.amount ?? 1;
+    const currency = payment?.currency ?? "TON";
+    const existing = Number(payment?.existingGames ?? 0);
+    const serverError = String(data?.error ?? "").trim();
+    if (data?.code === "PAID_GENERATION_REQUIRED") {
+      return (
+        serverError ||
+        `You've already created your free game${existing > 0 ? ` (${existing} so far)` : ""}. Pay ${amount} ${currency} to generate another.`
+      );
+    }
+    return serverError || error?.message || "Could not start generation.";
+  };
+
   const build = async (strategy: "pure-agent" | "hybrid", promptOverride = "") => {
     const pendingInput = chatInput.trim();
     const promptWithPendingInput = [finalPrompt || chatPrompt || studio.prompt, pendingInput]
@@ -248,24 +303,35 @@ function Create() {
     const buildPrompt = promptOverride || promptWithPendingInput;
     if (!buildPrompt.trim() || phase === "building") return;
     setGenerationNotice("");
+    setGenerationNoticeKind("info");
     try {
       const game = await studio.generateFromPrompt(strategy, buildPrompt);
       if (game) addCreatedGame(game);
     } catch (error: any) {
       const payment = error?.response?.data?.payment;
-      if (error?.response?.status === 402 && payment) {
-        const amount = payment.amount ?? 1;
-        const currency = payment.currency ?? "TON";
+      const isPaidRequired =
+        error?.response?.status === 402 &&
+        (error?.response?.data?.code === "PAID_GENERATION_REQUIRED" || Boolean(payment?.required));
+
+      if (isPaidRequired) {
+        const amount = payment?.amount ?? 1;
+        const currency = payment?.currency ?? "TON";
+        showNotice(formatPaidGenerationNotice(error), "payment");
         try {
           const tonWallet = getTonWallet(user);
           if (!tonWallet) {
-            throw new Error("Connect your TON wallet before generating another game.");
+            showNotice(
+              `${formatPaidGenerationNotice(error)} Connect your TON wallet in the header to continue.`,
+              "payment",
+            );
+            return;
           }
           setIsPaying(true);
           let paymentTxHash = sessionStorage.getItem(PENDING_TON_GENERATION_PAYMENT_KEY) ?? "";
           if (!paymentTxHash) {
-            setGenerationNotice(
-              `Confirm ${amount} ${currency} in your wallet to generate another game.`,
+            showNotice(
+              `Confirm ${amount} ${currency} in your wallet to unlock another game.`,
+              "payment",
             );
             paymentTxHash = await sendTonGenerationPayment({
               wallet: tonWallet,
@@ -274,7 +340,7 @@ function Create() {
             });
             sessionStorage.setItem(PENDING_TON_GENERATION_PAYMENT_KEY, paymentTxHash);
           }
-          setGenerationNotice("Payment sent. Verifying on TON mainnet...");
+          showNotice("Payment sent. Verifying on TON mainnet…", "info");
           let game = null;
           for (let attempt = 1; attempt <= 2; attempt += 1) {
             try {
@@ -285,26 +351,26 @@ function Create() {
                 verifyError?.response?.status === 402 &&
                 verifyError?.response?.data?.code === "PAYMENT_NOT_CONFIRMED";
               if (!waitingForTon || attempt === 2) throw verifyError;
-              setGenerationNotice("Payment sent. Waiting for TON confirmation...");
+              showNotice("Payment sent. Waiting for TON confirmation…", "info");
               await new Promise((resolve) => setTimeout(resolve, 5000));
             }
           }
           if (game) addCreatedGame(game);
           sessionStorage.removeItem(PENDING_TON_GENERATION_PAYMENT_KEY);
           setGenerationNotice("");
+          setGenerationNoticeKind("info");
         } catch (paymentError: any) {
-          setGenerationNotice(
+          showNotice(
             paymentError?.response?.data?.error ??
               paymentError?.message ??
-              `Could not complete ${currency} payment.`,
+              `Could not complete ${currency} payment. Please try again.`,
+            "error",
           );
         } finally {
           setIsPaying(false);
         }
       } else {
-        setGenerationNotice(
-          error?.response?.data?.error ?? error?.message ?? "Could not start generation.",
-        );
+        showNotice(formatPaidGenerationNotice(error), "error");
       }
     }
   };
@@ -379,6 +445,9 @@ function Create() {
           text: `Plan ready for ${selectedConcept.split(":")[0]}! Choose Hybrid Mode or Pure Agent Strategy below to start building.`,
         },
       ]);
+      requestAnimationFrame(() => {
+        strategySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
     }
   };
 
@@ -386,24 +455,33 @@ function Create() {
     const value = chatInput.trim();
     if (!value || phase === "building") return;
 
-    if (chatStage === "concept" && isCreateConfirmation(value)) {
+    // Early chat stages must advance through the guided flow (game → vibe → concept).
+    // The composer used to jump straight to "ready" and never call sendChat, so
+    // users thought submit created a game when it only parked a prompt.
+    if (chatStage === "game" || chatStage === "vibe") {
       sendChat(value);
       return;
     }
 
-    const prompt = [gameRequest, vibeRequest, selectedConcept, value].filter(Boolean).join(". ");
+    if (chatStage === "concept") {
+      sendChat(value);
+      return;
+    }
+
+    // Already ready: treat submit as "build with hybrid" so Enter/send actually creates.
+    const prompt = [finalPrompt || chatPrompt || studio.prompt, value].filter(Boolean).join(". ");
     studio.setPrompt(prompt);
     setFinalPrompt(prompt);
     setChatInput("");
-    setChatStage("ready");
     setMessages((current) => [
       ...current,
       { role: "user", text: value },
       {
         role: "assistant",
-        text: "Got it — that's your prompt. Choose Hybrid Mode or Pure Agent Strategy below to start building.",
+        text: "Starting Hybrid Mode build…",
       },
     ]);
+    void build("hybrid", prompt);
   };
 
   const freshChat = chatStage === "game" && messages.length <= 1;
@@ -419,6 +497,34 @@ function Create() {
       <div className="absolute inset-0 z-0 hidden bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.35),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(126,34,206,0.18))] sm:block" />
 
       <div className="relative z-10 mx-auto max-w-3xl px-4 pb-28 pt-2 sm:px-6 sm:pb-6 sm:pt-4">
+        {generationNotice && (
+          <div
+            ref={noticeRef}
+            role="alert"
+            className={`mb-4 rounded-2xl border-2 px-4 py-3 text-sm font-black shadow-[0_8px_24px_rgba(124,58,237,0.25)] ${
+              generationNoticeKind === "payment"
+                ? "border-amber-300 bg-amber-50 text-amber-950"
+                : generationNoticeKind === "error"
+                  ? "border-rose-300 bg-rose-50 text-rose-950"
+                  : "border-fuchsia-200 bg-white/90 text-violet-950"
+            }`}
+          >
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] opacity-70">
+              {generationNoticeKind === "payment"
+                ? "Payment required"
+                : generationNoticeKind === "error"
+                  ? "Build failed"
+                  : "Notice"}
+            </p>
+            <p className="mt-1 leading-snug">{generationNotice}</p>
+            {generationNoticeKind === "payment" && (
+              <p className="mt-2 text-xs font-bold opacity-80">
+                Your first game is free. Additional generations cost 1 TON.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="relative z-10 mb-1 w-full sm:hidden">
           <ConsoleHero
             value={chatInput}
@@ -577,10 +683,18 @@ function Create() {
           )}
         </section>
 
-        <div className={`mt-5 grid gap-3 sm:grid-cols-2 ${freshChat ? "hidden sm:grid" : ""}`}>
+        <div
+          ref={strategySectionRef}
+          className={`mt-5 grid gap-3 sm:grid-cols-2 ${freshChat ? "hidden sm:grid" : ""}`}
+        >
+          {chatStage === "ready" && phase === "idle" && (
+            <p className="sm:col-span-2 rounded-2xl border border-fuchsia-200/70 bg-white/85 px-4 py-3 text-center text-sm font-black text-violet-900 shadow-[0_0_20px_rgba(168,85,247,0.35)]">
+              Prompt locked. Tap Hybrid Mode or Pure Agent to start building.
+            </p>
+          )}
           <button
             onClick={() => build("hybrid")}
-            disabled={phase === "building" || isPaying}
+            disabled={phase === "building" || isPaying || (!finalPrompt && !chatPrompt && !studio.prompt)}
             className="group relative flex items-center gap-4 overflow-hidden rounded-[1.5rem] border-2 border-fuchsia-200/80 bg-[linear-gradient(135deg,#a855f7,#6d28d9)] p-4 text-left shadow-[0_0_24px_rgba(168,85,247,0.65),inset_0_1px_16px_rgba(255,255,255,0.18)] disabled:opacity-60"
           >
             <span className="grid size-16 shrink-0 place-items-center rounded-full bg-white/20">
@@ -607,7 +721,7 @@ function Create() {
 
           <button
             onClick={() => build("pure-agent")}
-            disabled={phase === "building" || isPaying}
+            disabled={phase === "building" || isPaying || (!finalPrompt && !chatPrompt && !studio.prompt)}
             className="group flex items-center gap-4 rounded-[1.5rem] border-2 border-fuchsia-200/80 bg-[linear-gradient(135deg,#ec4899,#7e22ce)] p-4 text-left shadow-[0_0_24px_rgba(236,72,153,0.5),inset_0_1px_16px_rgba(255,255,255,0.18)] disabled:opacity-60"
           >
             <span className="grid size-16 shrink-0 place-items-center rounded-full bg-white/20">
@@ -632,12 +746,6 @@ function Create() {
             </span>
           </button>
         </div>
-
-        {generationNotice && (
-          <div className="mt-4 rounded-2xl border border-fuchsia-200/70 bg-white/85 px-4 py-3 text-sm font-black text-violet-900 shadow-[0_0_20px_rgba(168,85,247,0.35)]">
-            {generationNotice}
-          </div>
-        )}
 
         {phase !== "idle" && (
           <div className="animate-float-up mt-6 rounded-2xl border border-border/60 bg-card p-6 shadow-card">

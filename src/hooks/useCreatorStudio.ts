@@ -25,9 +25,11 @@ function paidGenerationMessage(error: any) {
     return null;
   }
   const payment = error.response.data.payment;
-  const amount = payment?.amount ?? 2;
-  const currency = payment?.currency ?? "0G";
-  return `Your first game is free. Generate another game for ${amount} ${currency}.`;
+  const amount = payment?.amount ?? 1;
+  const currency = payment?.currency ?? "TON";
+  const serverError = String(error.response.data.error ?? "").trim();
+  if (serverError) return serverError;
+  return `You've already used your free game. Generate another for ${amount} ${currency}.`;
 }
 
 // Polls an existing code job until it finishes. Separated from runCodeJob so a
