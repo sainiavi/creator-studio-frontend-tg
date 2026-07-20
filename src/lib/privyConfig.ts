@@ -5,12 +5,14 @@ export const PRIVY_CLIENT_ID = import.meta.env.VITE_PRIVY_CLIENT_ID || undefined
 export const PRIVY_APP_NAME = import.meta.env.VITE_APP_NAME ?? "KULT Creator Studio";
 
 export const privyConfig: PrivyClientConfig = {
-  loginMethods: ["telegram"],
+  // Telegram for mini app. Email for web → Privy then creates an embedded TON wallet.
+  // There is no Privy login button named "TON Wallet" — TON is not a login method.
+  loginMethods: ["telegram", "email"],
   appearance: {
     theme: "dark",
-    accentColor: "#2aabee",
-    landingHeader: "Sign in with Telegram",
-    loginMessage: "Use Telegram to enter Creator Studio.",
+    accentColor: "#0098EA",
+    landingHeader: "Connect TON Wallet",
+    loginMessage: "Enter your email. Privy will create your TON wallet after you verify.",
     showWalletLoginFirst: false,
   },
 };

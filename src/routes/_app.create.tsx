@@ -1,17 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  Rocket,
-  Bot,
-  Loader2,
-  Check,
-  Play,
-  Send,
-  ArrowRight,
-  BriefcaseBusiness,
-  MessageSquareMore,
-  Wand2,
-} from "lucide-react";
+import { Rocket, Bot, Loader2, Check, Play, ArrowRight, BriefcaseBusiness, Wand2 } from "lucide-react";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
 import { findGameTemplate } from "@/lib/templates-loader";
@@ -21,6 +10,9 @@ import { getTonWallet } from "@/lib/tonWallet";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
 import { CreatePageSkeleton } from "@/components/studio/PageSkeletons";
+import { ConsoleHero } from "@/components/studio/ConsoleHero";
+import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
+import { KultLogo } from "@/components/studio/KultLogo";
 import profileBg from "@/assets/profile-bg.png";
 import cyberpunkSuggestion from "@/assets/create-suggestion-cyberpunk.png";
 import farmSuggestion from "@/assets/create-suggestion-farm.png";
@@ -417,30 +409,58 @@ function Create() {
   const freshChat = chatStage === "game" && messages.length <= 1;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#d9b2ff] text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#d8cff8_0%,#c4b6f2_42%,#9f87e7_100%)] text-white sm:bg-[#d9b2ff]">
       <img
         src={profileBg}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover object-top"
+        className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full object-cover object-top sm:block"
       />
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.35),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(126,34,206,0.18))]" />
+      <div className="absolute inset-0 z-0 hidden bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.35),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(126,34,206,0.18))] sm:block" />
 
-      <div className="relative z-10 mx-auto max-w-3xl px-4 pb-28 pt-4 sm:px-6 lg:pb-6">
-        <header className="mb-5 flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3 rounded-[1.6rem] border-2 border-white/70 bg-white/72 px-3.5 py-2.5 text-violet-950 shadow-[0_0_0_2px_rgba(168,85,247,0.22),0_0_28px_rgba(168,85,247,0.45),inset_0_2px_12px_rgba(255,255,255,0.95)] backdrop-blur">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[linear-gradient(135deg,#a855f7,#ec4899)] text-white shadow-[0_8px_16px_rgba(168,85,247,0.34)]">
-              <MessageSquareMore className="size-6" />
-            </span>
-            <div className="font-display text-2xl font-black leading-none text-violet-800 drop-shadow-[0_2px_0_rgba(255,255,255,0.8)] sm:text-3xl">
-              CREATE
-              <span className="block">WITH CHAT</span>
+      <div className="relative z-10 mx-auto max-w-3xl px-4 pb-28 pt-2 sm:px-6 sm:pb-6 sm:pt-4">
+        <div className="relative z-10 mb-1 w-full sm:hidden">
+          <ConsoleHero
+            value={chatInput}
+            onChange={setChatInput}
+            onSubmit={submitComposerPrompt}
+            onCategoryPick={(seed) => {
+              if (chatStage === "game" && messages.length <= 1) sendChat(seed);
+            }}
+            disabled={phase === "building"}
+            placeholder={
+              chatStage === "game" ? "Describe your game idea..." : "Type a prompt..."
+            }
+          />
+        </div>
+
+        <header className="mb-5 hidden items-center justify-between gap-3 sm:flex">
+          <div className="flex min-w-0 items-center gap-3 rounded-[1.6rem] border-2 border-white/70 bg-white/82 px-4 py-3 text-violet-950 shadow-[0_0_28px_rgba(168,85,247,0.35),inset_0_2px_12px_rgba(255,255,255,0.95)] backdrop-blur">
+            <KultLogo className="h-8 w-auto max-w-[120px] object-contain" />
+            <div>
+              <p className="font-display text-2xl font-black leading-none text-violet-900">Create</p>
+              <p className="text-xs font-bold text-violet-600">Describe it. AI builds it.</p>
             </div>
           </div>
-          <span className="hidden shrink-0 items-center gap-2 rounded-[1.6rem] border-2 border-violet-300/60 bg-white/72 px-4 py-3 font-display text-sm font-black text-violet-800 shadow-[inset_0_2px_10px_rgba(255,255,255,0.9),0_0_18px_rgba(168,85,247,0.3)] backdrop-blur sm:flex">
+          <span className="inline-flex shrink-0 items-center gap-2 rounded-[1.6rem] border-2 border-violet-300/60 bg-white/82 px-4 py-3 font-display text-sm font-black text-violet-800 shadow-[inset_0_2px_10px_rgba(255,255,255,0.9),0_0_18px_rgba(168,85,247,0.3)] backdrop-blur">
             <Bot className="size-6 text-violet-700" /> AI Game Studio
           </span>
         </header>
+
+        <div className="mb-5 hidden sm:block">
+          <CreateConsolePanel
+            value={chatInput}
+            onChange={setChatInput}
+            onSubmit={submitComposerPrompt}
+            onCategoryPick={(seed) => {
+              if (chatStage === "game" && messages.length <= 1) sendChat(seed);
+            }}
+            disabled={phase === "building"}
+            placeholder={
+              chatStage === "game" ? "Describe your game idea..." : "Type a prompt or command..."
+            }
+          />
+        </div>
 
         {templateSeed && (
           <div className="mb-4 flex gap-3 rounded-[1.5rem] border-2 border-fuchsia-200 bg-white/80 p-3 text-violet-950 shadow-[0_0_18px_rgba(168,85,247,0.3)] backdrop-blur">
@@ -476,8 +496,8 @@ function Create() {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-[2rem] border-[5px] border-white/80 bg-[radial-gradient(circle_at_50%_5%,rgba(168,85,247,0.28),transparent_24%),linear-gradient(180deg,#160543,#070018)] p-5 shadow-[0_0_0_2px_rgba(168,85,247,0.5),0_0_36px_rgba(168,85,247,0.75),inset_0_1px_22px_rgba(255,255,255,0.12)]">
-          <div className="flex flex-col items-center text-center">
+        <section className={`overflow-hidden rounded-[1.75rem] border-[3px] border-white/80 bg-[radial-gradient(circle_at_50%_5%,rgba(168,85,247,0.28),transparent_24%),linear-gradient(180deg,#160543,#070018)] p-4 shadow-[0_0_0_2px_rgba(168,85,247,0.5),0_0_36px_rgba(168,85,247,0.75),inset_0_1px_22px_rgba(255,255,255,0.12)] sm:rounded-[2rem] sm:border-[5px] sm:p-5 ${freshChat ? "hidden sm:block" : ""}`}>
+          <div className="hidden flex-col items-center text-center sm:flex">
             <span className="relative grid size-20 place-items-center rounded-full border-2 border-fuchsia-200 bg-[radial-gradient(circle_at_35%_25%,#ffb7ff,#a855f7_48%,#3b0764_100%)] shadow-[0_0_26px_rgba(217,70,239,0.9)]">
               <Bot className="size-11 text-cyan-200 drop-shadow-[0_0_10px_rgba(103,232,249,0.95)]" />
             </span>
@@ -555,33 +575,9 @@ function Create() {
               </div>
             </>
           )}
-
-          <div className="mt-5 flex items-center gap-2 rounded-[1.6rem] border border-fuchsia-300/35 bg-[#1a0a38]/85 p-2 pl-5 shadow-[inset_0_1px_12px_rgba(255,255,255,0.08)]">
-            <input
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") submitComposerPrompt();
-              }}
-              placeholder={
-                chatStage === "game"
-                  ? "Type soccer, runner, racing..."
-                  : "Type a prompt or command..."
-              }
-              className="min-w-0 flex-1 bg-transparent text-base font-bold text-white outline-none placeholder:text-violet-300/70"
-            />
-            <button
-              type="button"
-              onClick={() => submitComposerPrompt()}
-              disabled={phase === "building"}
-              className="grid size-14 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,#c084fc,#ec4899)] text-white shadow-[0_0_22px_rgba(217,70,239,0.85)] transition hover:opacity-90 disabled:opacity-60"
-            >
-              <Send className="size-6" />
-            </button>
-          </div>
         </section>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className={`mt-5 grid gap-3 sm:grid-cols-2 ${freshChat ? "hidden sm:grid" : ""}`}>
           <button
             onClick={() => build("hybrid")}
             disabled={phase === "building" || isPaying}

@@ -73,44 +73,57 @@ function Templates() {
           </div>
         </div>
 
-      <div className="relative z-10 grid grid-cols-1 gap-5 px-4 py-8 sm:grid-cols-2 sm:px-6 md:grid-cols-3 xl:grid-cols-4 lg:px-10">
+      <div className="grid grid-cols-2 gap-3 px-4 py-8 sm:grid-cols-2 sm:gap-4 sm:px-6 md:grid-cols-3 xl:grid-cols-4 lg:px-10">
         {list.map((t: any, i: number) => (
           <article
             key={t.id}
-            className="animate-float-up group overflow-hidden rounded-[1.5rem] border-2 border-fuchsia-200/80 bg-white/80 shadow-[0_10px_24px_rgba(124,58,237,0.18),0_0_20px_rgba(217,70,239,0.18),inset_0_1px_10px_rgba(255,255,255,0.9)] backdrop-blur transition-all hover:-translate-y-1 hover:border-fuchsia-300 hover:shadow-[0_14px_30px_rgba(124,58,237,0.24),0_0_26px_rgba(217,70,239,0.32)]"
+            className="animate-float-up group flex flex-col overflow-hidden rounded-[1.35rem] border border-violet-200/80 bg-white/90 shadow-[0_8px_20px_rgba(124,58,237,0.12)] backdrop-blur transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-[0_12px_28px_rgba(124,58,237,0.2)]"
             style={{ animationDelay: `${i * 50}ms`, opacity: 0 }}
           >
-            <div className={`relative flex aspect-[16/12] items-center justify-center overflow-hidden bg-gradient-to-br ${gradientClass[gradientForId(t.id)]}`}>
+            <div className={`relative flex aspect-[16/11] items-center justify-center overflow-hidden bg-gradient-to-br ${gradientClass[gradientForId(t.id)]}`}>
               {getThumbnailUrl(t.id) ? (
                 <>
                   <img
                     src={getThumbnailUrl(t.id)}
                     alt=""
-                    className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/35" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" />
                 </>
               ) : (
-                <span className="text-6xl transition-transform group-hover:scale-110">{templateEmoji[t.id] ?? "🎮"}</span>
+                <span className="text-5xl transition-transform group-hover:scale-110 sm:text-6xl">
+                  {templateEmoji[t.id] ?? "🎮"}
+                </span>
               )}
-              <div className="absolute inset-x-3 bottom-3 h-10 rounded-full bg-white/18 blur-xl" />
-            </div>
-            <div className="p-5">
-              <span className="rounded-full bg-fuchsia-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-fuchsia-600">{t.category}</span>
-              <h3 className="mt-3 font-display text-xl font-black text-violet-950">{t.name}</h3>
-              <p className="mt-2 line-clamp-2 text-sm font-semibold text-violet-700/75">{t.mechanic}</p>
+              <span className="absolute left-3 top-3 rounded-md bg-black/45 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/95 backdrop-blur-sm">
+                {t.category}
+              </span>
               <button
+                type="button"
                 onClick={() => navigate({ to: "/play/$gameId", params: { gameId: t.id } })}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-violet-300/70 bg-white/70 py-2.5 text-xs font-black uppercase tracking-wider text-violet-700 shadow-[inset_0_1px_8px_rgba(255,255,255,0.9)] transition-colors hover:border-violet-500 hover:text-violet-950"
+                aria-label={`Play ${t.name}`}
+                className="absolute bottom-3 right-3 grid size-9 place-items-center rounded-full border border-white/40 bg-white/90 text-violet-800 opacity-95 shadow-md transition hover:scale-105 hover:bg-white sm:size-10"
               >
-                Play Template <Play className="size-4" />
+                <Play className="size-4 fill-current" />
               </button>
+            </div>
+            <div className="flex flex-1 flex-col gap-3 p-3.5 sm:p-4">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-display text-[15px] font-bold leading-snug text-violet-950 sm:text-lg">
+                  {t.name}
+                </h3>
+                <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-violet-700/70 sm:text-sm">
+                  {t.mechanic}
+                </p>
+              </div>
               <button
+                type="button"
                 onClick={() => openInStudio(t.id)}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#a855f7,#ec4899)] py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-[0_8px_18px_rgba(168,85,247,0.34)] transition-opacity hover:opacity-90"
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[linear-gradient(135deg,#7c3aed,#db2777)] py-2.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(124,58,237,0.28)] transition hover:brightness-110"
               >
-                Use Template <ArrowUpRight className="size-4" />
+                Use template
+                <ArrowUpRight className="size-4 opacity-90" />
               </button>
             </div>
           </article>

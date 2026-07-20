@@ -16,7 +16,6 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
-  Eye,
   Gamepad2,
   Globe2,
   Heart,
@@ -25,7 +24,6 @@ import {
   Pencil,
   Play,
   Puzzle,
-  Repeat2,
   Rocket,
   Search,
   Share2,
@@ -43,12 +41,7 @@ import { resolveGameThumbnail } from "@/lib/studio-meta";
 import { fetchGamesPage } from "@/lib/api/games";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { VIEWS_TOP_LIMIT } from "@/lib/pagination";
-import {
-  gradientClass,
-  trending as demoTrending,
-  fresh as demoFresh,
-  type Game,
-} from "@/lib/games-data";
+import type { Game } from "@/lib/games-data";
 import { fetchCreatorScoreLeaderboard, type CreatorScoreEntry } from "@/lib/api/leaderboards";
 import rankOneAvatar from "@/assets/leaderboard-rank-1.png";
 import rankTwoAvatar from "@/assets/leaderboard-rank-2.png";
@@ -60,20 +53,21 @@ import {
   fetchNotifications,
   fetchPointSummary,
   fetchRecentActivities,
-  fetchSocialStats,
   markNotificationsRead,
-  toggleLike,
   type CreatorStats,
   type NotificationItem,
   type UserActivity,
 } from "@/lib/api/social";
-import { ShareGameModal } from "@/components/studio/ShareGameModal";
-import { TelegramSignInButton } from "@/components/studio/TelegramSignInButton";
+import { ConsoleHero } from "@/components/studio/ConsoleHero";
+import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
+import { GamePosterCard, type GamePosterSize } from "@/components/studio/GamePosterCard";
+import { KultLogo } from "@/components/studio/KultLogo";
+import { TonWalletSignInButton } from "@/components/studio/TonWalletSignInButton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentUserId } from "@/lib/identity";
 import profileBg from "@/assets/profile-bg.png";
 import mobileHomeBg from "@/assets/mobile-bg.png";
 import mobileHomeBottomBg from "@/assets/mobile-bg-bottom.png";
-import heroFrame from "@/assets/hero-frame.png";
 
 // Full home page — lazy-loaded from _app.index.tsx (not a registered route file).
 // export const Route = createFileRoute("/_app/")({
@@ -115,7 +109,6 @@ function relativeTime(timestamp: string) {
 
 const preferredCategories = ["Action", "Arcade", "Racing", "Puzzle", "Strategy"];
 const categoryPriority = ["Action", "Arcade", "Racing", "Puzzle", "Strategy"];
-const placeholderSlots = Array.from({ length: 6 }, (_, index) => index);
 
 // The fixed category chips on the mobile home ("Browse by Category").
 const browseCategories: {
@@ -213,15 +206,6 @@ function formatCount(value: number) {
   return String(value);
 }
 
-function countFromLabel(value: string | undefined) {
-  if (!value || value === "New") return 0;
-  const parsed = Number.parseFloat(value);
-  if (!Number.isFinite(parsed)) return 0;
-  if (value.endsWith("M")) return Math.round(parsed * 1_000_000);
-  if (value.endsWith("K")) return Math.round(parsed * 1_000);
-  return Math.round(parsed);
-}
-
 function uniqueGames(games: Game[]) {
   return games.filter(
     (game, index, collection) =>
@@ -243,14 +227,10 @@ export function Home() {
   const [mobileFeedTab, setMobileFeedTab] = useState("For You");
   const [recentEventsOpen, setRecentEventsOpen] = useState(false);
   const [mobileIdea, setMobileIdea] = useState("");
-  const mobileIdeaInputRef = useRef<HTMLInputElement>(null);
 
   const openCreateWithMobileIdea = useCallback(() => {
     const prompt = mobileIdea.trim();
-    if (!prompt) {
-      mobileIdeaInputRef.current?.focus();
-      return;
-    }
+    if (!prompt) return;
     sessionStorage.setItem("kult-create-prompt", prompt);
     navigate({ to: "/create" });
   }, [mobileIdea, navigate]);
@@ -352,36 +332,6 @@ export function Home() {
       .catch(() => {});
   }, []);
 
-  // The user's own creations (from this browser and from the backend) — without
-  // this, search only covered the static template showcase.
-  const myCreations: Game[] = useMemo(
-    () =>
-      createdGames
-        .filter((g: any) => g?.title)
-        .filter(
-          (g: any, i: number, all: any[]) =>
-            !g?.id || all.findIndex((x: any) => x?.id === g.id) === i,
-        )
-        .map((g: any, index: number) => ({
-          title: g.title,
-          category: g.category ?? "Game",
-          plays: g.views
-            ? g.views >= 1000
-              ? `${(g.views / 1000).toFixed(1)}K`
-              : String(g.views)
-            : "New",
-          emoji: "🎮",
-          gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
-          creator: "you",
-          creatorId: g.creatorId ?? getCurrentUserId(),
-          thumbnailUrl: resolveGameThumbnail(g),
-          templateId: g.id ?? g.templateId,
-          likes: Number(g.points?.likes ?? 0),
-          prompt: g.customization?.prompt || "",
-        })),
-    [createdGames],
-  );
-
   // The user's own game packages (same source as the profile page's My Games),
   // newest first — real titles, thumbnails, publish state, and update times.
   const myProjects = useMemo(
@@ -424,6 +374,7 @@ export function Home() {
   const [gamesOffset, setGamesOffset] = useState(0);
   const [hasMoreGames, setHasMoreGames] = useState(true);
   const [loadingMoreGames, setLoadingMoreGames] = useState(false);
+  const [gamesLoading, setGamesLoading] = useState(true);
 
   const mergeCommunityGames = useCallback((incoming: Game[], append: boolean) => {
     setCommunityGames((current) => {
@@ -451,7 +402,13 @@ export function Home() {
         setViewsMap(map);
       })
       .catch(() => {});
-    void loadGamesPage(0, false).catch(() => {});
+    setGamesLoading(true);
+    void loadGamesPage(0, false)
+      .catch(() => {
+        setCommunityGames([]);
+        setHasMoreGames(false);
+      })
+      .finally(() => setGamesLoading(false));
   }, [loadGamesPage]);
 
   const loadMoreGames = useCallback(() => {
@@ -486,8 +443,8 @@ export function Home() {
   }, []);
 
   const realGames = useMemo(
-    () => uniqueGames([...myCreations, ...communityGames].map(withHomeCategory)),
-    [myCreations, communityGames],
+    () => uniqueGames(communityGames.map(withHomeCategory)),
+    [communityGames],
   );
 
   const shelves = useMemo(() => {
@@ -497,14 +454,12 @@ export function Home() {
       if (v <= 0) return game;
       return { ...game, plays: v >= 1000 ? `${(v / 1000).toFixed(1)}K` : String(v) };
     };
-    // Most-viewed first; only real created/community games are shown on Home.
+    // Home shelves are driven only by the /games/list API response.
     const trending = [...realGames]
       .filter((game, i, all) => all.findIndex((x) => x.templateId === game.templateId) === i)
       .sort((first, second) => realViews(second) - realViews(first))
       .map(withRealPlays);
-    const latest = uniqueGames([...latestGames, ...myCreations].map(withHomeCategory)).map(
-      withRealPlays,
-    );
+    const latest = uniqueGames(latestGames.map(withHomeCategory)).map(withRealPlays);
     const playersChoice = uniqueGames([
       ...preferredCategories.flatMap((category) =>
         trending.filter((game) => game.category === category),
@@ -538,7 +493,7 @@ export function Home() {
         games: realGames.filter((game) => game.category === category),
       })),
     ].filter((shelf) => shelf.games.length > 0);
-  }, [realGames, myCreations, viewsMap, latestGames]);
+  }, [realGames, viewsMap, latestGames]);
 
   const visibleShelves = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -569,17 +524,18 @@ export function Home() {
     return [{ title: `Search Results for “${searchQuery}”`, games: allResults }];
   }, [searchQuery, shelves, searchResults]);
 
-  // Real games power the mobile home; the static showcase list fills in until
-  // the backend returns anything, so the page never renders empty.
-  const trendingNow = useMemo(() => {
-    const games = shelves.find((shelf) => shelf.title === "Trending")?.games ?? [];
-    return games.length > 0 ? games : demoTrending;
-  }, [shelves]);
+  const trendingNow = useMemo(
+    () => shelves.find((shelf) => shelf.title === "Trending")?.games ?? [],
+    [shelves],
+  );
 
-  const newReleases = useMemo(() => {
-    const games = shelves.find((shelf) => shelf.title === "Latest")?.games ?? [];
-    return games.length > 0 ? games : demoFresh;
-  }, [shelves]);
+  const newReleases = useMemo(
+    () => shelves.find((shelf) => shelf.title === "Latest")?.games ?? [],
+    [shelves],
+  );
+
+  const hasAnyGames = communityGames.length > 0;
+  const gamesEmptyMessage = "No games found. Check back soon or create the first one!";
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -619,7 +575,7 @@ export function Home() {
         src={mobileHomeBottomBg}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[clamp(590px,184.6vw,800px)] z-0 h-[calc(100%_-_clamp(590px,184.6vw,800px))] w-[101%] max-w-none -translate-x-1/2 object-fill sm:hidden"
+        className="pointer-events-none absolute left-1/2 top-[clamp(620px,193vw,840px)] z-0 h-[calc(100%_-_clamp(620px,193vw,840px))] w-[101%] max-w-none -translate-x-1/2 object-fill sm:hidden"
       />
       <div className="pointer-events-none absolute left-1/2 top-[clamp(87px,27.2vw,118px)] z-[20] w-[58%] -translate-x-1/2 text-center sm:hidden">
         <p className="font-display text-[clamp(7px,2.3vw,10px)] font-black uppercase tracking-[0.1em] text-violet-800 drop-shadow-[0_1px_0_rgba(255,255,255,1)] [text-shadow:0_1px_0_rgba(255,255,255,1),0_0_8px_rgba(124,58,237,0.45)]">
@@ -635,78 +591,29 @@ export function Home() {
           </span>
         </h1>
       </div>
-      <p className="pointer-events-none absolute left-[48%] top-[clamp(269px,84.1vw,365px)] z-[3] w-[60%] -translate-x-1/2 text-center text-[clamp(12px,3.6vw,16px)] font-black leading-[1.08] text-[#2b075f] drop-shadow-[0_1px_0_rgba(255,255,255,1)] [text-shadow:0_1px_0_rgba(255,255,255,0.95),0_0_10px_rgba(255,255,255,0.9),0_0_14px_rgba(168,85,247,0.45)] sm:hidden">
+      <p className="pointer-events-none absolute left-[48%] top-[clamp(248px,77.5vw,338px)] z-[3] w-[60%] -translate-x-1/2 text-center text-[clamp(12px,3.6vw,16px)] font-black leading-[1.08] text-[#2b075f] drop-shadow-[0_1px_0_rgba(255,255,255,1)] [text-shadow:0_1px_0_rgba(255,255,255,0.95),0_0_10px_rgba(255,255,255,0.9),0_0_14px_rgba(168,85,247,0.45)] sm:hidden">
         Describe your game idea
         <br />
         and our AI crafts the game,
         <br />
         agents, and world.
       </p>
-      <img
-        src={heroFrame}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[clamp(160px,50vw,217px)] z-[1] h-auto w-[108%] max-w-none -translate-x-1/2 object-contain sm:hidden"
-      />
-      <section className="pointer-events-auto absolute left-1/2 top-[clamp(316px,98.8vw,428px)] z-[60] w-[51%] -translate-x-1/2 rounded-md bg-[#090018] px-[clamp(6px,2.05vw,9px)] py-[clamp(8px,2.56vw,11px)] text-center shadow-[0_0_16px_rgba(124,58,237,0.5),inset_0_1px_10px_rgba(255,255,255,0.08)] sm:hidden">
-        <p className="mb-1 font-display text-[clamp(5px,1.54vw,7px)] font-black uppercase tracking-[0.08em] text-fuchsia-400 [text-shadow:0_0_8px_rgba(217,70,239,0.85)]">
-          What do you want to create?
-        </p>
-        <label
-          className="flex h-[clamp(32px,10.25vw,44px)] items-center gap-1.5 rounded border border-fuchsia-500/80 bg-[#190b3d] px-2 shadow-[0_0_10px_rgba(168,85,247,0.32),inset_0_1px_8px_rgba(255,255,255,0.08)] focus-within:border-fuchsia-300 focus-within:shadow-[0_0_14px_rgba(217,70,239,0.75),inset_0_1px_8px_rgba(255,255,255,0.12)]"
-          onClick={() => mobileIdeaInputRef.current?.focus()}
-        >
-          <input
-            ref={mobileIdeaInputRef}
-            type="text"
-            value={mobileIdea}
-            onChange={(event) => setMobileIdea(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") openCreateWithMobileIdea();
-            }}
-            placeholder="Describe your game idea..."
-            className="pointer-events-auto min-w-0 flex-1 bg-transparent text-[clamp(7px,2.05vw,9px)] font-bold text-white outline-none placeholder:text-violet-200/75"
-          />
-          <button
-            type="button"
-            aria-label="Start creating"
-            onClick={openCreateWithMobileIdea}
-            className="grid size-[clamp(20px,6.4vw,28px)] shrink-0 place-items-center rounded bg-[linear-gradient(145deg,#f472b6,#a855f7)] text-white shadow-[0_0_12px_rgba(217,70,239,0.85),inset_0_1px_7px_rgba(255,255,255,0.35)]"
-          >
-            <WandSparkles className="size-[clamp(12px,3.1vw,15px)]" />
-          </button>
-        </label>
-        <div className="mt-[clamp(4px,1.3vw,6px)] grid grid-cols-4 gap-[clamp(3px,1vw,5px)]">
-          {[
-            { label: "Sports", icon: Volleyball },
-            { label: "Racing", icon: Trophy },
-            { label: "RPG", icon: Swords },
-            { label: "More", icon: Sparkles },
-          ].map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() =>
-                  setMobileIdea((current) => current || `${item.label} game with exciting levels`)
-                }
-                className="grid aspect-[1.08] place-items-center rounded border border-fuchsia-500/65 bg-[#180a3a] text-violet-50 shadow-[0_0_8px_rgba(124,58,237,0.32),inset_0_1px_7px_rgba(255,255,255,0.08)]"
-              >
-                <Icon className="size-[clamp(12px,3.1vw,15px)]" />
-                <span className="text-[clamp(5px,1.3vw,6px)] font-black">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+      <div className="absolute left-1/2 top-[clamp(96px,28vw,132px)] z-[5] w-full max-w-[520px] -translate-x-1/2 px-3 sm:hidden">
+        <ConsoleHero
+          value={mobileIdea}
+          onChange={setMobileIdea}
+          onSubmit={openCreateWithMobileIdea}
+          placeholder="Describe your game idea..."
+          className="w-full"
+        />
+      </div>
       <button
         type="button"
         aria-label="Create with typed idea"
         onClick={openCreateWithMobileIdea}
-        className="pointer-events-auto absolute left-1/2 top-[clamp(470px,136vw,590px)] z-[80] size-[clamp(78px,22vw,96px)] -translate-x-1/2 rounded-full sm:hidden"
+        className="pointer-events-auto absolute left-1/2 top-[clamp(500px,155vw,660px)] z-[80] size-[clamp(78px,22vw,96px)] -translate-x-1/2 rounded-full sm:hidden"
       />
-      <section className="absolute left-1/2 top-[clamp(510px,159.5vw,690px)] z-[2] w-[96%] -translate-x-1/2 rounded-2xl border border-white/90 bg-white/82 px-3 py-2.5 shadow-[0_8px_22px_rgba(124,58,237,0.18),0_0_16px_rgba(255,255,255,0.65),inset_0_1px_9px_rgba(255,255,255,0.88)] backdrop-blur-sm sm:hidden">
+      <section className="absolute left-1/2 top-[clamp(545px,170vw,730px)] z-[2] w-[96%] -translate-x-1/2 rounded-2xl border border-white/90 bg-white/82 px-3 py-2.5 shadow-[0_8px_22px_rgba(124,58,237,0.18),0_0_16px_rgba(255,255,255,0.65),inset_0_1px_9px_rgba(255,255,255,0.88)] backdrop-blur-sm sm:hidden">
         <div className="grid grid-cols-4 divide-x divide-violet-300/70">
           {[
             { title: "1. Describe", body: "Share your idea in simple words.", icon: MessageCircle },
@@ -741,14 +648,9 @@ export function Home() {
       />
       <div className="absolute inset-0 z-0 hidden bg-[radial-gradient(circle_at_50%_6%,rgba(255,255,255,0.62),transparent_26%),radial-gradient(circle_at_16%_38%,rgba(244,114,182,0.24),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.24),rgba(216,180,254,0.2))] sm:block" />
       <div className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden h-56 bg-[linear-gradient(105deg,transparent_0%,rgba(255,255,255,0.5)_42%,transparent_62%)] opacity-70 sm:block" />
-      <header className="relative z-10 m-3 flex min-h-16 items-center justify-between gap-3 rounded-[1.65rem] border-2 border-fuchsia-200 bg-[#100528] px-4 py-3 text-white shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] backdrop-blur sm:gap-4 sm:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
-          <div className="min-w-0">
-            <p className="font-display text-3xl font-black leading-none text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.45)]">
-              KULT
-            </p>
-            <p className="mt-1 text-xs font-black uppercase tracking-[0.22em] text-white">Games</p>
-          </div>
+      <header className="relative z-20 m-3 flex min-h-14 items-center justify-between gap-1.5 rounded-[1.65rem] border-2 border-fuchsia-200 bg-[#100528] px-2.5 py-2.5 text-white shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] backdrop-blur sm:min-h-16 sm:gap-4 sm:px-6 sm:py-3">
+        <div className="relative z-20 flex shrink-0 items-center sm:min-w-0 sm:flex-1 sm:gap-4">
+          <KultLogo className="h-5 w-auto max-w-[64px] object-contain object-left sm:h-10 sm:max-w-[148px]" />
           <p className="hidden shrink-0 text-sm font-semibold text-violet-100 sm:block">
             <span className="font-black text-white"></span>
           </p>
@@ -763,10 +665,10 @@ export function Home() {
             />
           </label>
         </div>
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <TelegramSignInButton responsive />
-          <label className="grid size-10 shrink-0 place-items-center rounded-full border border-fuchsia-200/30 bg-white/10 transition focus-within:border-fuchsia-200 sm:hidden">
-            <Search className="size-4 shrink-0 text-white" />
+        <div className="relative z-10 flex min-w-0 flex-1 items-center justify-end gap-1 sm:shrink-0 sm:flex-none sm:gap-3">
+          <TonWalletSignInButton responsive compact />
+          <label className="grid size-8 shrink-0 place-items-center rounded-full border border-fuchsia-200/30 bg-white/10 transition focus-within:border-fuchsia-200 sm:hidden">
+            <Search className="size-3.5 shrink-0 text-white" />
             <input
               type="search"
               value={searchQuery}
@@ -780,15 +682,15 @@ export function Home() {
             onClick={() => void openNotifications()}
             title="Open notifications"
             aria-label="Open notifications"
-            className="relative grid size-9 place-items-center rounded-full border border-fuchsia-200/30 bg-white/10 text-white transition hover:border-fuchsia-200"
+            className={`relative grid size-8 shrink-0 place-items-center rounded-full border border-fuchsia-200/30 bg-white/10 text-white transition hover:border-fuchsia-200 sm:grid sm:size-9`}
           >
-            <Bell className="size-4" />
+            <Bell className="size-3.5 sm:size-4" />
             {notifications.some((notification) => !notification.read) && (
-              <span className="absolute right-2 top-2 size-1.5 rounded-full bg-primary" />
+              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary sm:right-2 sm:top-2" />
             )}
           </button>
-          <div className="flex items-center gap-2 rounded-full border border-fuchsia-200/30 bg-white/10 px-3 py-2 text-xs font-black text-white sm:rounded-xl">
-            <Zap className="size-4 text-fuchsia-200" />
+          <div className="flex shrink-0 items-center gap-1 rounded-full border border-fuchsia-200/30 bg-white/10 px-2 py-1.5 text-[10px] font-black text-white sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs">
+            <Zap className="size-3.5 text-fuchsia-200 sm:size-4" />
             <span className="sm:hidden">{formatCount(kultPoints)}</span>
             <span className="hidden sm:inline">
               Level {kpLevel} · {formatCount(kultPoints)} KP
@@ -858,7 +760,7 @@ export function Home() {
         </DialogContent>
       </Dialog>
 
-      <div className="relative z-10 grid gap-3 px-3 pb-3 pt-[clamp(545px,169.2vw,730px)] sm:pt-0 xl:grid-cols-[minmax(0,1fr)_310px]">
+      <div className="relative z-10 grid gap-3 px-3 pb-3 pt-[clamp(660px,205vw,860px)] sm:pt-0 xl:grid-cols-[minmax(0,1fr)_310px]">
         <main className="min-w-0 space-y-3">
           <section className="min-[1190px]:hidden">
             <div className="mx-auto w-full max-w-2xl space-y-6 px-1">
@@ -896,20 +798,30 @@ export function Home() {
               )}
 
               {!searchQuery.trim() &&
-                (mobileFeedTab === "For You" ? (
+                (gamesLoading ? (
+                  <GamesFeedSkeleton />
+                ) : !hasAnyGames ? (
+                  <p className="py-12 text-center text-sm font-semibold text-violet-700">
+                    {gamesEmptyMessage}
+                  </p>
+                ) : mobileFeedTab === "For You" ? (
                   <>
                     <MobileShelf
                       title="🔥 Trending Now"
                       games={trendingNow}
+                      cardSize="featured"
                       onViewAll={() => setMobileFeedTab("Trending")}
                       onOpen={openGame}
+                      emptyText={gamesEmptyMessage}
                     />
 
                     <MobileShelf
                       title="✨ New Releases"
                       games={newReleases}
+                      cardSize="standard"
                       onViewAll={() => setMobileFeedTab("New")}
                       onOpen={openGame}
+                      emptyText={gamesEmptyMessage}
                     />
 
                     <section>
@@ -954,7 +866,7 @@ export function Home() {
                   <FeedGrid
                     games={feedTabGames}
                     onOpen={openGame}
-                    emptyText={`No ${mobileFeedTab} games yet — be the first to create one!`}
+                    emptyText={`No ${mobileFeedTab} games found.`}
                     onLoadMore={loadMoreGames}
                     hasMore={hasMoreGames}
                     loadingMore={loadingMoreGames}
@@ -964,32 +876,40 @@ export function Home() {
           </section>
 
           <div className="hidden space-y-3 min-[1190px]:block">
-            {visibleShelves.slice(0, 2).map((shelf) => (
-              <GameShelf
-                key={shelf.title}
-                title={shelf.title}
-                games={shelf.games}
-                cardsPerRow={4}
-                onLoadMore={loadMoreGames}
-                hasMore={hasMoreGames}
-                loadingMore={loadingMoreGames}
-                onDeleteGame={
-                  shelf.title === "My Creations"
-                    ? (game) => {
-                        if (game.templateId) void removeCreatedGame(game.templateId);
-                      }
-                    : undefined
-                }
-                onEditGame={
-                  shelf.title === "My Creations"
-                    ? (game) => {
-                        if (game.templateId)
-                          navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } });
-                      }
-                    : undefined
-                }
-              />
-            ))}
+            {gamesLoading ? (
+              <GamesShelfSkeleton count={2} />
+            ) : visibleShelves.length === 0 ? (
+              <p className="rounded-[1.35rem] border-2 border-fuchsia-200 bg-white/80 py-12 text-center text-sm font-semibold text-violet-700 shadow-[0_10px_24px_rgba(124,58,237,0.16)] backdrop-blur">
+                {gamesEmptyMessage}
+              </p>
+            ) : (
+              visibleShelves.slice(0, 2).map((shelf) => (
+                <GameShelf
+                  key={shelf.title}
+                  title={shelf.title}
+                  games={shelf.games}
+                  cardsPerRow={4}
+                  onLoadMore={loadMoreGames}
+                  hasMore={hasMoreGames}
+                  loadingMore={loadingMoreGames}
+                  onDeleteGame={
+                    shelf.title === "My Creations"
+                      ? (game) => {
+                          if (game.templateId) void removeCreatedGame(game.templateId);
+                        }
+                      : undefined
+                  }
+                  onEditGame={
+                    shelf.title === "My Creations"
+                      ? (game) => {
+                          if (game.templateId)
+                            navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } });
+                        }
+                      : undefined
+                  }
+                />
+              ))
+            )}
           </div>
         </main>
 
@@ -1059,32 +979,33 @@ export function Home() {
         </aside>
 
         <div className="hidden min-w-0 space-y-3 min-[1190px]:block xl:col-span-2">
-          {visibleShelves.slice(2).map((shelf) => (
-            <GameShelf
-              key={shelf.title}
-              title={shelf.title}
-              games={shelf.games}
-              onLoadMore={loadMoreGames}
-              hasMore={hasMoreGames}
-              loadingMore={loadingMoreGames}
-              onDeleteGame={
-                shelf.title === "My Creations"
-                  ? (game) => {
-                      if (game.templateId) void removeCreatedGame(game.templateId);
-                    }
-                  : undefined
-              }
-              onEditGame={
-                shelf.title === "My Creations"
-                  ? (game) => {
-                      if (game.templateId)
-                        navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } });
-                    }
-                  : undefined
-              }
-            />
-          ))}
-          {(hasMoreGames || loadingMoreGames) && !searchQuery.trim() && (
+          {!gamesLoading &&
+            visibleShelves.slice(2).map((shelf) => (
+              <GameShelf
+                key={shelf.title}
+                title={shelf.title}
+                games={shelf.games}
+                onLoadMore={loadMoreGames}
+                hasMore={hasMoreGames}
+                loadingMore={loadingMoreGames}
+                onDeleteGame={
+                  shelf.title === "My Creations"
+                    ? (game) => {
+                        if (game.templateId) void removeCreatedGame(game.templateId);
+                      }
+                    : undefined
+                }
+                onEditGame={
+                  shelf.title === "My Creations"
+                    ? (game) => {
+                        if (game.templateId)
+                          navigate({ to: "/edit/$gameId", params: { gameId: game.templateId } });
+                      }
+                    : undefined
+                }
+              />
+            ))}
+          {(hasMoreGames || loadingMoreGames) && !searchQuery.trim() && hasAnyGames && (
             <div
               ref={gamesLoadMoreRef}
               className="py-6 text-center text-xs font-semibold text-violet-600"
@@ -1203,15 +1124,10 @@ function GameShelf({
     }
   };
 
-  const rowItems = [
-    ...games.map((game) => ({ type: "game" as const, game })),
-    ...placeholderSlots.map((slot) => ({ type: "placeholder" as const, slot })),
-  ];
-
   const basisClass =
     cardsPerRow === 4
-      ? "min-w-0 shrink-0 grow-0 basis-[72%] sm:basis-[40%] md:basis-[31%] lg:basis-[calc(25%-6px)] 2xl:basis-[calc(25%-6px)]"
-      : "min-w-0 shrink-0 grow-0 basis-[72%] sm:basis-[40%] md:basis-[31%] lg:basis-[calc(20%-7px)] 2xl:basis-[calc(16.666%-7px)]";
+      ? "min-w-0 shrink-0 grow-0 basis-[44%] sm:basis-[32%] md:basis-[24%] lg:basis-[calc(25%-6px)] 2xl:basis-[calc(25%-6px)]"
+      : "min-w-0 shrink-0 grow-0 basis-[44%] sm:basis-[32%] md:basis-[24%] lg:basis-[calc(20%-7px)] 2xl:basis-[calc(16.666%-7px)]";
 
   return (
     <>
@@ -1246,25 +1162,16 @@ function GameShelf({
           className="cursor-grab overflow-hidden select-none active:cursor-grabbing"
         >
           <div className="flex touch-pan-y gap-2">
-            {rowItems.map((item, index) => (
-              <div
-                key={
-                  item.type === "game"
-                    ? `${item.game.title}-${index}`
-                    : `${title}-placeholder-${item.slot}`
-                }
-                className={basisClass}
-              >
-                {item.type === "game" ? (
-                  <GameTile
-                    game={item.game}
-                    onOpen={() => openGame(item.game)}
-                    onDelete={onDeleteGame ? () => onDeleteGame(item.game) : undefined}
-                    onEdit={onEditGame ? () => onEditGame(item.game) : undefined}
-                  />
-                ) : (
-                  <PlaceholderTile />
-                )}
+            {games.map((game, index) => (
+              <div key={`${game.title}-${index}`} className={basisClass}>
+                <GameTile
+                  game={game}
+                  onOpen={() => openGame(game)}
+                  onDelete={onDeleteGame ? () => onDeleteGame(game) : undefined}
+                  onEdit={onEditGame ? () => onEditGame(game) : undefined}
+                  size="standard"
+                  metaTheme="light"
+                />
               </div>
             ))}
           </div>
@@ -1300,20 +1207,18 @@ function GameShelf({
               </button>
             </header>
             <div className="overflow-y-auto p-4 sm:p-6">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {rowItems.map((item, index) =>
-                  item.type === "game" ? (
-                    <GameTile
-                      key={`${item.game.title}-grid-${index}`}
-                      game={item.game}
-                      onOpen={() => openGame(item.game)}
-                      onDelete={onDeleteGame ? () => onDeleteGame(item.game) : undefined}
-                      onEdit={onEditGame ? () => onEditGame(item.game) : undefined}
-                    />
-                  ) : (
-                    <PlaceholderTile key={`${title}-grid-placeholder-${item.slot}`} />
-                  ),
-                )}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {games.map((game, index) => (
+                  <GameTile
+                    key={`${game.title}-grid-${index}`}
+                    game={game}
+                    onOpen={() => openGame(game)}
+                    onDelete={onDeleteGame ? () => onDeleteGame(game) : undefined}
+                    onEdit={onEditGame ? () => onEditGame(game) : undefined}
+                    size="compact"
+                    metaTheme="light"
+                  />
+                ))}
               </div>
               {(hasMore || loadingMore) && onLoadMore && (
                 <div
@@ -1333,76 +1238,61 @@ function GameShelf({
 
 function PlaceholderTile() {
   return (
-    <div className="w-full min-w-0 overflow-hidden rounded-xl border border-dashed border-violet-300/70 bg-white/55 text-left">
-      <div className="relative aspect-square overflow-hidden bg-[linear-gradient(135deg,#f5d0fe,#ddd6fe)]">
-        <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(90deg,transparent,oklch(0.72_0.27_340/0.18),transparent)]" />
-        <div className="absolute inset-4 rounded border border-border/50" />
-      </div>
-      <div className="p-2">
-        <p className="truncate text-[11px] font-bold text-violet-600">Coming Soon</p>
-        <div className="mt-1 flex items-center justify-between text-[9px] text-violet-500/80">
-          <span>Placeholder</span>
-          <span>--</span>
-        </div>
+    <div className="flex w-full flex-col gap-2">
+      <Skeleton className="aspect-[4/5] w-full rounded-[1.25rem]" />
+      <div className="flex items-center gap-2 px-0.5">
+        <Skeleton className="size-7 rounded-full" />
+        <Skeleton className="h-3 w-16 rounded-full" />
       </div>
     </div>
   );
 }
 
-// Inline cover shown when a game has no stored image (e.g. its generated
-// cover failed) — anything but a broken-image icon.
-const FALLBACK_COVER =
-  "data:image/svg+xml;base64," +
-  btoa(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
-      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#2b1a4f"/><stop offset="1" stop-color="#0c1230"/>
-      </linearGradient></defs>
-      <rect width="400" height="400" fill="url(#g)"/>
-      <circle cx="200" cy="170" r="64" fill="none" stroke="#8d6bff" stroke-width="6" opacity="0.7"/>
-      <rect x="160" y="150" width="80" height="40" rx="12" fill="#8d6bff" opacity="0.8"/>
-      <circle cx="176" cy="170" r="6" fill="#0c1230"/><circle cx="224" cy="170" r="6" fill="#0c1230"/>
-      <text x="200" y="290" text-anchor="middle" fill="#b9a8ff" font-family="monospace" font-size="20">AI GAME</text>
-    </svg>`,
+function GamesShelfSkeleton({ count = 2 }: { count?: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, section) => (
+        <section
+          key={section}
+          className="rounded-[1.35rem] border-2 border-fuchsia-200 bg-white/80 p-3 shadow-[0_10px_24px_rgba(124,58,237,0.16)] backdrop-blur"
+        >
+          <Skeleton className="mb-3 h-5 w-32 rounded-lg" />
+          <div className="flex gap-2 overflow-hidden">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="min-w-0 shrink-0 grow-0 basis-[calc(25%-6px)]">
+                <PlaceholderTile />
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </>
   );
-
-// Creator stats are shared by every tile from the same creator — fetch once
-// per creator per page load, not once per tile.
-const creatorStatsCache = new Map<string, Promise<CreatorStats | null>>();
-
-function getCreatorStats(creatorId: string) {
-  let promise = creatorStatsCache.get(creatorId);
-  if (!promise) {
-    promise = fetchCreatorStats(creatorId).catch(() => null);
-    creatorStatsCache.set(creatorId, promise);
-  }
-  return promise;
 }
 
-function GameCover({ game, className }: { game: Game; className?: string }) {
-  if (!game.thumbnailUrl) {
-    return (
-      <div
-        className={`grid place-items-center bg-gradient-to-br ${gradientClass[game.gradient]} ${className ?? ""}`}
-      >
-        <span className="text-5xl drop-shadow-[0_6px_16px_oklch(0_0_0/0.4)]">{game.emoji}</span>
-      </div>
-    );
-  }
+function GamesFeedSkeleton() {
   return (
-    <img
-      src={game.thumbnailUrl}
-      alt=""
-      draggable={false}
-      loading="lazy"
-      onError={(event) => {
-        const img = event.currentTarget;
-        if (img.dataset.fallback) return;
-        img.dataset.fallback = "1";
-        img.src = FALLBACK_COVER;
-      }}
-      className={`object-cover ${className ?? ""}`}
-    />
+    <div className="space-y-6">
+      {Array.from({ length: 2 }).map((_, section) => (
+        <div key={section}>
+          <Skeleton className="mb-3 h-7 w-40 rounded-lg" />
+          <div className="-mx-4 flex gap-3 overflow-hidden px-4">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={index}
+                className={
+                  section === 0
+                    ? "w-[66%] shrink-0 sm:w-[40%] sm:max-w-[240px]"
+                    : "w-[44%] shrink-0 sm:w-[30%] sm:max-w-[200px]"
+                }
+              >
+                <PlaceholderTile />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -1411,36 +1301,49 @@ function MobileShelf({
   games,
   onViewAll,
   onOpen,
+  cardSize = "standard",
+  emptyText = "No games found.",
 }: {
   title: string;
   games: Game[];
   onViewAll: () => void;
   onOpen: (game: Game) => void;
+  cardSize?: GamePosterSize;
+  emptyText?: string;
 }) {
+  const slotWidth =
+    cardSize === "featured"
+      ? "w-[66%] shrink-0 snap-start sm:w-[40%] sm:max-w-[240px]"
+      : "w-[44%] shrink-0 snap-start sm:w-[30%] sm:max-w-[200px]";
+
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-2xl font-black text-violet-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
-          {title}
-        </h2>
+        <h2 className="font-display text-xl font-black tracking-tight text-violet-950">{title}</h2>
         <button
           type="button"
           onClick={onViewAll}
-          className="flex items-center gap-0.5 text-sm font-black text-black transition hover:text-violet-800"
+          className="flex items-center gap-0.5 text-sm font-bold text-violet-800/90 transition hover:text-violet-950"
         >
           View all <ChevronRight className="size-4" />
         </button>
       </div>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {games.slice(0, 10).map((game, index) => (
-          <div
-            key={`${game.templateId ?? game.title}-${index}`}
-            className="w-[86%] shrink-0 snap-start sm:w-[31%] sm:max-w-[220px]"
-          >
-            <GameTile game={game} onOpen={() => onOpen(game)} />
-          </div>
-        ))}
-      </div>
+      {games.length === 0 ? (
+        <p className="py-8 text-center text-sm font-semibold text-violet-700">{emptyText}</p>
+      ) : (
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {games.slice(0, 10).map((game, index) => (
+            <div key={`${game.templateId ?? game.title}-${index}`} className={slotWidth}>
+              <GameTile
+                game={game}
+                onOpen={() => onOpen(game)}
+                size={cardSize}
+                metaTheme="light"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -1466,12 +1369,14 @@ function FeedGrid({
     return <p className="py-12 text-center text-sm font-semibold text-violet-700">{emptyText}</p>;
   }
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-3">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4">
       {games.map((game, index) => (
         <GameTile
           key={`${game.templateId ?? game.title}-${index}`}
           game={game}
           onOpen={() => onOpen(game)}
+          size="compact"
+          metaTheme="light"
         />
       ))}
       {(hasMore || loadingMore) && onLoadMore && (
@@ -1564,111 +1469,22 @@ function GameTile({
   onOpen,
   onDelete,
   onEdit,
+  size = "standard",
+  metaTheme = "light",
 }: {
   game: Game;
   onOpen: () => void;
   onDelete?: () => void;
   onEdit?: () => void;
+  size?: GamePosterSize;
+  metaTheme?: "light" | "dark";
 }) {
-  const navigate = useNavigate();
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const tileRef = useRef<HTMLDivElement>(null);
-  const [liked, setLiked] = useState(false);
-  const [likes, setLikes] = useState(game.likes ?? 0);
-  const [comments, setComments] = useState(0);
-  const [shares, setShares] = useState(game.shares ?? 0);
-  const [views, setViews] = useState(countFromLabel(game.plays));
-  const [shareCopied, setShareCopied] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [creatorMeta, setCreatorMeta] = useState<{ followers: number; remixes: number } | null>(
-    null,
-  );
-
-  useEffect(() => {
-    setViews(countFromLabel(game.plays));
-  }, [game.plays]);
-
-  // Real counts come from the social API, but only once the tile scrolls into
-  // view — the "view all" grid can hold 100+ tiles and must not fire 100 GETs.
-  useEffect(() => {
-    const gameId = game.templateId;
-    const creatorId = game.creatorId;
-    const node = tileRef.current;
-    if ((!gameId && !creatorId) || !node) return;
-    let cancelled = false;
-    const observer = new IntersectionObserver((entries) => {
-      if (!entries.some((entry) => entry.isIntersecting)) return;
-      observer.disconnect();
-      if (gameId) {
-        fetchSocialStats(gameId, getCurrentUserId())
-          .then((stats) => {
-            if (cancelled) return;
-            setLiked(stats.likes.liked);
-            setLikes(stats.likes.count);
-            setComments(stats.comments.count);
-            setShares(stats.shares.count);
-            setViews(stats.views?.count ?? 0);
-          })
-          .catch(() => {});
-      }
-      if (creatorId) {
-        void getCreatorStats(creatorId).then((stats) => {
-          if (cancelled || !stats) return;
-          setCreatorMeta({ followers: stats.followers ?? 0, remixes: stats.remixes ?? 0 });
-        });
-      }
-    });
-    observer.observe(node);
-    return () => {
-      cancelled = true;
-      observer.disconnect();
-    };
-  }, [game.templateId, game.creatorId]);
-
-  const like = async () => {
-    setLiked((value) => !value);
-    setLikes((value) => Math.max(0, value + (liked ? -1 : 1)));
-    if (!game.templateId) return;
-    const result = await toggleLike(game.templateId, getCurrentUserId()).catch(() => null);
-    if (result) {
-      setLiked(result.liked);
-      setLikes(result.count);
-    }
-  };
-
-  const share = async () => {
-    // Real games open the full share modal; showcase cards without a backend
-    // id have no shareable play URL, so just copy the current page link.
-    if (game.templateId) {
-      setShareOpen(true);
-      return;
-    }
-    await navigator.clipboard?.writeText(window.location.href).catch(() => null);
-    setShareCopied(true);
-    setTimeout(() => setShareCopied(false), 1500);
-  };
-
-  const remix = () => {
-    const seed = [
-      `Remix ${game.title}`,
-      game.prompt || `${game.category} game by ${game.creator}`,
-      "Keep the core mechanics, physics, controls, and pacing.",
-      "Change the theme, characters, visual style, and one gameplay twist.",
-    ].join(". ");
-    sessionStorage.setItem("kult-remix-prompt", seed);
-    navigate({ to: "/create" });
-  };
-
-  const stopTilePress = {
-    onPointerDown: (event: ReactPointerEvent) => event.stopPropagation(),
-    onPointerUp: (event: ReactPointerEvent) => event.stopPropagation(),
-  };
 
   return (
     <div
       ref={tileRef}
-      role="button"
-      tabIndex={0}
       onPointerDown={(event) => {
         pointerStart.current = { x: event.clientX, y: event.clientY };
       }}
@@ -1682,146 +1498,21 @@ function GameTile({
       onPointerCancel={() => {
         pointerStart.current = null;
       }}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") onOpen();
-      }}
-      className="group w-full min-w-0 overflow-hidden rounded-[1.5rem] border-2 border-fuchsia-200/80 bg-white/85 text-left text-violet-950 shadow-[0_10px_24px_rgba(124,58,237,0.18),0_0_20px_rgba(217,70,239,0.18),inset_0_1px_10px_rgba(255,255,255,0.92)] backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-fuchsia-300 hover:shadow-[0_14px_30px_rgba(124,58,237,0.24),0_0_26px_rgba(217,70,239,0.32)]"
     >
-      <div className="relative aspect-square overflow-hidden">
-        <GameCover
-          game={game}
-          className="h-full w-full transition duration-300 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/55" />
-        <span className="absolute left-2 top-2 rounded-full bg-white/85 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-fuchsia-600 shadow-[0_2px_10px_rgba(124,58,237,0.18)] backdrop-blur">
-          {game.category}
-        </span>
-        <span
-          className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-black text-violet-700 shadow-[0_2px_10px_rgba(124,58,237,0.18)] backdrop-blur"
-          title={`${formatCount(views)} views`}
-        >
-          <Eye className="size-3" /> {formatCount(views)} views
-        </span>
-        {onEdit && (
-          <button
-            title={`Edit ${game.title}`}
-            {...stopTilePress}
-            onClick={(event) => {
-              event.stopPropagation();
-              onEdit();
-            }}
-            className="absolute left-2 top-9 z-10 grid size-7 place-items-center rounded-lg border border-fuchsia-200/70 bg-white/85 text-violet-800 opacity-0 shadow-[0_2px_10px_rgba(124,58,237,0.2)] transition group-hover:opacity-100 hover:bg-fuchsia-100 hover:text-fuchsia-600"
-          >
-            <Pencil className="size-3.5" />
-          </button>
-        )}
-        {onDelete && (
-          <button
-            title={`Delete ${game.title}`}
-            {...stopTilePress}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (window.confirm(`Delete "${game.title}"? This cannot be undone.`)) onDelete();
-            }}
-            className="absolute right-2 top-2 z-10 grid size-7 place-items-center rounded-lg border border-fuchsia-200/70 bg-white/85 text-violet-800 opacity-0 shadow-[0_2px_10px_rgba(124,58,237,0.2)] transition group-hover:opacity-100 hover:bg-red-100 hover:text-red-600"
-          >
-            <X className="size-3.5" />
-          </button>
-        )}
-      </div>
-      <div className="p-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <p className="truncate font-display text-xs font-black text-violet-950">{game.title}</p>
-          <span className="shrink-0 text-[8px] font-black uppercase tracking-[0.12em] text-violet-500">
-            {game.creator}
-          </span>
-        </div>
-        {creatorMeta && (
-          <div className="mt-1.5 flex items-center gap-3 text-[9px] font-semibold text-violet-600">
-            <span
-              className="flex items-center gap-1"
-              title={`${game.creator} has ${creatorMeta.followers} followers`}
-            >
-              <Users className="size-3 text-neon-cyan" /> {formatCount(creatorMeta.followers)}{" "}
-              followers
-            </span>
-            <span
-              className="flex items-center gap-1"
-              title={`${game.creator}'s games were remixed ${creatorMeta.remixes} times`}
-            >
-              <Repeat2 className="size-3 text-neon-violet" /> {formatCount(creatorMeta.remixes)}{" "}
-              remixes
-            </span>
-          </div>
-        )}
-        <div className="mt-2 flex items-center justify-between border-t border-violet-200/70 pt-2">
-          <button
-            type="button"
-            title="Like"
-            aria-label={`Like ${game.title}`}
-            {...stopTilePress}
-            onClick={(event) => {
-              event.stopPropagation();
-              void like();
-            }}
-            className={`flex min-w-0 items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold transition ${
-              liked ? "text-rose-500" : "text-violet-600 hover:text-rose-500"
-            }`}
-          >
-            <Heart className={`size-3.5 ${liked ? "fill-current" : ""}`} /> {formatCount(likes)}
-          </button>
-          <button
-            type="button"
-            title="Comments"
-            aria-label={`Comments on ${game.title}`}
-            {...stopTilePress}
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpen();
-            }}
-            className="flex min-w-0 items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold text-violet-600 transition hover:text-cyan-500"
-          >
-            <MessageCircle className="size-3.5" /> {formatCount(comments)}
-          </button>
-          <button
-            type="button"
-            title={shareCopied ? "Link copied!" : "Share"}
-            aria-label={`Share ${game.title}`}
-            {...stopTilePress}
-            onClick={(event) => {
-              event.stopPropagation();
-              void share();
-            }}
-            className="flex min-w-0 items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold text-violet-600 transition hover:text-emerald-500"
-          >
-            <Share2 className="size-3.5" /> {shareCopied ? "✓" : formatCount(shares)}
-          </button>
-          <button
-            type="button"
-            title="Remix this game"
-            aria-label={`Remix ${game.title}`}
-            {...stopTilePress}
-            onClick={(event) => {
-              event.stopPropagation();
-              remix();
-            }}
-            className="flex min-w-0 items-center gap-1 rounded-lg bg-fuchsia-100 px-2 py-1 text-[10px] font-black text-fuchsia-600 transition hover:bg-fuchsia-500 hover:text-white"
-          >
-            <Repeat2 className="size-3.5" /> Remix
-          </button>
-        </div>
-      </div>
-      {game.templateId && (
-        <ShareGameModal
-          open={shareOpen}
-          onClose={() => setShareOpen(false)}
-          gameId={game.templateId}
-          title={game.title}
-          category={game.category}
-          thumbnailUrl={game.thumbnailUrl}
-          onShared={setShares}
-        />
-      )}
+      <GamePosterCard
+        game={game}
+        onClick={onOpen}
+        onEdit={onEdit}
+        onDelete={
+          onDelete
+            ? () => {
+                if (window.confirm(`Delete "${game.title}"? This cannot be undone.`)) onDelete();
+              }
+            : undefined
+        }
+        size={size}
+        metaTheme={metaTheme}
+      />
     </div>
   );
 }

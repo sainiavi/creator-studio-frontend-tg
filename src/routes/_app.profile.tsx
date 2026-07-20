@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/studio/PageHeader";
+import { KultLogo } from "@/components/studio/KultLogo";
 import { GameCard } from "@/components/studio/GameCard";
 import {
   Dialog,
@@ -259,17 +260,17 @@ function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
 
       {games.length > 0 ? (
         showAll ? (
-          <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4 xl:grid-cols-4 2xl:grid-cols-5">
             {games.map((g, i) => (
-              <GameCard key={g.title + i} game={g} index={i} onEdit={onEditGame} />
+              <GameCard key={g.title + i} game={g} index={i} onEdit={onEditGame} compact metaTheme="dark" />
             ))}
           </div>
         ) : (
           <div ref={emblaRef} className="mt-5 cursor-grab overflow-hidden select-none active:cursor-grabbing">
-            <div className="flex touch-pan-y gap-4">
+            <div className="flex touch-pan-y gap-2.5 sm:gap-4">
               {games.map((g, i) => (
-                <div key={g.title + i} className="flex-[0_0_240px] sm:flex-[0_0_280px] min-w-0">
-                  <GameCard game={g} index={i} onEdit={onEditGame} />
+                <div key={g.title + i} className="min-w-0 flex-[0_0_44%] sm:flex-[0_0_240px]">
+                  <GameCard game={g} index={i} onEdit={onEditGame} compact metaTheme="dark" />
                 </div>
               ))}
             </div>
@@ -609,19 +610,16 @@ function Profile() {
         <PageHeader title="Profile" subtitle="Your creator identity · Published games" />
       </div>
       <div className="relative z-10 px-4 pb-8 pt-3 sm:px-6 sm:py-8 lg:px-10">
-        <div className="relative mb-5 flex items-center justify-between overflow-hidden rounded-[1.55rem] border-2 border-fuchsia-200 bg-[#100528] px-4 py-3 shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] sm:hidden">
-          <div className="font-display text-2xl font-black leading-none text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.45)]">
-            KULT
-            <span className="block text-[0.62rem] tracking-[0.24em]">GAMES</span>
-          </div>
-          <h1 className="font-display text-3xl font-black text-white">Profile</h1>
+        <div className="relative mb-5 grid grid-cols-[auto_1fr_auto] items-center gap-3 overflow-hidden rounded-[1.55rem] border-2 border-fuchsia-200 bg-[#100528] px-3 py-2.5 shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] sm:hidden">
+          <KultLogo className="h-6 w-auto max-w-[72px] shrink-0 object-contain object-left" />
+          <h1 className="min-w-0 truncate text-center font-display text-2xl font-black text-white">Profile</h1>
           <button
             type="button"
             onClick={() => navigate({ to: "/" })}
             title="Home"
-            className="grid size-12 place-items-center rounded-2xl border border-white/30 bg-[linear-gradient(145deg,#b26cff,#6627d8)] text-white shadow-[inset_0_2px_8px_rgba(255,255,255,0.42),0_0_18px_rgba(178,108,255,0.8)]"
+            className="grid size-10 shrink-0 place-items-center rounded-2xl border border-white/30 bg-[linear-gradient(145deg,#b26cff,#6627d8)] text-white shadow-[inset_0_2px_8px_rgba(255,255,255,0.42),0_0_18px_rgba(178,108,255,0.8)]"
           >
-            <Home className="size-7 fill-none stroke-[3.2] text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.55)]" />
+            <Home className="size-6 fill-none stroke-[3.2] text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.55)]" />
           </button>
         </div>
 
@@ -630,7 +628,7 @@ function Profile() {
             <div className="pointer-events-none absolute -left-16 top-0 h-28 w-44 rotate-[-18deg] bg-white/10 blur-2xl" />
             <div className="absolute -right-8 -bottom-8 size-36 rounded-full bg-fuchsia-300/35 blur-xl" />
             <div className="relative flex items-center gap-5">
-              <div className="grid size-28 shrink-0 place-items-center rounded-full border-[6px] border-fuchsia-300 bg-[radial-gradient(circle,#3e196f,#16072f_70%)] text-6xl shadow-[0_0_22px_rgba(245,132,255,0.9)]">
+              <div className="grid size-24 shrink-0 place-items-center rounded-full border-[5px] border-fuchsia-300 bg-[radial-gradient(circle,#3e196f,#16072f_70%)] text-5xl shadow-[0_0_22px_rgba(245,132,255,0.9)] sm:size-28 sm:border-[6px] sm:text-6xl">
                 🎮
               </div>
               <div className="min-w-0 flex-1">

@@ -42,6 +42,7 @@ export function getPrivyIdentity(user: User | null) {
   const telegramUserId = telegram?.telegramUserId ?? telegram?.telegram_user_id ?? null;
   const telegramUsername = telegram?.username ?? null;
   const telegramName = telegram?.firstName ?? telegram?.first_name ?? null;
+
   return {
     userId: user.id,
     walletAddress: wallet?.chainType === "ethereum" ? wallet.address : null,

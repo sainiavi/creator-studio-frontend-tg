@@ -1,39 +1,73 @@
 import { Link } from "@tanstack/react-router";
-import { Home, LayoutGrid, PlusCircle, Trophy, UserRound } from "lucide-react";
+import { Home, LayoutGrid, Plus, Trophy, UserRound } from "lucide-react";
 
-const items = [
-  { to: "/", label: "Home", Icon: Home },
-  { to: "/templates", label: "Templates", Icon: LayoutGrid },
-  { to: "/create", label: "Create", Icon: PlusCircle },
-  { to: "/leaderboard", label: "Ranks", Icon: Trophy },
-  { to: "/profile", label: "Profile", Icon: UserRound },
+const sideItems = [
+  { to: "/", label: "Discover", Icon: Home, exact: true },
+  { to: "/templates", label: "Templates", Icon: LayoutGrid, exact: false },
 ] as const;
+
+const endItems = [
+  { to: "/leaderboard", label: "Ranks", Icon: Trophy, exact: false },
+  { to: "/profile", label: "Profile", Icon: UserRound, exact: false },
+] as const;
+
+const barColor = "#160b2e";
+
+function NavItem({
+  to,
+  label,
+  Icon,
+  exact,
+}: {
+  to: string;
+  label: string;
+  Icon: typeof Home;
+  exact: boolean;
+}) {
+  return (
+    <Link
+      to={to}
+      activeOptions={{ exact }}
+      className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-1 py-2 text-[#d4cce8] transition"
+      activeProps={{
+        className: "text-white",
+      }}
+    >
+      <Icon className="size-[22px]" strokeWidth={2.15} aria-hidden="true" />
+      <span className="text-[10px] font-semibold leading-none tracking-wide">{label}</span>
+    </Link>
+  );
+}
 
 export function MobileNav() {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 overflow-hidden px-2 pb-2 pt-3 md:hidden">
-      <div className="absolute inset-0 -z-10 bg-white/18" />
-      <nav className="flex items-center justify-around rounded-[2rem] border-2 border-violet-300/70 bg-[linear-gradient(180deg,#fff7ff,#f1ddff)] px-2 py-2 shadow-[0_0_0_2px_rgba(255,255,255,0.72),0_0_24px_rgba(168,85,247,0.48),inset_0_2px_12px_rgba(255,255,255,0.9)] backdrop-blur">
-        {items.map(({ to, label, Icon }) => (
-          <Link
-            key={to}
-            to={to}
-            activeOptions={{ exact: to === "/" }}
-            className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-1.5 py-1 text-violet-800 transition"
-            activeProps={{
-              className:
-                "bg-white/80 text-violet-950 shadow-[0_0_0_1px_rgba(168,85,247,0.38),0_6px_16px_rgba(124,58,237,0.28),inset_0_1px_8px_rgba(255,255,255,0.95)]",
-            }}
-          >
-            <Icon
-              className="size-7 drop-shadow-[0_3px_6px_rgba(124,58,237,0.28)]"
-              strokeWidth={2.2}
-              aria-hidden="true"
-            />
-            <span className="text-[11px] font-black leading-none">{label}</span>
-          </Link>
-        ))}
-      </nav>
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 md:hidden">
+      <div className="pointer-events-auto relative overflow-visible pt-8">
+        <nav
+          className="relative border-t border-violet-400/25 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_28px_rgba(88,28,135,0.35)]"
+          style={{ backgroundColor: barColor }}
+        >
+          <div className="flex h-[62px] items-stretch">
+            {sideItems.map((item) => (
+              <NavItem key={item.to} {...item} />
+            ))}
+
+            <div className="relative flex min-w-0 flex-1 items-center justify-center">
+              <Link
+                to="/create"
+                aria-label="Create"
+                className="absolute bottom-[34px] left-1/2 z-30 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-[#a855f7] text-white shadow-[0_0_0_5px_#160b2e,0_8px_24px_rgba(168,85,247,0.65)]"
+              >
+                <Plus className="size-7" strokeWidth={3} aria-hidden="true" />
+              </Link>
+            </div>
+
+            {endItems.map((item) => (
+              <NavItem key={item.to} {...item} />
+            ))}
+          </div>
+        </nav>
+      </div>
     </div>
   );
 }

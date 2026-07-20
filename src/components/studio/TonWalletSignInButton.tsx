@@ -4,18 +4,28 @@ import { Loader2, LogOut, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { getCurrentUsername } from "@/lib/identity";
+import { VITE_PRIVY_APP_ID } from "@/lib/privyConfig";
 import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 import {
   formatTonAddress,
-  getStoredTonWallet,
   getTonWallet,
   getTonWalletErrorMessage,
   toTonWallet,
   type TonWallet,
 } from "@/lib/tonWallet";
 
-export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
+type TonWalletSignInButtonProps = {
+  compact?: boolean;
+  responsive?: boolean;
+  className?: string;
+};
+
+export function TonWalletSignInButton({
+  compact = false,
+  responsive = false,
+  className = "",
+}: TonWalletSignInButtonProps) {
   const { ready, authenticated, login: loginModal, logout, user } = usePrivy();
   const { login: loginWithTelegram, state: telegramState } = useLoginWithTelegram();
   const { createWallet } = useCreateWallet();
@@ -28,9 +38,8 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   const [tonStatus, setTonStatus] = useState<"idle" | "copied" | "error">("idle");
   const [tonErrorMessage, setTonErrorMessage] = useState("");
   const creatingTonRef = useRef(false);
-  const lastTonActivationAt = useRef(0);
   const identity = getCurrentUsername();
-  const tonWallet = getTonWallet(user) ?? createdTonWallet ?? getStoredTonWallet();
+  const tonWallet = getTonWallet(user) ?? createdTonWallet;
 
   const ensureTonWallet = async (nextUser = user) => {
     if (!nextUser || getTonWallet(nextUser) || createdTonWallet || creatingTonRef.current) {
@@ -86,6 +95,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   const signInWithTelegram = async () => {
     if (!inTelegram) {
       setAuthStatus("openTelegram");
+      window.alert("Open this app inside Telegram to sign in with Telegram.");
       window.setTimeout(() => setAuthStatus("idle"), 2000);
       return;
     }
@@ -107,6 +117,8 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   };
 
   const signInWithTonWallet = () => {
+    // Privy has no "TON Wallet" login button. Web path = email verify, then we
+    // create an embedded TON wallet. Telegram stays on the mini-app path only.
     setAuthLoading(true);
     setAuthStatus("idle");
     login({
@@ -123,6 +135,11 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   };
 
   const handleTonWallet = async () => {
+    if (!authenticated) {
+      signIn();
+      return;
+    }
+
     if (tonWallet?.address) {
       try {
         await navigator.clipboard?.writeText(tonWallet.address);
@@ -137,110 +154,97 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
     await ensureTonWallet(user);
   };
 
-  const activateTonWallet = () => {
-    const now = Date.now();
-    if (tonLoading || now - lastTonActivationAt.current < 500) {
-      return;
-    }
-    lastTonActivationAt.current = now;
-    void handleTonWallet();
-  };
+  if (!VITE_PRIVY_APP_ID) {
+    return null;
+  }
 
   if (!ready) {
     return (
-      <div className={`mb-4 ${collapsed ? "px-0" : "px-2"}`}>
-        <div className="h-10 animate-pulse rounded-xl bg-white/55" />
+      <div
+        className={`h-9 ${compact || responsive ? "w-9 sm:w-24" : "w-24"} animate-pulse rounded-full border border-white/15 bg-white/10 ${className}`}
+      />
+    );
+  }
+
+  if (authenticated) {
+    const label = tonWallet?.address
+      ? formatTonAddress(tonWallet.address)
+      : tonLoading
+        ? "Creating"
+        : "Create TON";
+    const mobileLabel = tonLoading ? "..." : tonStatus === "error" ? "!" : "TON";
+
+    return (
+      <div className={`inline-flex h-9 shrink-0 items-center gap-1 ${className}`}>
+        <button
+          type="button"
+          onClick={() => void handleTonWallet()}
+          disabled={tonLoading}
+          className={`inline-flex h-9 items-center justify-center gap-2 rounded-full border border-sky-200/35 bg-white/12 text-xs font-black uppercase text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-70 ${
+            compact ? "w-9 px-0" : responsive ? "w-auto px-2 sm:px-3" : "px-3"
+          }`}
+          title={
+            tonWallet?.address
+              ? `TON wallet ${tonWallet.address}. Click to copy.`
+              : tonErrorMessage
+                ? `TON wallet error: ${tonErrorMessage}`
+                : `Signed in as ${identity}. Click to create TON wallet.`
+          }
+        >
+          {tonLoading ? (
+            <Loader2 className="size-4 animate-spin text-[#55c2ff]" />
+          ) : (
+            <Wallet className="size-4 text-[#55c2ff]" />
+          )}
+          {!compact && (
+            <>
+              <span className={responsive ? "inline sm:hidden" : "hidden"}>{mobileLabel}</span>
+              <span className={`${responsive ? "hidden sm:inline" : ""} max-w-28 truncate`}>
+                {tonStatus === "copied" ? "Copied" : tonStatus === "error" ? "Try again" : label}
+              </span>
+            </>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => void logout()}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white ${
+            compact && responsive ? "hidden sm:inline-flex" : ""
+          }`}
+          title="Disconnect"
+        >
+          <LogOut className="size-3.5" />
+        </button>
       </div>
     );
   }
 
-  if (!authenticated) {
-    const loading = authLoading || telegramLoading;
-    return (
-      <button
-        type="button"
-        onClick={signIn}
-        disabled={loading}
-        className={`mb-4 flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 ${
-          collapsed ? "size-10" : "gap-2 px-3 py-2"
-        }`}
-        title={inTelegram ? "Sign in with Telegram" : "Connect TON wallet"}
-      >
-        {loading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
-        {!collapsed && (
-          <span className="label-mono text-xs font-bold">
-            {loading
-              ? "CONNECTING..."
-              : inTelegram
-                ? authStatus === "openTelegram"
-                  ? "OPEN TELEGRAM"
-                  : authStatus === "error"
-                    ? "TRY AGAIN"
-                    : "TELEGRAM SIGN IN"
-                : authStatus === "error"
-                  ? "TRY AGAIN"
-                  : "TON WALLET"}
-          </span>
-        )}
-      </button>
-    );
-  }
+  const loading = authLoading || telegramLoading;
+  const btnClass = inTelegram
+    ? "bg-[#2aabee] shadow-[0_0_18px_rgba(42,171,238,0.35)] hover:bg-[#229ed9]"
+    : "bg-[#0098EA] shadow-[0_0_18px_rgba(0,152,234,0.35)] hover:bg-[#0088d1]";
+  const label = inTelegram
+    ? authStatus === "openTelegram"
+      ? "Open Telegram"
+      : authStatus === "error"
+        ? "Try again"
+        : "Telegram Sign In"
+    : authStatus === "error"
+      ? "Try again"
+      : "TON Wallet";
 
   return (
-    <div className={`mb-4 space-y-2 ${collapsed ? "px-0" : "px-2"}`}>
-      {!collapsed && (
-        <div className="rounded-xl border border-sky-200/70 bg-white/75 px-3 py-2 text-sky-950">
-          <p className="label-mono text-[10px] font-black text-sky-500">
-            {inTelegram ? "TELEGRAM SIGNED IN" : "TON WALLET CONNECTED"}
-          </p>
-          <p className="mt-1 truncate font-mono text-xs font-bold">
-            {tonWallet?.address ? formatTonAddress(tonWallet.address) : identity}
-          </p>
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={activateTonWallet}
-        onPointerUp={activateTonWallet}
-        onTouchEnd={activateTonWallet}
-        disabled={tonLoading}
-        className={`flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white hover:text-sky-950 disabled:cursor-not-allowed disabled:opacity-70 ${
-          collapsed ? "size-10" : "w-full gap-2 px-3 py-2"
-        }`}
-        title={
-          tonWallet?.address
-            ? `TON wallet ${tonWallet.address}. Click to copy.`
-            : tonErrorMessage
-              ? `TON wallet error: ${tonErrorMessage}`
-              : "Create TON wallet"
-        }
-      >
-        {tonLoading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
-        {!collapsed && (
-          <span className="label-mono truncate text-xs font-bold">
-            {tonStatus === "copied"
-              ? "TON COPIED"
-              : tonStatus === "error"
-                ? tonErrorMessage || "TON ERROR"
-                : tonWallet?.address
-                  ? formatTonAddress(tonWallet.address)
-                  : "CREATE TON WALLET"}
-          </span>
-        )}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => void logout()}
-        className={`flex items-center justify-center rounded-xl border border-sky-200 bg-white/60 text-sky-700 transition hover:bg-white hover:text-sky-950 ${
-          collapsed ? "size-10" : "w-full gap-2 px-3 py-2"
-        }`}
-        title="Disconnect"
-      >
-        <LogOut className="size-4" />
-        {!collapsed && <span className="label-mono text-xs font-bold">DISCONNECT</span>}
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={signIn}
+      disabled={loading}
+      className={`inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full text-xs font-black uppercase tracking-wide text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${btnClass} ${
+        compact || responsive ? "w-9 px-0 sm:w-auto sm:px-3" : "px-3"
+      } ${className}`}
+      title={inTelegram ? "Sign in with Telegram" : "Connect TON wallet"}
+    >
+      {loading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
+      {!compact && <span className={responsive ? "hidden sm:inline" : ""}>{label}</span>}
+    </button>
   );
 }

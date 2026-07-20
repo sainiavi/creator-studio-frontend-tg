@@ -111,13 +111,13 @@ export function GameRow({
         </div>
       </div>
       <div className="overflow-hidden cursor-grab active:cursor-grabbing select-none overscroll-x-contain" ref={emblaRef}>
-        <div className="flex gap-4">
+        <div className="flex gap-2.5 sm:gap-4">
           {games.map((g, i) => (
             <div
               key={g.title}
-              className="min-w-0 shrink-0 grow-0 basis-[calc(50%-8px)] sm:basis-[calc(33.333%-11px)] xl:basis-[calc(25%-12px)] 2xl:basis-[calc(20%-13px)]"
+              className="min-w-0 shrink-0 grow-0 basis-[44%] sm:basis-[calc(33.333%-11px)] xl:basis-[calc(25%-12px)] 2xl:basis-[calc(20%-13px)]"
             >
-              <GameCard game={g} index={i} />
+              <GameCard game={g} index={i} compact metaTheme="dark" />
             </div>
           ))}
         </div>
