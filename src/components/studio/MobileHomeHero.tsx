@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { ConsoleHero } from "./ConsoleHero";
+import type { ChatMessage, ChatStage } from "@/lib/createChatFlow";
 import flow1Img from "@/assets/flow1Img.png";
 import flow2Img from "@/assets/flow2Img.png";
 import flow3Img from "@/assets/flow3Img.png";
@@ -72,6 +73,10 @@ type MobileHomeHeroProps = {
   onSubmit: () => void;
   onCategoryPick: (seed: string) => void;
   onWorldPick: (seed: string) => void;
+  messages?: ChatMessage[];
+  chatStage?: ChatStage;
+  onQuickReply?: (text: string) => void;
+  isThinking?: boolean;
 };
 
 export function MobileHomeHero({
@@ -80,6 +85,10 @@ export function MobileHomeHero({
   onSubmit,
   onCategoryPick,
   onWorldPick,
+  messages,
+  chatStage,
+  onQuickReply,
+  isThinking,
 }: MobileHomeHeroProps) {
   return (
     <section className="relative z-10 space-y-4 px-3 pb-2 pt-3 sm:hidden">
@@ -108,6 +117,10 @@ export function MobileHomeHero({
           onChange={onChange}
           onSubmit={onSubmit}
           onCategoryPick={onCategoryPick}
+          messages={messages}
+          chatStage={chatStage}
+          onQuickReply={onQuickReply}
+          isThinking={isThinking}
           placeholder="Describe your game idea..."
           className="w-full"
         />

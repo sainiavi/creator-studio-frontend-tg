@@ -59,7 +59,7 @@ import {
   type UserActivity,
 } from "@/lib/api/social";
 import { MobileHomeHero } from "@/components/studio/MobileHomeHero";
-import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
+import { useCreateChatFlow } from "@/hooks/useCreateChatFlow";
 import { GamePosterCard, type GamePosterSize } from "@/components/studio/GamePosterCard";
 import { KultLogo } from "@/components/studio/KultLogo";
 import { TonWalletSignInButton } from "@/components/studio/TonWalletSignInButton";
@@ -212,7 +212,15 @@ function uniqueGames(games: Game[]) {
 
 export function Home() {
   const navigate = useNavigate();
-  const { createdGames, removeCreatedGame } = useStudioContext();
+  const { studio, createdGames, removeCreatedGame } = useStudioContext();
+  const createChat = useCreateChatFlow({
+    onReady: (prompt) => {
+      sessionStorage.setItem("kult-create-prompt", prompt);
+      studio.setPrompt(prompt);
+      navigate({ to: "/create" });
+    },
+    onPromptChange: (prompt) => studio.setPrompt(prompt),
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Game[]>([]);
   const [kultPoints, setKultPoints] = useState(0);
@@ -223,22 +231,6 @@ export function Home() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileFeedTab, setMobileFeedTab] = useState("For You");
   const [recentEventsOpen, setRecentEventsOpen] = useState(false);
-  const [mobileIdea, setMobileIdea] = useState("");
-
-  const openCreateWithMobileIdea = useCallback(() => {
-    const prompt = mobileIdea.trim();
-    if (!prompt) return;
-    sessionStorage.setItem("kult-create-prompt", prompt);
-    navigate({ to: "/create" });
-  }, [mobileIdea, navigate]);
-
-  const openCreateWithSeed = useCallback(
-    (seed: string) => {
-      sessionStorage.setItem("kult-create-prompt", seed);
-      navigate({ to: "/create" });
-    },
-    [navigate],
-  );
 
   const formatStat = useCallback((value: number | undefined) => {
     const n = value ?? 0;
@@ -622,11 +614,15 @@ export function Home() {
       </header>
 
       <MobileHomeHero
-        value={mobileIdea}
-        onChange={setMobileIdea}
-        onSubmit={openCreateWithMobileIdea}
-        onCategoryPick={openCreateWithSeed}
-        onWorldPick={openCreateWithSeed}
+        value={createChat.chatInput}
+        onChange={createChat.setChatInput}
+        onSubmit={createChat.submitComposerPrompt}
+        onCategoryPick={createChat.sendChat}
+        onWorldPick={createChat.sendChat}
+        messages={createChat.messages}
+        chatStage={createChat.chatStage}
+        onQuickReply={createChat.sendChat}
+        isThinking={createChat.isThinking}
       />
 
       <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>

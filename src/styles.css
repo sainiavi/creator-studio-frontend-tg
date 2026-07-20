@@ -233,6 +233,181 @@
   .animate-bob {
     animation: bob 3.4s ease-in-out infinite;
   }
+
+  /* Console hero — LCD boot + hologram panel */
+  @keyframes lcd-idle-glow {
+    0%,
+    100% {
+      box-shadow:
+        inset 0 0 10px rgba(168, 85, 247, 0.12),
+        0 0 0 1px rgba(192, 132, 252, 0.28);
+    }
+    50% {
+      box-shadow:
+        inset 0 0 18px rgba(168, 85, 247, 0.32),
+        0 0 14px rgba(217, 70, 239, 0.45);
+    }
+  }
+  .animate-lcd-idle {
+    animation: lcd-idle-glow 2.8s ease-in-out infinite;
+  }
+
+  @keyframes lcd-boot-flash {
+    0% {
+      filter: brightness(1);
+      box-shadow: inset 0 0 0 rgba(217, 70, 239, 0);
+    }
+    15% {
+      filter: brightness(2.8);
+      box-shadow:
+        inset 0 0 28px rgba(255, 255, 255, 0.55),
+        0 0 32px rgba(217, 70, 239, 0.95);
+    }
+    35% {
+      filter: brightness(1.4);
+    }
+    55% {
+      filter: brightness(2.2);
+      box-shadow:
+        inset 0 0 20px rgba(192, 132, 252, 0.7),
+        0 0 40px rgba(217, 70, 239, 1);
+    }
+    100% {
+      filter: brightness(1);
+      box-shadow:
+        inset 0 0 12px rgba(168, 85, 247, 0.4),
+        0 0 18px rgba(217, 70, 239, 0.55);
+    }
+  }
+  .animate-lcd-boot {
+    animation: lcd-boot-flash 0.55s ease-out forwards;
+  }
+
+  @keyframes scanline-sweep {
+    0% {
+      transform: translateY(-120%);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.85;
+    }
+    100% {
+      transform: translateY(220%);
+      opacity: 0;
+    }
+  }
+  .animate-scanline {
+    animation: scanline-sweep 0.55s ease-out forwards;
+  }
+
+  @keyframes hologram-emerge {
+    0% {
+      transform: translateX(-50%) translateY(72px) scale(0.14) perspective(900px) rotateX(22deg);
+      opacity: 0;
+      filter: blur(8px) brightness(2.4);
+    }
+    30% {
+      opacity: 1;
+      filter: blur(1px) brightness(1.7);
+    }
+    65% {
+      transform: translateX(-50%) translateY(-6px) scale(1.04) perspective(900px) rotateX(-3deg);
+      filter: blur(0) brightness(1.15);
+    }
+    100% {
+      transform: translateX(-50%) translateY(0) scale(1) perspective(900px) rotateX(0deg);
+      opacity: 1;
+      filter: blur(0) brightness(1);
+    }
+  }
+  .animate-hologram-in {
+    animation: hologram-emerge 0.72s cubic-bezier(0.22, 1.15, 0.36, 1) forwards;
+  }
+
+  @keyframes hologram-collapse {
+    0% {
+      transform: translateX(-50%) translateY(0) scale(1);
+      opacity: 1;
+      filter: blur(0);
+    }
+    100% {
+      transform: translateX(-50%) translateY(64px) scale(0.12) perspective(900px) rotateX(18deg);
+      opacity: 0;
+      filter: blur(6px) brightness(0.6);
+    }
+  }
+  .animate-hologram-out {
+    animation: hologram-collapse 0.42s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+  }
+
+  @keyframes holo-border-spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  .animate-holo-border {
+    animation: holo-border-spin 5s linear infinite;
+  }
+
+  @keyframes energy-beam-pulse {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: scaleY(0.92);
+    }
+    50% {
+      opacity: 0.85;
+      transform: scaleY(1);
+    }
+  }
+  .animate-energy-beam {
+    animation: energy-beam-pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes sparkle-float {
+    0% {
+      opacity: 0;
+      transform: translateY(8px) scale(0.4);
+    }
+    20% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-36px) scale(1);
+    }
+  }
+  .animate-sparkle {
+    animation: sparkle-float 1.8s ease-out infinite;
+  }
+
+  @keyframes char-lean-left {
+    0%,
+    100% {
+      transform: translateX(0) scale(1);
+    }
+    50% {
+      transform: translateX(6px) scale(1.05);
+    }
+  }
+  @keyframes char-lean-right {
+    0%,
+    100% {
+      transform: translateX(0) scale(1);
+    }
+    50% {
+      transform: translateX(-6px) scale(1.05);
+    }
+  }
+  .animate-char-left-active {
+    animation: char-lean-left 2.4s ease-in-out infinite;
+  }
+  .animate-char-right-active {
+    animation: char-lean-right 2.4s ease-in-out infinite;
+  }
 }
 
 /*

@@ -30,6 +30,8 @@ type CreateConsolePanelProps = {
   fillScreen?: boolean;
   /** Opens directly in textarea mode (used by slide-up overlay) */
   startExpanded?: boolean;
+  /** Keep heading + input row + categories; never switch to textarea/Done UI */
+  lockCompact?: boolean;
   className?: string;
 };
 
@@ -45,19 +47,21 @@ export function CreateConsolePanel({
   fillScreen = false,
   startExpanded = false,
   delegateExpand = false,
+  lockCompact = false,
   className = "",
 }: CreateConsolePanelProps) {
   const inputId = useId();
   const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
-  const [expanded, setExpanded] = useState(startExpanded);
+  const [expanded, setExpanded] = useState(startExpanded && !lockCompact);
+  const showExpanded = expanded && !lockCompact;
 
   useEffect(() => {
-    if (startExpanded) {
+    if (startExpanded && !lockCompact) {
       setExpanded(true);
       onExpandedChange?.(true);
       requestAnimationFrame(() => fieldRef.current?.focus());
     }
-  }, [startExpanded, onExpandedChange]);
+  }, [startExpanded, lockCompact, onExpandedChange]);
 
   const setExpandedState = (next: boolean) => {
     setExpanded(next);
@@ -69,7 +73,7 @@ export function CreateConsolePanel({
   const handleSubmit = () => {
     if (!value.trim() || disabled) return;
     onSubmit();
-    collapse();
+    if (!delegateExpand && !lockCompact) collapse();
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -83,6 +87,10 @@ export function CreateConsolePanel({
   const pickCategory = (seed: string) => {
     onChange(value.trim() ? value : seed);
     onCategoryPick?.(seed);
+    if (lockCompact || delegateExpand) {
+      requestAnimationFrame(() => fieldRef.current?.focus());
+      return;
+    }
     setExpandedState(true);
     requestAnimationFrame(() => fieldRef.current?.focus());
   };
@@ -94,12 +102,12 @@ export function CreateConsolePanel({
       : "rounded-[1.2rem] border border-fuchsia-300/45 bg-[#090018]/95 p-3 shadow-[0_0_24px_rgba(124,58,237,0.4),inset_0_1px_12px_rgba(255,255,255,0.1)] sm:rounded-[1.35rem] sm:p-4";
 
   const headingClass = fillScreen
-    ? "mb-[1%] h-[10%] shrink-0 content-center font-display text-[length:clamp(4px,10cqh,7px)] font-black uppercase leading-none tracking-[0.02em] text-fuchsia-400"
+    ? "mb-[1%] h-[11%] shrink-0 content-center font-display text-[length:clamp(5px,11cqh,8px)] font-black uppercase leading-none tracking-[0.02em] text-fuchsia-400"
     : embedded
       ? "mb-[clamp(2px,0.6vw,3px)] shrink-0 font-display text-[clamp(4px,1.15vw,5.5px)] font-black uppercase tracking-[0.05em] text-fuchsia-400"
       : "mb-2 font-display text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-300 sm:text-xs";
 
-  const fieldShellClass = expanded
+  const fieldShellClass = showExpanded
     ? fillScreen
       ? "flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col gap-[3%] overflow-hidden rounded-[2px] border border-fuchsia-500/80 bg-[#12082a] p-[4%] box-border"
       : embedded
@@ -111,12 +119,12 @@ export function CreateConsolePanel({
         ? "flex shrink-0 items-center gap-[2%] rounded-[2px] border border-fuchsia-500/70 bg-[#12082a] px-[3%] [height:34%]"
         : "flex min-h-[3.5rem] items-center gap-2 rounded-xl border border-fuchsia-400/70 bg-[#190b3d] px-2.5 py-2 shadow-[0_0_12px_rgba(168,85,247,0.32),inset_0_1px_8px_rgba(255,255,255,0.08)] sm:min-h-16 sm:px-3 sm:py-2.5";
 
-  const inputClass = expanded
+  const inputClass = showExpanded
     ? embedded || fillScreen
       ? "min-h-0 min-w-0 max-w-full flex-1 w-full resize-none overflow-y-auto overflow-x-hidden bg-transparent text-[length:clamp(6px,14cqh,10px)] font-semibold leading-tight text-white outline-none placeholder:text-violet-300/55 [scrollbar-width:thin] box-border"
       : "min-h-[80px] w-full resize-none bg-transparent text-sm font-semibold leading-relaxed text-white outline-none placeholder:text-violet-300/70 sm:min-h-[96px] sm:text-base"
-    : embedded || fillScreen
-      ? "min-w-0 flex-1 bg-transparent text-[length:clamp(5px,12cqh,8px)] font-semibold text-white outline-none placeholder:text-violet-300/50"
+    : fillScreen
+      ? "min-w-0 flex-1 bg-transparent text-[length:clamp(6px,13cqh,9px)] font-semibold text-white outline-none placeholder:text-violet-300/50"
       : "min-w-0 flex-1 bg-transparent text-sm font-bold text-white outline-none placeholder:text-violet-300/70";
 
   const sendButtonClass = fillScreen
@@ -133,10 +141,10 @@ export function CreateConsolePanel({
 
   return (
     <section className={`${shellClass} ${className}`}>
-      <p className={`${headingClass} ${fillScreen && expanded ? "sr-only" : ""}`}>What do you want to create?</p>
+      <p className={`${headingClass} ${fillScreen && showExpanded ? "sr-only" : ""}`}>What do you want to create?</p>
 
       <label htmlFor={inputId} className={`${fieldShellClass} transition-all duration-200 ease-out`}>
-        {expanded ? (
+        {showExpanded ? (
           <>
             <textarea
               id={inputId}
@@ -186,7 +194,7 @@ export function CreateConsolePanel({
               value={value}
               onChange={(event) => onChange(event.target.value)}
               onFocus={() => {
-                if (delegateExpand) {
+                if (delegateExpand || lockCompact) {
                   onExpandedChange?.(true);
                   return;
                 }
@@ -202,9 +210,12 @@ export function CreateConsolePanel({
               aria-label="Start creating"
               disabled={disabled}
               onClick={() => {
-                if (delegateExpand) {
-                  onExpandedChange?.(true);
-                  if (value.trim()) onSubmit();
+                if (delegateExpand || lockCompact) {
+                  if (!value.trim()) {
+                    onExpandedChange?.(true);
+                    return;
+                  }
+                  handleSubmit();
                   return;
                 }
                 setExpandedState(true);
@@ -218,7 +229,7 @@ export function CreateConsolePanel({
         )}
       </label>
 
-      {!expanded && (
+      {!showExpanded && (
         <div
           className={`grid min-h-0 grid-cols-4 ${
             fillScreen
