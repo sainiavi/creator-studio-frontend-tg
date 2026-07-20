@@ -42,6 +42,10 @@ type ConsoleHeroProps = {
   placeholder?: string;
   disabled?: boolean;
   onFocusChange?: (focused: boolean) => void;
+  /** Show mascot characters beside the controller (home hero) */
+  showSideCharacters?: boolean;
+  /** Bottom offset for side characters, e.g. "42%" */
+  characterBottom?: string;
   className?: string;
 };
 
@@ -57,13 +61,14 @@ export function ConsoleHero({
   placeholder = "Describe your game idea...",
   disabled = false,
   onFocusChange,
+  showSideCharacters = true,
+  characterBottom = "32%",
   className = "",
 }: ConsoleHeroProps) {
   const timersRef = useRef<number[]>([]);
   const [active, setActive] = useState(false);
   const [booting, setBooting] = useState(false);
-  const hasMessages = Boolean(messages?.length);
-  const showMessageList = active && hasMessages && (messages!.length > 1 || chatStage !== "game");
+  const showMessageList = active && Boolean(messages?.length);
 
   useEffect(() => {
     onFocusChange?.(active);
@@ -128,7 +133,7 @@ export function ConsoleHero({
     },
     onCategoryPick: (seed: string) => {
       openPopup(true);
-      if (hasMessages && chatStage !== "game") {
+      if (messages?.length && chatStage !== "game") {
         onQuickReply?.(seed);
       } else {
         onCategoryPick?.(seed);
@@ -209,10 +214,10 @@ export function ConsoleHero({
         </button>
       )}
 
-      {/* Active overlay — messages + controller stacked above bottom nav */}
+      {/* Active overlay — messages fill top, controller pinned above bottom nav */}
       {active && (
         <div
-          className="pointer-events-none fixed inset-x-0 top-[max(48px,7dvh)] z-[55] flex flex-col items-center gap-2 px-3"
+          className="pointer-events-none fixed inset-x-0 top-[max(48px,7dvh)] z-[55] flex flex-col items-center justify-end gap-2 px-3"
           style={{ bottom: MOBILE_DOCK_CLEARANCE }}
         >
           {showMessageList && messages && (
@@ -239,24 +244,30 @@ export function ConsoleHero({
 
       {/* Idle — controller in hero above page content */}
       <div className="relative mx-auto h-[clamp(300px,82vw,380px)] w-full">
-        <img
-          src={character1}
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-          className={`pointer-events-none absolute bottom-[32%] -left-[4%] z-[8] h-[clamp(188px,50vw,240px)] w-[44%] object-contain object-right-bottom drop-shadow-[0_10px_18px_rgba(76,29,149,0.22)] transition-all duration-500 ${
-            active ? "opacity-0" : ""
-          }`}
-        />
-        <img
-          src={character2}
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-          className={`pointer-events-none absolute bottom-[32%] -right-[4%] z-[8] h-[clamp(188px,50vw,240px)] w-[44%] object-contain object-left-bottom drop-shadow-[0_10px_18px_rgba(76,29,149,0.22)] transition-all duration-500 ${
-            active ? "opacity-0" : ""
-          }`}
-        />
+        {showSideCharacters && (
+          <>
+            <img
+              src={character1}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              className={`pointer-events-none absolute -left-[4%] z-[8] h-[clamp(188px,50vw,240px)] w-[44%] object-contain object-right-bottom drop-shadow-[0_10px_18px_rgba(76,29,149,0.22)] transition-all duration-500 ${
+                active ? "opacity-0" : ""
+              }`}
+              style={{ bottom: characterBottom }}
+            />
+            <img
+              src={character2}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              className={`pointer-events-none absolute -right-[4%] z-[8] h-[clamp(188px,50vw,240px)] w-[44%] object-contain object-left-bottom drop-shadow-[0_10px_18px_rgba(76,29,149,0.22)] transition-all duration-500 ${
+                active ? "opacity-0" : ""
+              }`}
+              style={{ bottom: characterBottom }}
+            />
+          </>
+        )}
 
         {!active && (
           <div

@@ -96,13 +96,13 @@ export function CreateConsolePanel({
   };
 
   const shellClass = fillScreen
-    ? "box-border flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden bg-transparent px-[3%] py-[2%]"
+    ? "box-border flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden bg-transparent px-[3%] pb-[2%] pt-[5%]"
     : embedded
       ? "flex h-full min-h-0 flex-col rounded-sm bg-[#090018]/96 px-[clamp(4px,1.2vw,7px)] py-[clamp(4px,1.2vw,6px)] shadow-[inset_0_1px_8px_rgba(255,255,255,0.06)]"
       : "rounded-[1.2rem] border border-fuchsia-300/45 bg-[#090018]/95 p-3 shadow-[0_0_24px_rgba(124,58,237,0.4),inset_0_1px_12px_rgba(255,255,255,0.1)] sm:rounded-[1.35rem] sm:p-4";
 
   const headingClass = fillScreen
-    ? "mb-[1%] h-[11%] shrink-0 content-center font-display text-[length:clamp(5px,11cqh,8px)] font-black uppercase leading-none tracking-[0.02em] text-fuchsia-400"
+    ? "mb-[3%] shrink-0 text-center font-display text-[length:clamp(4.5px,9.5cqh,7px)] font-black uppercase leading-[1.15] tracking-[0.02em] text-fuchsia-400"
     : embedded
       ? "mb-[clamp(2px,0.6vw,3px)] shrink-0 font-display text-[clamp(4px,1.15vw,5.5px)] font-black uppercase tracking-[0.05em] text-fuchsia-400"
       : "mb-2 font-display text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-300 sm:text-xs";
@@ -114,7 +114,7 @@ export function CreateConsolePanel({
         ? "flex min-h-0 flex-1 flex-col gap-[4%] rounded-[3px] border border-fuchsia-500/80 bg-[#12082a] p-[4%]"
         : "flex min-h-[148px] flex-col gap-2 rounded-xl border-2 border-fuchsia-300 bg-[#16082f] p-2.5 shadow-[0_0_20px_rgba(217,70,239,0.55),inset_0_1px_10px_rgba(255,255,255,0.1)] sm:min-h-[168px] sm:p-3"
     : fillScreen
-      ? "box-border flex h-[52%] w-full max-w-full min-w-0 shrink-0 items-center gap-[2%] overflow-hidden rounded-[2px] border border-fuchsia-500/70 bg-[#12082a] px-[4%] py-[6%]"
+      ? "box-border flex h-[44%] w-full max-w-full min-w-0 shrink-0 items-center gap-[2%] overflow-hidden rounded-[2px] border border-fuchsia-500/70 bg-[#12082a] px-[4%] py-[5%]"
       : embedded
         ? "flex shrink-0 items-center gap-[2%] rounded-[2px] border border-fuchsia-500/70 bg-[#12082a] px-[3%] [height:34%]"
         : "flex min-h-[3.5rem] items-center gap-2 rounded-xl border border-fuchsia-400/70 bg-[#190b3d] px-2.5 py-2 shadow-[0_0_12px_rgba(168,85,247,0.32),inset_0_1px_8px_rgba(255,255,255,0.08)] sm:min-h-16 sm:px-3 sm:py-2.5";

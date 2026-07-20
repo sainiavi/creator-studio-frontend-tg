@@ -387,6 +387,7 @@ function Create() {
             chatStage={chatStage}
             onQuickReply={sendChatMessage}
             isThinking={isThinking}
+            showSideCharacters={false}
             disabled={phase === "building"}
             placeholder={
               chatStage === "game" ? "Describe your game idea..." : "Type a prompt..."

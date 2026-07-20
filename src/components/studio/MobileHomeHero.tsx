@@ -121,6 +121,7 @@ export function MobileHomeHero({
           chatStage={chatStage}
           onQuickReply={onQuickReply}
           isThinking={isThinking}
+          characterBottom="42%"
           placeholder="Describe your game idea..."
           className="w-full"
         />
