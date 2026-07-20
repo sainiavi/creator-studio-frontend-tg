@@ -6,7 +6,6 @@ import { gradientForId, templateEmoji, engineOf, getThumbnailUrl } from "@/lib/s
 import { useStudioContext } from "@/context/StudioContext";
 import { useGameTemplates } from "@/hooks/useGameTemplates";
 import { TemplatesGridSkeleton } from "@/components/studio/PageSkeletons";
-import profileBg from "@/assets/profile-bg.png";
 
 export const Route = createFileRoute("/_app/templates")({
   pendingComponent: TemplatesGridSkeleton,
@@ -33,22 +32,13 @@ function Templates() {
   if (loading) return <TemplatesGridSkeleton />;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f4ddff] text-violet-950">
-      <img
-        src={profileBg}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover object-top"
-      />
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_6%,rgba(255,255,255,0.62),transparent_26%),radial-gradient(circle_at_16%_38%,rgba(244,114,182,0.24),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.24),rgba(216,180,254,0.2))]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-56 bg-[linear-gradient(105deg,transparent_0%,rgba(255,255,255,0.5)_42%,transparent_62%)] opacity-70" />
-
+    <div className="relative min-h-screen overflow-hidden text-violet-950">
       <div className="relative z-10 hidden sm:block">
         <PageHeader title="Templates" subtitle="Pick a base · Remix with a prompt · Ship instantly" />
       </div>
 
-      <div className="relative z-10 px-4 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-10">
-        <section className="overflow-hidden rounded-[1.65rem] border-2 border-fuchsia-200 bg-[#100528] px-5 py-4 text-center shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] sm:hidden">
+      <div className="relative z-10 px-4 pb-8 pt-0 sm:px-6 sm:pt-6 lg:px-10">
+        <section className="-mx-4 border-b border-violet-400/25 bg-[#160b2e] px-5 py-4 text-center text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] md:hidden">
           <p className="font-display text-3xl font-black text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.45)]">
             Templates
           </p>

@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
 import { usePrivy } from "@privy-io/react-auth";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
+import { clearAuthToken, prefetchAuthToken } from "../lib/api";
+import { getCurrentUserId } from "../lib/identity";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { syncPrivyIdentity } from "../lib/privyIdentity";
 
@@ -73,10 +75,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { ready, authenticated, user } = usePrivy();
+  const previousUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (ready) syncPrivyIdentity(authenticated ? user : null);
-  }, [authenticated, ready, user]);
+    if (!ready) return;
+    syncPrivyIdentity(authenticated ? user : null);
+    const nextUserId = getCurrentUserId();
+    if (previousUserIdRef.current !== null && previousUserIdRef.current !== nextUserId) {
+      clearAuthToken();
+    }
+    previousUserIdRef.current = nextUserId;
+    void prefetchAuthToken();
+  }, [authenticated, ready, user?.id]);
 
   return (
     <QueryClientProvider client={queryClient}>

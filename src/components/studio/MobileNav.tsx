@@ -11,7 +11,8 @@ const endItems = [
   { to: "/profile", label: "Profile", Icon: UserRound, exact: false },
 ] as const;
 
-const barColor = "#160b2e";
+export const MOBILE_BAR_COLOR = "#160b2e";
+const barColor = MOBILE_BAR_COLOR;
 
 function NavItem({
   to,

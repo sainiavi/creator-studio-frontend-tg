@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Rocket, Bot, Loader2, Check, Play, ArrowRight, BriefcaseBusiness, Wand2 } from "lucide-react";
 import { useStudioContext } from "@/context/StudioContext";
-import { api } from "@/lib/api";
+import { api, clearAuthToken, prefetchAuthToken } from "@/lib/api";
 import { findGameTemplate } from "@/lib/templates-loader";
 import { engineOf, getThumbnailUrl, templateEmoji } from "@/lib/studio-meta";
 import { sendTonGenerationPayment } from "@/lib/tonPayment";
@@ -13,7 +13,6 @@ import { CreatePageSkeleton } from "@/components/studio/PageSkeletons";
 import { ConsoleHero } from "@/components/studio/ConsoleHero";
 import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
 import { KultLogo } from "@/components/studio/KultLogo";
-import profileBg from "@/assets/profile-bg.png";
 import cyberpunkSuggestion from "@/assets/create-suggestion-cyberpunk.png";
 import farmSuggestion from "@/assets/create-suggestion-farm.png";
 
@@ -370,6 +369,16 @@ function Create() {
           setIsPaying(false);
         }
       } else {
+        const serverError = String(error?.response?.data?.error ?? error?.message ?? "").trim();
+        if (error?.response?.status === 401 || /authorization token/i.test(serverError)) {
+          clearAuthToken();
+          void prefetchAuthToken();
+          showNotice(
+            "Sign in with TON Wallet in the header, then try building again.",
+            "error",
+          );
+          return;
+        }
         showNotice(formatPaidGenerationNotice(error), "error");
       }
     }
@@ -487,15 +496,7 @@ function Create() {
   const freshChat = chatStage === "game" && messages.length <= 1;
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#d8cff8_0%,#c4b6f2_42%,#9f87e7_100%)] text-white sm:bg-[#d9b2ff]">
-      <img
-        src={profileBg}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full object-cover object-top sm:block"
-      />
-      <div className="absolute inset-0 z-0 hidden bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.35),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(126,34,206,0.18))] sm:block" />
-
+    <div className="relative min-h-screen overflow-x-hidden text-white">
       <div className="relative z-10 mx-auto max-w-3xl px-4 pb-28 pt-2 sm:px-6 sm:pb-6 sm:pt-4">
         {generationNotice && (
           <div

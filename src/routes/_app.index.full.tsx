@@ -58,16 +58,13 @@ import {
   type NotificationItem,
   type UserActivity,
 } from "@/lib/api/social";
-import { ConsoleHero } from "@/components/studio/ConsoleHero";
+import { MobileHomeHero } from "@/components/studio/MobileHomeHero";
 import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
 import { GamePosterCard, type GamePosterSize } from "@/components/studio/GamePosterCard";
 import { KultLogo } from "@/components/studio/KultLogo";
 import { TonWalletSignInButton } from "@/components/studio/TonWalletSignInButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentUserId } from "@/lib/identity";
-import profileBg from "@/assets/profile-bg.png";
-import mobileHomeBg from "@/assets/mobile-bg.png";
-import mobileHomeBottomBg from "@/assets/mobile-bg-bottom.png";
 
 // Full home page — lazy-loaded from _app.index.tsx (not a registered route file).
 // export const Route = createFileRoute("/_app/")({
@@ -234,6 +231,14 @@ export function Home() {
     sessionStorage.setItem("kult-create-prompt", prompt);
     navigate({ to: "/create" });
   }, [mobileIdea, navigate]);
+
+  const openCreateWithSeed = useCallback(
+    (seed: string) => {
+      sessionStorage.setItem("kult-create-prompt", seed);
+      navigate({ to: "/create" });
+    },
+    [navigate],
+  );
 
   const formatStat = useCallback((value: number | undefined) => {
     const n = value ?? 0;
@@ -433,15 +438,6 @@ export function Home() {
     [communityGames],
   );
 
-  useEffect(() => {
-    const link = document.createElement("link");
-    link.rel = "preload";
-    link.as = "image";
-    link.href = mobileHomeBg;
-    document.head.appendChild(link);
-    return () => link.remove();
-  }, []);
-
   const realGames = useMemo(
     () => uniqueGames(communityGames.map(withHomeCategory)),
     [communityGames],
@@ -564,93 +560,10 @@ export function Home() {
   );
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#d8cff8_0%,#c4b6f2_42%,#9f87e7_100%)] text-violet-950 sm:bg-[#f4ddff]">
-      <img
-        src={mobileHomeBg}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-0 z-0 h-auto w-[101%] max-w-none -translate-x-1/2 object-contain sm:hidden"
-      />
-      <img
-        src={mobileHomeBottomBg}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-[clamp(620px,193vw,840px)] z-0 h-[calc(100%_-_clamp(620px,193vw,840px))] w-[101%] max-w-none -translate-x-1/2 object-fill sm:hidden"
-      />
-      <div className="pointer-events-none absolute left-1/2 top-[clamp(87px,27.2vw,118px)] z-[20] w-[58%] -translate-x-1/2 text-center sm:hidden">
-        <p className="font-display text-[clamp(7px,2.3vw,10px)] font-black uppercase tracking-[0.1em] text-violet-800 drop-shadow-[0_1px_0_rgba(255,255,255,1)] [text-shadow:0_1px_0_rgba(255,255,255,1),0_0_8px_rgba(124,58,237,0.45)]">
-          ✧ You Imagine. AI Builds. ✧
-        </p>
-        <h1 className="mt-1 font-display text-[clamp(34px,10.8vw,47px)] font-black uppercase leading-[1.03] text-white drop-shadow-[0_2px_0_#6d28d9] [-webkit-text-stroke:1.4px_#5b21b6]">
-          Create
-          <span className="mx-auto block w-max -translate-x-4 bg-[linear-gradient(180deg,#ff6bea_0%,#8b5cf6_74%)] bg-clip-text text-transparent drop-shadow-[0_3px_0_#4c1d95] [-webkit-text-stroke:1px_#5b21b6]">
-            Playable
-          </span>
-          <span className="mx-auto block w-max bg-[linear-gradient(180deg,#ff75ec_0%,#7c3aed_78%)] bg-clip-text text-transparent drop-shadow-[0_3px_0_#4c1d95] [-webkit-text-stroke:1px_#5b21b6]">
-            Worlds
-          </span>
-        </h1>
-      </div>
-      <p className="pointer-events-none absolute left-[48%] top-[clamp(248px,77.5vw,338px)] z-[3] w-[60%] -translate-x-1/2 text-center text-[clamp(12px,3.6vw,16px)] font-black leading-[1.08] text-[#2b075f] drop-shadow-[0_1px_0_rgba(255,255,255,1)] [text-shadow:0_1px_0_rgba(255,255,255,0.95),0_0_10px_rgba(255,255,255,0.9),0_0_14px_rgba(168,85,247,0.45)] sm:hidden">
-        Describe your game idea
-        <br />
-        and our AI crafts the game,
-        <br />
-        agents, and world.
-      </p>
-      <div className="absolute left-1/2 top-[clamp(96px,28vw,132px)] z-[5] w-full max-w-[520px] -translate-x-1/2 px-3 sm:hidden">
-        <ConsoleHero
-          value={mobileIdea}
-          onChange={setMobileIdea}
-          onSubmit={openCreateWithMobileIdea}
-          placeholder="Describe your game idea..."
-          className="w-full"
-        />
-      </div>
-      <button
-        type="button"
-        aria-label="Create with typed idea"
-        onClick={openCreateWithMobileIdea}
-        className="pointer-events-auto absolute left-1/2 top-[clamp(500px,155vw,660px)] z-[80] size-[clamp(78px,22vw,96px)] -translate-x-1/2 rounded-full sm:hidden"
-      />
-      <section className="absolute left-1/2 top-[clamp(545px,170vw,730px)] z-[2] w-[96%] -translate-x-1/2 rounded-2xl border border-white/90 bg-white/82 px-3 py-2.5 shadow-[0_8px_22px_rgba(124,58,237,0.18),0_0_16px_rgba(255,255,255,0.65),inset_0_1px_9px_rgba(255,255,255,0.88)] backdrop-blur-sm sm:hidden">
-        <div className="grid grid-cols-4 divide-x divide-violet-300/70">
-          {[
-            { title: "1. Describe", body: "Share your idea in simple words.", icon: MessageCircle },
-            {
-              title: "2. AI Builds",
-              body: "Artificial intelligence builds agents & world.",
-              icon: Sparkles,
-            },
-            { title: "3. Playtest", body: "Test instantly in play mode.", icon: Gamepad2 },
-            { title: "4. Publish", body: "Launch your game to the world.", icon: Rocket },
-          ].map((step) => {
-            const Icon = step.icon;
-            return (
-              <div key={step.title} className="px-2 first:pl-0 last:pr-0">
-                <span className="mb-2 grid size-10 place-items-center rounded-lg bg-[linear-gradient(145deg,#d946ef,#7c3aed)] text-white shadow-[0_0_12px_rgba(168,85,247,0.5),inset_0_1px_8px_rgba(255,255,255,0.35)]">
-                  <Icon className="size-5" />
-                </span>
-                <p className="text-[10px] font-black leading-tight text-violet-950">{step.title}</p>
-                <p className="mt-1 text-[8px] font-bold leading-tight text-violet-900/90">
-                  {step.body}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-      <img
-        src={profileBg}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full object-cover object-top sm:block"
-      />
-      <div className="absolute inset-0 z-0 hidden bg-[radial-gradient(circle_at_50%_6%,rgba(255,255,255,0.62),transparent_26%),radial-gradient(circle_at_16%_38%,rgba(244,114,182,0.24),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.24),rgba(216,180,254,0.2))] sm:block" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-0 hidden h-56 bg-[linear-gradient(105deg,transparent_0%,rgba(255,255,255,0.5)_42%,transparent_62%)] opacity-70 sm:block" />
-      <header className="relative z-20 m-3 flex min-h-14 items-center justify-between gap-1.5 rounded-[1.65rem] border-2 border-fuchsia-200 bg-[#100528] px-2.5 py-2.5 text-white shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] backdrop-blur sm:min-h-16 sm:gap-4 sm:px-6 sm:py-3">
+    <div className="relative min-h-screen overflow-x-hidden text-violet-950">
+      <header className="sticky top-0 z-30 flex min-h-[58px] items-center justify-between gap-1.5 border-b border-violet-400/25 bg-[#160b2e] px-3 py-2 text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] md:relative md:top-auto md:z-20 md:m-3 md:min-h-16 md:rounded-[1.65rem] md:border-2 md:border-fuchsia-200 md:border-b-2 md:bg-[#100528] md:px-6 md:py-3 md:shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] md:backdrop-blur">
         <div className="relative z-20 flex shrink-0 items-center sm:min-w-0 sm:flex-1 sm:gap-4">
-          <KultLogo className="h-5 w-auto max-w-[64px] object-contain object-left sm:h-10 sm:max-w-[148px]" />
+          <KultLogo className="h-8 w-auto max-w-[104px] object-contain object-left sm:h-10 sm:max-w-[148px]" />
           <p className="hidden shrink-0 text-sm font-semibold text-violet-100 sm:block">
             <span className="font-black text-white"></span>
           </p>
@@ -708,6 +621,14 @@ export function Home() {
         </div>
       </header>
 
+      <MobileHomeHero
+        value={mobileIdea}
+        onChange={setMobileIdea}
+        onSubmit={openCreateWithMobileIdea}
+        onCategoryPick={openCreateWithSeed}
+        onWorldPick={openCreateWithSeed}
+      />
+
       <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
         <DialogContent className="max-h-[82vh] overflow-y-auto rounded-[1.5rem] border-2 border-fuchsia-200 bg-white/92 text-violet-950 shadow-[0_0_30px_rgba(168,85,247,0.35)] backdrop-blur sm:max-w-xl">
           <DialogHeader>
@@ -760,7 +681,7 @@ export function Home() {
         </DialogContent>
       </Dialog>
 
-      <div className="relative z-10 grid gap-3 px-3 pb-3 pt-[clamp(660px,205vw,860px)] sm:pt-0 xl:grid-cols-[minmax(0,1fr)_310px]">
+      <div className="relative z-10 grid gap-3 px-3 pb-3 pt-2 sm:pt-0 xl:grid-cols-[minmax(0,1fr)_310px]">
         <main className="min-w-0 space-y-3">
           <section className="min-[1190px]:hidden">
             <div className="mx-auto w-full max-w-2xl space-y-6 px-1">

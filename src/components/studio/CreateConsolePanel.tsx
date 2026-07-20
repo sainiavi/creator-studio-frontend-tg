@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type ComponentType, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type ComponentType, type KeyboardEvent } from "react";
 import { Sparkles, Swords, Trophy, Volleyball, Wand2 } from "lucide-react";
 
 export type CreateCategory = {
@@ -20,12 +20,16 @@ type CreateConsolePanelProps = {
   onSubmit: () => void;
   onCategoryPick?: (seed: string) => void;
   onExpandedChange?: (expanded: boolean) => void;
+  /** When set, focus opens the parent overlay instead of expanding inline */
+  delegateExpand?: boolean;
   placeholder?: string;
   disabled?: boolean;
   /** Fits inside the handheld console screen on home/create heroes */
   embedded?: boolean;
   /** Edge-to-edge inside the console LCD clip (no card chrome) */
   fillScreen?: boolean;
+  /** Opens directly in textarea mode (used by slide-up overlay) */
+  startExpanded?: boolean;
   className?: string;
 };
 
@@ -39,11 +43,21 @@ export function CreateConsolePanel({
   disabled = false,
   embedded = false,
   fillScreen = false,
+  startExpanded = false,
+  delegateExpand = false,
   className = "",
 }: CreateConsolePanelProps) {
   const inputId = useId();
   const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(startExpanded);
+
+  useEffect(() => {
+    if (startExpanded) {
+      setExpanded(true);
+      onExpandedChange?.(true);
+      requestAnimationFrame(() => fieldRef.current?.focus());
+    }
+  }, [startExpanded, onExpandedChange]);
 
   const setExpandedState = (next: boolean) => {
     setExpanded(next);
@@ -171,7 +185,13 @@ export function CreateConsolePanel({
               type="text"
               value={value}
               onChange={(event) => onChange(event.target.value)}
-              onFocus={() => setExpandedState(true)}
+              onFocus={() => {
+                if (delegateExpand) {
+                  onExpandedChange?.(true);
+                  return;
+                }
+                setExpandedState(true);
+              }}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               disabled={disabled}
@@ -182,6 +202,11 @@ export function CreateConsolePanel({
               aria-label="Start creating"
               disabled={disabled}
               onClick={() => {
+                if (delegateExpand) {
+                  onExpandedChange?.(true);
+                  if (value.trim()) onSubmit();
+                  return;
+                }
                 setExpandedState(true);
                 if (value.trim()) handleSubmit();
               }}

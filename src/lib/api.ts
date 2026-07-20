@@ -22,6 +22,21 @@ const TOKEN_KEY = "kult-auth-token";
 const TOKEN_USER_KEY = "kult-auth-token-user";
 let tokenPromise: Promise<string | null> | null = null;
 
+export function clearAuthToken() {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_USER_KEY);
+  } catch {
+    // localStorage unavailable — ignore
+  }
+  tokenPromise = null;
+}
+
+/** Warm the auth token cache after login or identity changes. */
+export function prefetchAuthToken(): Promise<string | null> {
+  return getToken();
+}
+
 function currentIdentity(): string | undefined {
   try {
     return getCurrentUserId();
@@ -30,23 +45,48 @@ function currentIdentity(): string | undefined {
   }
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    promise.catch(() => null),
+    new Promise<null>((resolve) => window.setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
+async function requestAuthToken(body: Record<string, unknown>): Promise<string | null> {
+  // Plain axios: must not run through the interceptor that awaits the token.
+  const response = await axios.post(`${baseURL}/auth/token`, body, {
+    timeout: 10000,
+    withCredentials: true,
+  });
+  return response.data?.token ?? null;
+}
+
 async function fetchToken(): Promise<string | null> {
   try {
     const userId = currentIdentity();
     const [privyAccessToken, privyIdentityToken] = await Promise.all([
-      getAccessToken().catch(() => null),
-      getIdentityToken().catch(() => null),
+      withTimeout(getAccessToken(), 4000),
+      withTimeout(getIdentityToken(), 4000),
     ]);
-    // Plain axios: must not run through the interceptor that awaits the token.
-    const response = await axios.post(
-      `${baseURL}/auth/token`,
-      { userId, privyAccessToken, privyIdentityToken },
-      {
-        timeout: 10000,
-        withCredentials: true,
-      },
-    );
-    const token: string | null = response.data?.token ?? null;
+
+    const privyBody: Record<string, string> = {};
+    if (typeof privyAccessToken === "string" && privyAccessToken.trim()) {
+      privyBody.privyAccessToken = privyAccessToken.trim();
+    }
+    if (typeof privyIdentityToken === "string" && privyIdentityToken.trim()) {
+      privyBody.privyIdentityToken = privyIdentityToken.trim();
+    }
+
+    let token: string | null = null;
+    try {
+      token = await requestAuthToken({ userId, ...privyBody });
+    } catch {
+      // Invalid or stale Privy tokens make the backend 400/500 — userId-only still works.
+      if (Object.keys(privyBody).length > 0) {
+        token = await requestAuthToken({ userId }).catch(() => null);
+      }
+    }
+
     if (token) {
       localStorage.setItem(TOKEN_KEY, token);
       localStorage.setItem(TOKEN_USER_KEY, userId ?? "");
@@ -83,7 +123,7 @@ api.interceptors.response.use(
   async (error) => {
     const config = error.config;
     if (error.response?.status === 401 && config && !config.__retriedAuth) {
-      localStorage.removeItem(TOKEN_KEY);
+      clearAuthToken();
       const token = await getToken();
       if (token) {
         config.__retriedAuth = true;

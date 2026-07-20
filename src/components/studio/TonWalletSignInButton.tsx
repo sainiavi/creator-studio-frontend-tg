@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { getCurrentUsername } from "@/lib/identity";
 import { VITE_PRIVY_APP_ID } from "@/lib/privyConfig";
 import { syncPrivyIdentity } from "@/lib/privyIdentity";
+import { prefetchAuthToken } from "@/lib/api";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 import {
   formatTonAddress,
@@ -76,6 +77,7 @@ export function TonWalletSignInButton({
       setAuthLoading(false);
       setAuthStatus("idle");
       syncPrivyIdentity(nextUser);
+      void prefetchAuthToken();
       void ensureTonWallet(nextUser);
     },
     onError: () => {

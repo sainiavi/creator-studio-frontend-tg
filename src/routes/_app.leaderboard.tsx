@@ -5,7 +5,6 @@ import { Crown, Trophy, UserRound } from "lucide-react";
 import rankOneAvatar from "@/assets/leaderboard-rank-1.png";
 import rankTwoAvatar from "@/assets/leaderboard-rank-2.png";
 import rankThreeAvatar from "@/assets/leaderboard-rank-3.png";
-import profileBg from "@/assets/profile-bg.png";
 import { LeaderboardSkeleton } from "@/components/studio/PageSkeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
@@ -277,15 +276,9 @@ function Leaderboard() {
   const loadMoreRef = useInfiniteScroll(loadMoreRows, hasMoreRows && !loading && tableRows.length > 0);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f4ddff] text-violet-950">
-      <img src={profileBg} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover object-top" />
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_6%,rgba(255,255,255,0.62),transparent_26%),radial-gradient(circle_at_16%_38%,rgba(244,114,182,0.24),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.24),rgba(216,180,254,0.2))]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-56 bg-[linear-gradient(105deg,transparent_0%,rgba(255,255,255,0.5)_42%,transparent_62%)] opacity-70" />
-
-
-
-      <div className="relative z-10 mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-10">
-        <section className="relative mb-5 overflow-hidden rounded-[1.65rem] border-2 border-fuchsia-200 bg-[#100528] px-4 py-3.5 text-white shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] backdrop-blur sm:px-6 sm:py-4">
+    <div className="relative min-h-screen overflow-hidden text-violet-950">
+      <div className="relative z-10 mx-auto max-w-5xl px-4 py-0 sm:px-6 sm:py-6 lg:px-10">
+        <section className="relative -mx-4 mb-5 overflow-hidden border-b border-violet-400/25 bg-[#160b2e] px-4 py-3.5 text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] sm:mx-0 md:rounded-[1.65rem] md:border-2 md:border-fuchsia-200 md:border-b-2 md:bg-[#100528] md:px-6 md:py-4 md:shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] md:backdrop-blur">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(217,70,239,0.18),transparent_50%),radial-gradient(circle_at_10%_50%,rgba(139,92,246,0.15),transparent_50%)]" />
           <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           <div className="relative flex items-center justify-between">

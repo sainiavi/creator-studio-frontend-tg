@@ -36,7 +36,6 @@ import { getCurrentUserId, getCurrentUsername, getWalletAddress, setCurrentUsern
 import { api } from "@/lib/api";
 import { useGameTemplates } from "@/hooks/useGameTemplates";
 import { ActivityListSkeleton, ProfileSkeleton } from "@/components/studio/PageSkeletons";
-import profileBg from "@/assets/profile-bg.png";
 import { useStudioContext } from "@/context/StudioContext";
 import {
   Copy,
@@ -598,19 +597,11 @@ function Profile() {
 
   return (
     <div className="relative min-h-screen overflow-hidden sm:min-h-0">
-      <img
-        src={profileBg}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover object-top sm:hidden"
-      />
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_6%,rgba(255,255,255,0.62),transparent_26%),radial-gradient(circle_at_16%_38%,rgba(244,114,182,0.24),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.24),rgba(216,180,254,0.2))] sm:hidden" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-56 bg-[linear-gradient(105deg,transparent_0%,rgba(255,255,255,0.5)_42%,transparent_62%)] opacity-70 sm:hidden" />
       <div className="relative z-10 hidden sm:block">
         <PageHeader title="Profile" subtitle="Your creator identity · Published games" />
       </div>
-      <div className="relative z-10 px-4 pb-8 pt-3 sm:px-6 sm:py-8 lg:px-10">
-        <div className="relative mb-5 grid grid-cols-[auto_1fr_auto] items-center gap-3 overflow-hidden rounded-[1.55rem] border-2 border-fuchsia-200 bg-[#100528] px-3 py-2.5 shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] sm:hidden">
+      <div className="relative z-10 px-4 pb-8 pt-0 sm:px-6 sm:py-8 lg:px-10">
+        <div className="relative -mx-4 mb-5 grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-violet-400/25 bg-[#160b2e] px-3 py-2.5 text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] md:hidden">
           <KultLogo className="h-6 w-auto max-w-[72px] shrink-0 object-contain object-left" />
           <h1 className="min-w-0 truncate text-center font-display text-2xl font-black text-white">Profile</h1>
           <button
