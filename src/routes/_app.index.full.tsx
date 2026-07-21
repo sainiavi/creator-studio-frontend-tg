@@ -36,6 +36,7 @@ import {
   WandSparkles,
   X,
   Zap,
+  LayoutGrid,
 } from "lucide-react";
 import { resolveGameThumbnail } from "@/lib/studio-meta";
 import { fetchGamesPage } from "@/lib/api/games";
@@ -112,58 +113,60 @@ const categoryPriority = ["Action", "Arcade", "Racing", "Puzzle", "Strategy"];
 const browseCategories: {
   name: string;
   icon: ComponentType<{ className?: string }>;
-  chip: string;
   iconColor: string;
+  glow: string;
 }[] = [
-  {
-    name: "Action",
-    icon: Swords,
-    chip: "border-fuchsia-200 bg-fuchsia-100",
-    iconColor: "text-fuchsia-600",
-  },
   {
     name: "Arcade",
     icon: Gamepad2,
-    chip: "border-violet-200 bg-violet-100",
-    iconColor: "text-violet-600",
+    iconColor: "text-violet-400",
+    glow: "shadow-[0_0_18px_rgba(167,139,250,0.35)]",
   },
   {
     name: "Puzzle",
     icon: Puzzle,
-    chip: "border-sky-200 bg-sky-100",
-    iconColor: "text-sky-600",
+    iconColor: "text-lime-400",
+    glow: "shadow-[0_0_18px_rgba(163,230,53,0.35)]",
   },
   {
     name: "Sports",
     icon: Volleyball,
-    chip: "border-emerald-200 bg-emerald-100",
-    iconColor: "text-emerald-600",
+    iconColor: "text-orange-400",
+    glow: "shadow-[0_0_18px_rgba(251,146,60,0.35)]",
+  },
+  {
+    name: "Action",
+    icon: Swords,
+    iconColor: "text-amber-300",
+    glow: "shadow-[0_0_18px_rgba(252,211,77,0.35)]",
   },
   {
     name: "Strategy",
     icon: Trophy,
-    chip: "border-cyan-200 bg-cyan-100",
-    iconColor: "text-cyan-600",
+    iconColor: "text-sky-400",
+    glow: "shadow-[0_0_18px_rgba(56,189,248,0.35)]",
   },
   {
     name: "Adventure",
     icon: Mountain,
-    chip: "border-teal-200 bg-teal-100",
-    iconColor: "text-teal-600",
+    iconColor: "text-teal-300",
+    glow: "shadow-[0_0_18px_rgba(94,234,212,0.35)]",
   },
   {
     name: "RPG",
     icon: Shield,
-    chip: "border-orange-200 bg-orange-100",
-    iconColor: "text-orange-600",
+    iconColor: "text-fuchsia-400",
+    glow: "shadow-[0_0_18px_rgba(232,121,249,0.35)]",
   },
   {
     name: "Multiplayer",
     icon: Users,
-    chip: "border-purple-200 bg-purple-100",
-    iconColor: "text-purple-600",
+    iconColor: "text-rose-300",
+    glow: "shadow-[0_0_18px_rgba(251,113,133,0.35)]",
   },
 ];
+
+const BROWSE_CATEGORY_PREVIEW = 5;
 
 const homeFeedTabs = ["For You", "Trending", "New", ...browseCategories.map((c) => c.name)];
 
@@ -230,6 +233,7 @@ export function Home() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileFeedTab, setMobileFeedTab] = useState("For You");
+  const [browseCategoriesExpanded, setBrowseCategoriesExpanded] = useState(false);
   const [recentEventsOpen, setRecentEventsOpen] = useState(false);
 
   const formatStat = useCallback((value: number | undefined) => {
@@ -525,12 +529,6 @@ export function Home() {
   const hasAnyGames = communityGames.length > 0;
   const gamesEmptyMessage = "No games found. Check back soon or create the first one!";
 
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const game of realGames) counts[game.category] = (counts[game.category] ?? 0) + 1;
-    return counts;
-  }, [realGames]);
-
   const feedTabGames = useMemo(() => {
     if (mobileFeedTab === "Trending") return trendingNow;
     if (mobileFeedTab === "New") return newReleases;
@@ -553,9 +551,9 @@ export function Home() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden text-violet-950">
-      <header className="sticky top-0 z-30 flex min-h-[58px] items-center justify-between gap-1.5 border-b border-violet-400/25 bg-[#160b2e] px-3 py-2 text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] md:relative md:top-auto md:z-20 md:m-3 md:min-h-16 md:rounded-[1.65rem] md:border-2 md:border-fuchsia-200 md:border-b-2 md:bg-[#100528] md:px-6 md:py-3 md:shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] md:backdrop-blur">
-        <div className="relative z-20 flex shrink-0 items-center sm:min-w-0 sm:flex-1 sm:gap-4">
-          <KultLogo className="h-8 w-auto max-w-[104px] object-contain object-left sm:h-10 sm:max-w-[148px]" />
+      <header className="sticky top-0 z-30 flex min-h-[56px] items-center justify-between gap-3 border-b border-white/[0.06] bg-[linear-gradient(180deg,#07050f_0%,#12081f_55%,#160b2e_100%)] px-3 py-2.5 text-white shadow-[0_10px_28px_rgba(8,4,20,0.55)] md:relative md:top-auto md:z-20 md:m-3 md:min-h-16 md:rounded-[1.65rem] md:border-2 md:border-fuchsia-200 md:border-b-2 md:bg-[#100528] md:bg-none md:px-6 md:py-3 md:shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] md:backdrop-blur">
+        <div className="relative z-20 flex min-w-0 shrink-0 items-center sm:flex-1 sm:gap-4">
+          <KultLogo className="h-8 w-auto max-w-[118px] object-contain object-left sm:h-10 sm:max-w-[148px]" />
           <p className="hidden shrink-0 text-sm font-semibold text-violet-100 sm:block">
             <span className="font-black text-white"></span>
           </p>
@@ -570,10 +568,10 @@ export function Home() {
             />
           </label>
         </div>
-        <div className="relative z-10 flex min-w-0 flex-1 items-center justify-end gap-1 sm:shrink-0 sm:flex-none sm:gap-3">
+        <div className="relative z-10 flex shrink-0 items-center justify-end gap-2 sm:gap-2.5">
           <TonWalletSignInButton responsive compact />
-          <label className="grid size-8 shrink-0 place-items-center rounded-full border border-fuchsia-200/30 bg-white/10 transition focus-within:border-fuchsia-200 sm:hidden">
-            <Search className="size-3.5 shrink-0 text-white" />
+          <label className="grid size-9 shrink-0 place-items-center rounded-full border border-white/18 bg-[#1b1d27] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition active:scale-95 focus-within:border-sky-300/50 sm:hidden">
+            <Search className="size-4 shrink-0 stroke-[1.75]" />
             <input
               type="search"
               value={searchQuery}
@@ -587,15 +585,15 @@ export function Home() {
             onClick={() => void openNotifications()}
             title="Open notifications"
             aria-label="Open notifications"
-            className={`relative grid size-8 shrink-0 place-items-center rounded-full border border-fuchsia-200/30 bg-white/10 text-white transition hover:border-fuchsia-200 sm:grid sm:size-9`}
+            className="relative grid size-9 shrink-0 place-items-center rounded-full border border-white/18 bg-[#1b1d27] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition active:scale-95 hover:border-white/30 sm:size-9"
           >
-            <Bell className="size-3.5 sm:size-4" />
+            <Bell className="size-4 stroke-[1.75]" />
             {notifications.some((notification) => !notification.read) && (
-              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary sm:right-2 sm:top-2" />
+              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
             )}
           </button>
-          <div className="flex shrink-0 items-center gap-1 rounded-full border border-fuchsia-200/30 bg-white/10 px-2 py-1.5 text-[10px] font-black text-white sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs">
-            <Zap className="size-3.5 text-fuchsia-200 sm:size-4" />
+          <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/18 bg-[#1b1d27] px-2.5 text-[11px] font-black tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:gap-2 sm:rounded-full sm:px-3 sm:text-xs">
+            <Zap className="size-3.5 shrink-0 fill-white text-white sm:size-4" strokeWidth={1.75} />
             <span className="sm:hidden">{formatCount(kultPoints)}</span>
             <span className="hidden sm:inline">
               Level {kpLevel} · {formatCount(kultPoints)} KP
@@ -606,7 +604,7 @@ export function Home() {
             onClick={() => navigate({ to: "/profile" })}
             title="Open profile"
             aria-label="Open profile"
-            className="hidden size-9 place-items-center rounded-full bg-white/10 font-display text-sm font-black text-white transition hover:bg-white/20 sm:grid"
+            className="hidden size-9 place-items-center rounded-full border border-white/18 bg-[#1b1d27] font-display text-sm font-black text-white transition hover:bg-white/10 sm:grid"
           >
             K
           </button>
@@ -747,33 +745,42 @@ export function Home() {
                           Browse by Category
                         </h2>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {browseCategories.map((category) => {
+                      <div className="grid grid-cols-3 gap-2.5">
+                        {(browseCategoriesExpanded
+                          ? browseCategories
+                          : browseCategories.slice(0, BROWSE_CATEGORY_PREVIEW)
+                        ).map((category) => {
                           const Icon = category.icon;
-                          const count = categoryCounts[category.name] ?? 0;
                           return (
                             <button
                               key={category.name}
                               type="button"
                               onClick={() => setMobileFeedTab(category.name)}
-                              className="flex items-center gap-2.5 rounded-2xl border border-violet-200/90 bg-white px-2.5 py-2.5 text-left text-violet-950 shadow-[0_4px_12px_rgba(124,58,237,0.1)] transition active:scale-[0.98] hover:border-fuchsia-300 hover:shadow-[0_6px_16px_rgba(168,85,247,0.16)]"
+                              className="relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0b0d14] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:border-white/20 hover:bg-[#12151f]"
                             >
-                              <span
-                                className={`grid size-9 shrink-0 place-items-center rounded-xl border ${category.chip}`}
-                              >
-                                <Icon className={`size-4 ${category.iconColor}`} />
+                              <span className="absolute right-2 top-2 size-1.5 rounded-full bg-white/20" />
+                              <span className={`grid place-items-center ${category.glow}`}>
+                                <Icon className={`size-8 ${category.iconColor}`} strokeWidth={1.75} />
                               </span>
-                              <span className="min-w-0">
-                                <span className="block truncate text-[13px] font-black leading-tight">
-                                  {category.name}
-                                </span>
-                                <span className="block text-[10px] font-bold text-violet-600/75">
-                                  {formatCount(count)} {count === 1 ? "game" : "games"}
-                                </span>
+                              <span className={`text-[12px] font-bold leading-none ${category.iconColor}`}>
+                                {category.name}
                               </span>
                             </button>
                           );
                         })}
+                        {!browseCategoriesExpanded && (
+                          <button
+                            type="button"
+                            onClick={() => setBrowseCategoriesExpanded(true)}
+                            className="relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0b0d14] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:border-white/20 hover:bg-[#12151f]"
+                          >
+                            <span className="absolute right-2 top-2 size-1.5 rounded-full bg-white/20" />
+                            <span className="grid place-items-center shadow-[0_0_18px_rgba(226,232,240,0.2)]">
+                              <LayoutGrid className="size-8 text-slate-200" strokeWidth={1.75} />
+                            </span>
+                            <span className="text-[12px] font-bold leading-none text-slate-200">More</span>
+                          </button>
+                        )}
                       </div>
                     </section>
 

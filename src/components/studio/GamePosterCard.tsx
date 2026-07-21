@@ -88,10 +88,7 @@ export function GamePosterCard({
   const avatarSize = size === "featured" ? "size-8" : size === "standard" ? "size-7" : "size-6";
 
   const aspectClass = size === "compact" ? "aspect-[3/4]" : "aspect-[4/5]";
-  const radiusClass =
-    size === "compact"
-      ? "rounded-2xl sm:rounded-[1.25rem]"
-      : "rounded-[1.35rem] sm:rounded-[1.45rem]";
+  const radiusClass = size === "compact" ? "rounded-xl" : "rounded-[0.9rem] sm:rounded-2xl";
 
   const stopPress = (event: MouseEvent | ReactPointerEvent) => {
     event.stopPropagation();

@@ -93,7 +93,7 @@ export function MobileHomeHero({
   return (
     <section className="relative z-10 space-y-5 px-3 pb-4 pt-4 sm:hidden">
       <div className="mx-auto w-full max-w-[520px]">
-        <div className="relative z-20 mb-1 text-center">
+        <div className="relative z-30 text-center">
           <p className="font-display text-[10px] font-black uppercase tracking-[0.14em] text-violet-700">
             ✧ AI BUILDS. YOU IMAGINE. ✧
           </p>
@@ -112,8 +112,7 @@ export function MobileHomeHero({
             Describe your game idea and our AI crafts the game, agents, and world.
           </p>
         </div>
-        {/* Clear air under copy; characters sit high enough that only lower legs go under the bezel */}
-        <div className="relative z-0 mt-8">
+        <div className="relative z-0 mt-6">
           <ConsoleHero
             value={value}
             onChange={onChange}
@@ -123,7 +122,7 @@ export function MobileHomeHero({
             chatStage={chatStage}
             onQuickReply={onQuickReply}
             isThinking={isThinking}
-            characterBottom="50%"
+            characterBottom="42%"
             placeholder="Type your game idea here…"
             className="w-full"
           />

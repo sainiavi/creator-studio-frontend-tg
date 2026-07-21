@@ -62,7 +62,7 @@ export function ConsoleHero({
   disabled = false,
   onFocusChange,
   showSideCharacters = true,
-  characterBottom = "32%",
+  characterBottom = "40%",
   className = "",
 }: ConsoleHeroProps) {
   const timersRef = useRef<number[]>([]);
@@ -242,8 +242,8 @@ export function ConsoleHero({
         </div>
       )}
 
-      {/* Idle — full torso visible above bezel; only lower legs sit under the controller */}
-      <div className="relative mx-auto h-[clamp(340px,92vw,430px)] w-full">
+      {/* Idle hero: smaller mascots behind controller; controller always visible */}
+      <div className="relative mx-auto h-[clamp(300px,84vw,380px)] w-full">
         {showSideCharacters && (
           <>
             <img
@@ -251,7 +251,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute -left-[2%] z-0 h-[clamp(220px,58vw,280px)] w-[44%] object-contain object-right-bottom drop-shadow-[0_10px_18px_rgba(76,29,149,0.22)] transition-all duration-500 ${
+              className={`pointer-events-none absolute left-0 z-[1] h-[clamp(155px,40vw,185px)] w-[36%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}
@@ -261,7 +261,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute -right-[2%] z-0 h-[clamp(220px,58vw,280px)] w-[44%] object-contain object-left-bottom drop-shadow-[0_10px_18px_rgba(76,29,149,0.22)] transition-all duration-500 ${
+              className={`pointer-events-none absolute right-0 z-[1] h-[clamp(155px,40vw,185px)] w-[36%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}
@@ -271,7 +271,7 @@ export function ConsoleHero({
 
         {!active && (
           <div
-            className="absolute bottom-0 left-1/2 z-20 w-[min(100%,520px)] -translate-x-1/2 scale-[1.06] origin-bottom"
+            className="absolute bottom-0 left-1/2 z-20 w-[min(100%,520px)] -translate-x-1/2 origin-bottom scale-[1.06]"
             onClick={(event) => {
               if ((event.target as HTMLElement).closest("input, button, label, textarea")) return;
               openPopup();

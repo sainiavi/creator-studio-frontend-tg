@@ -163,7 +163,7 @@ export function TonWalletSignInButton({
   if (!ready) {
     return (
       <div
-        className={`h-9 ${compact || responsive ? "w-9 sm:w-24" : "w-24"} animate-pulse rounded-full border border-white/15 bg-white/10 ${className}`}
+        className={`size-9 animate-pulse rounded-full border border-white/15 bg-[#38bdf8]/35 ${className}`}
       />
     );
   }
@@ -177,13 +177,13 @@ export function TonWalletSignInButton({
     const mobileLabel = tonLoading ? "..." : tonStatus === "error" ? "!" : "TON";
 
     return (
-      <div className={`inline-flex h-9 shrink-0 items-center gap-1 ${className}`}>
+      <div className={`inline-flex h-9 shrink-0 items-center gap-2 ${className}`}>
         <button
           type="button"
           onClick={() => void handleTonWallet()}
           disabled={tonLoading}
-          className={`inline-flex h-9 items-center justify-center gap-2 rounded-full border border-sky-200/35 bg-white/12 text-xs font-black uppercase text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-70 ${
-            compact ? "w-9 px-0" : responsive ? "w-auto px-2 sm:px-3" : "px-3"
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#38bdf8] text-white shadow-[0_0_16px_rgba(56,189,248,0.45)] transition hover:bg-[#0ea5e9] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 ${
+            compact && responsive ? "sm:w-auto sm:gap-2 sm:px-3" : compact ? "" : "w-auto gap-2 px-3"
           }`}
           title={
             tonWallet?.address
@@ -194,28 +194,33 @@ export function TonWalletSignInButton({
           }
         >
           {tonLoading ? (
-            <Loader2 className="size-4 animate-spin text-[#55c2ff]" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <Wallet className="size-4 text-[#55c2ff]" />
+            <Wallet className="size-4 stroke-[1.75]" />
           )}
           {!compact && (
             <>
               <span className={responsive ? "inline sm:hidden" : "hidden"}>{mobileLabel}</span>
-              <span className={`${responsive ? "hidden sm:inline" : ""} max-w-28 truncate`}>
+              <span className={`${responsive ? "hidden sm:inline" : ""} max-w-28 truncate text-xs font-black uppercase`}>
                 {tonStatus === "copied" ? "Copied" : tonStatus === "error" ? "Try again" : label}
               </span>
             </>
+          )}
+          {compact && responsive && (
+            <span className="hidden max-w-28 truncate text-xs font-black uppercase sm:inline">
+              {tonStatus === "copied" ? "Copied" : tonStatus === "error" ? "Try again" : label}
+            </span>
           )}
         </button>
         <button
           type="button"
           onClick={() => void logout()}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white ${
+          className={`inline-flex size-9 items-center justify-center rounded-full border border-white/18 bg-[#1b1d27] text-white/75 transition hover:bg-[#252833] hover:text-white ${
             compact && responsive ? "hidden sm:inline-flex" : ""
           }`}
           title="Disconnect"
         >
-          <LogOut className="size-3.5" />
+          <LogOut className="size-3.5 stroke-[1.75]" />
         </button>
       </div>
     );
@@ -223,8 +228,8 @@ export function TonWalletSignInButton({
 
   const loading = authLoading || telegramLoading;
   const btnClass = inTelegram
-    ? "bg-[#2aabee] shadow-[0_0_18px_rgba(42,171,238,0.35)] hover:bg-[#229ed9]"
-    : "bg-[#0098EA] shadow-[0_0_18px_rgba(0,152,234,0.35)] hover:bg-[#0088d1]";
+    ? "bg-[#2aabee] shadow-[0_0_16px_rgba(42,171,238,0.45)] hover:bg-[#229ed9]"
+    : "bg-[#38bdf8] shadow-[0_0_16px_rgba(56,189,248,0.45)] hover:bg-[#0ea5e9]";
   const label = inTelegram
     ? authStatus === "openTelegram"
       ? "Open Telegram"
@@ -240,13 +245,16 @@ export function TonWalletSignInButton({
       type="button"
       onClick={signIn}
       disabled={loading}
-      className={`inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full text-xs font-black uppercase tracking-wide text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${btnClass} ${
-        compact || responsive ? "w-9 px-0 sm:w-auto sm:px-3" : "px-3"
+      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 ${btnClass} ${
+        compact || responsive ? "sm:w-auto sm:gap-2 sm:px-3" : "w-auto gap-2 px-3"
       } ${className}`}
       title={inTelegram ? "Sign in with Telegram" : "Connect TON wallet"}
     >
-      {loading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
-      {!compact && <span className={responsive ? "hidden sm:inline" : ""}>{label}</span>}
+      {loading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4 stroke-[1.75]" />}
+      {!compact && <span className={`text-xs font-black uppercase tracking-wide ${responsive ? "hidden sm:inline" : ""}`}>{label}</span>}
+      {compact && responsive && (
+        <span className="hidden text-xs font-black uppercase tracking-wide sm:inline">{label}</span>
+      )}
     </button>
   );
 }
