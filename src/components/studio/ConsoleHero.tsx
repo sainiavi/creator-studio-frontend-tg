@@ -71,8 +71,8 @@ export function ConsoleHero({
   const showMessageList = active && Boolean(messages?.length);
 
   useEffect(() => {
-    onFocusChange?.(active);
-  }, [active, onFocusChange]);
+    onFocusChange?.(active || booting);
+  }, [active, booting, onFocusChange]);
 
   useEffect(() => {
     if (!active) return;

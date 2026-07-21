@@ -80,9 +80,9 @@ export function ConsoleChatMessages({
               type="button"
               disabled={disabled || isThinking}
               onClick={() => onQuickReply(idea)}
-              className="rounded-full border border-fuchsia-400/45 bg-[#180a3a]/90 px-2.5 py-1 text-[10px] font-bold text-violet-100"
+              className="max-w-full rounded-full border border-fuchsia-400/45 bg-[#180a3a]/90 px-2.5 py-1 text-left text-[10px] font-bold leading-snug text-violet-100"
             >
-              {idea.length > 24 ? `${idea.slice(0, 22)}…` : idea}
+              {idea}
             </button>
           ))}
           {showCreateConfirm && (

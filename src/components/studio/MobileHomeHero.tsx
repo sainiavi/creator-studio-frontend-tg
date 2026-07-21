@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
 import { ConsoleHero } from "./ConsoleHero";
 import type { ChatMessage, ChatStage } from "@/lib/createChatFlow";
 import flow1Img from "@/assets/flow1Img.webp";
@@ -90,10 +91,16 @@ export function MobileHomeHero({
   onQuickReply,
   isThinking,
 }: MobileHomeHeroProps) {
+  const [consoleOpen, setConsoleOpen] = useState(false);
+
   return (
     <section className="relative z-10 space-y-5 px-3 pb-4 pt-4 sm:hidden">
       <div className="mx-auto w-full max-w-[520px]">
-        <div className="relative z-30 text-center">
+        <div
+          className={`relative text-center transition-opacity duration-200 ${
+            consoleOpen ? "pointer-events-none opacity-0" : ""
+          }`}
+        >
           <p className="font-display text-[10px] font-black uppercase tracking-[0.14em] text-violet-700">
             ✧ AI BUILDS. YOU IMAGINE. ✧
           </p>
@@ -112,7 +119,7 @@ export function MobileHomeHero({
             Describe your game idea and our AI crafts the game, agents, and world.
           </p>
         </div>
-        <div className="relative z-0 mt-6">
+        <div className="relative mt-6">
           <ConsoleHero
             value={value}
             onChange={onChange}
@@ -122,6 +129,7 @@ export function MobileHomeHero({
             chatStage={chatStage}
             onQuickReply={onQuickReply}
             isThinking={isThinking}
+            onFocusChange={setConsoleOpen}
             characterBottom="42%"
             placeholder="Type your game idea here…"
             className="w-full"
@@ -169,19 +177,19 @@ export function MobileHomeHero({
         </div>
       </div>
 
-      <section className="mx-auto w-full max-w-[340px]">
-        <h2 className="mb-3 text-center font-display text-base font-black uppercase tracking-wide text-violet-950">
+      <section className="mx-auto mt-4 w-full max-w-[290px] pt-2">
+        <h2 className="mb-4 text-center font-display text-base font-black uppercase tracking-wide text-violet-950">
           Popular Worlds
         </h2>
-        <div className="grid grid-cols-3 gap-2">
-          {POPULAR_WORLDS.slice(0, 3).map((world) => (
-            <PopularWorldCard key={world.title} world={world} onPick={onWorldPick} />
+        <div className="grid grid-cols-3 gap-1.5">
+          {POPULAR_WORLDS.slice(0, 3).map((world, index) => (
+            <PopularWorldCard key={world.title} world={world} onPick={onWorldPick} index={index} />
           ))}
         </div>
-        <div className="mt-2 flex justify-center gap-2">
-          {POPULAR_WORLDS.slice(3).map((world) => (
-            <div key={world.title} className="w-[calc((100%-0.5rem)/3)] max-w-[108px]">
-              <PopularWorldCard world={world} onPick={onWorldPick} />
+        <div className="mt-1.5 flex justify-center gap-1.5">
+          {POPULAR_WORLDS.slice(3).map((world, index) => (
+            <div key={world.title} className="w-[calc((100%-0.375rem)/3)] max-w-[92px]">
+              <PopularWorldCard world={world} onPick={onWorldPick} index={index + 3} />
             </div>
           ))}
         </div>
@@ -193,30 +201,36 @@ export function MobileHomeHero({
 function PopularWorldCard({
   world,
   onPick,
+  index = 0,
 }: {
   world: (typeof POPULAR_WORLDS)[number];
   onPick: (seed: string) => void;
+  index?: number;
 }) {
   return (
     <button
       type="button"
       onClick={() => onPick(world.seed)}
-      className="group w-full overflow-hidden rounded-2xl border-2 border-white/70 bg-[linear-gradient(165deg,#f3e8ff_0%,#c4b5fd_42%,#8b5cf6_78%,#5b21b6_100%)] text-left shadow-[0_8px_18px_rgba(109,40,217,0.28),inset_0_1px_10px_rgba(255,255,255,0.55)] transition active:scale-[0.97]"
+      className="group w-full overflow-hidden rounded-lg border border-white/70 bg-[linear-gradient(165deg,#f3e8ff_0%,#c4b5fd_42%,#8b5cf6_78%,#5b21b6_100%)] text-left shadow-[0_8px_18px_rgba(109,40,217,0.28),inset_0_1px_10px_rgba(255,255,255,0.55)] transition active:scale-[0.97]"
     >
-      <div className="relative flex h-[76px] items-end justify-center px-1.5 pt-2">
-        <div className="pointer-events-none absolute inset-x-2 top-1.5 h-8 rounded-full bg-white/25 blur-md" />
-        <img
-          src={world.image}
-          alt=""
-          className="relative max-h-[66px] w-full object-contain object-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.4)] transition duration-300 group-hover:scale-[1.04]"
-          draggable={false}
-        />
+      <div className="relative flex aspect-[3/2] items-center justify-center overflow-hidden">
+        <span
+          className="animate-bob block h-full w-full"
+          style={{ animationDelay: `${index * 0.3}s` }}
+        >
+          <img
+            src={world.image}
+            alt=""
+            className="h-full w-full scale-125 object-cover object-center drop-shadow-[0_6px_12px_rgba(76,29,149,0.35)] transition duration-300 group-hover:scale-[1.32]"
+            draggable={false}
+          />
+        </span>
       </div>
-      <div className="border-t border-white/25 bg-black/15 px-2 pb-2 pt-1.5 text-center backdrop-blur-[2px]">
-        <p className="truncate text-[10px] font-black leading-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+      <div className="relative z-[1] border-t border-white/25 bg-black/15 px-1 pb-1 pt-0.5 text-center backdrop-blur-[2px]">
+        <p className="truncate text-[9px] font-black leading-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
           {world.title}
         </p>
-        <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-violet-100/90">
+        <p className="mt-px text-[7px] font-bold uppercase tracking-wide text-violet-100/90">
           {world.category}
         </p>
       </div>
