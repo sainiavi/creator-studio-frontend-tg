@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import character1 from "@/assets/character1.webp";
 import character2 from "@/assets/character2.webp";
@@ -10,9 +11,6 @@ import type { ChatMessage, ChatStage } from "@/lib/createChatFlow";
 /** gameControllerCard.png — 378×224 */
 const CARD_W = 378;
 const CARD_H = 224;
-
-/** Clears mobile bottom nav + FAB + safe area */
-const MOBILE_DOCK_CLEARANCE = "calc(7.25rem + env(safe-area-inset-bottom, 0px))";
 
 /** LCD bounds — inset slightly so UI doesn't kiss the bezel */
 const SCREEN = {
@@ -194,56 +192,77 @@ export function ConsoleHero({
     </div>
   );
 
-  return (
-    <div className={`relative mx-auto w-full max-w-[520px] ${className}`}>
-      {(active || booting) && (
+  const overlay =
+    (active || booting) &&
+    createPortal(
+      <>
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-[54] bg-[#1a0a2e]/30 backdrop-blur-md"
-        />
-      )}
-
-      {(active || booting) && (
-        <button
-          type="button"
-          aria-label="Close chat"
           onClick={closePopup}
-          className="fixed right-3 top-[max(3.75rem,calc(env(safe-area-inset-top,0px)+3.25rem))] z-[56] grid size-10 place-items-center rounded-full border border-fuchsia-300/35 bg-[#160b2e]/92 text-white shadow-[0_4px_20px_rgba(109,40,217,0.55)] backdrop-blur-sm transition active:scale-95"
-        >
-          <X className="size-5" strokeWidth={2.5} />
-        </button>
-      )}
+          className="fixed inset-0 z-[54] bg-[#1a0a2e]/30 backdrop-blur-md"
+        />
 
-      {/* Active overlay — messages fill top, controller pinned above bottom nav */}
-      {active && (
+        {/* Bottom sheet — docks to the screen edge and only grows as tall as its content */}
         <div
-          className="pointer-events-none fixed inset-x-0 top-[max(48px,7dvh)] z-[55] flex flex-col items-center justify-end gap-2 px-3"
-          style={{ bottom: MOBILE_DOCK_CLEARANCE }}
+          className={`fixed inset-x-0 bottom-0 z-[55] mx-auto flex max-h-[88dvh] w-full max-w-[480px] flex-col rounded-t-[1.75rem] border-x border-t border-fuchsia-400/40 bg-[#0a0118]/98 shadow-[0_-20px_60px_rgba(109,40,217,0.5),inset_0_1px_14px_rgba(255,255,255,0.08)] backdrop-blur-md transition-transform duration-300 ease-out ${
+            active ? "translate-y-0" : "translate-y-full"
+          }`}
         >
+          <div className="flex shrink-0 items-center justify-between px-4 pt-2.5">
+            <span className="h-1.5 w-10 rounded-full bg-white/20" />
+            <button
+              type="button"
+              aria-label="Close chat"
+              onClick={closePopup}
+              className="grid size-8 place-items-center rounded-full border border-fuchsia-300/35 bg-white/10 text-white transition active:scale-95"
+            >
+              <X className="size-4" strokeWidth={2.5} />
+            </button>
+          </div>
+
           {showMessageList && messages && (
-            <div className="pointer-events-auto relative flex min-h-0 w-full max-w-[400px] flex-1 flex-col overflow-hidden rounded-[1.1rem] border border-fuchsia-400/40 bg-[#0a0118]/98 p-3 shadow-[0_20px_50px_rgba(109,40,217,0.45),inset_0_1px_14px_rgba(255,255,255,0.08)] backdrop-blur-md">
-              <div className="pointer-events-none absolute -inset-[2px] overflow-hidden rounded-[1.15rem]">
-                <div className="animate-holo-border absolute inset-[-60%] bg-[conic-gradient(from_0deg,#f472b6,#a855f7,#6366f1,#f472b6)] opacity-70 blur-[1px]" />
-              </div>
+            <div className="min-h-0 flex-1 overflow-hidden px-3 pb-2 pt-2">
               <ConsoleChatMessages
                 messages={messages}
                 chatStage={chatStage}
                 isThinking={isThinking}
                 onQuickReply={onQuickReply}
                 disabled={disabled}
-                className="relative min-h-0 flex-1"
+                className="h-full"
               />
             </div>
           )}
 
-          <div className="pointer-events-auto w-[min(96vw,480px)] shrink-0 scale-[1.1] origin-bottom">
-            {controllerBlock}
+          <div
+            className="shrink-0 px-3 pb-3 pt-1"
+            style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
+          >
+            <CreateConsolePanel
+              value={value}
+              onChange={onChange}
+              onSubmit={handleSubmit}
+              onCategoryPick={(seed) => {
+                if (messages?.length && chatStage !== "game") {
+                  onQuickReply?.(seed);
+                } else {
+                  onCategoryPick?.(seed);
+                }
+              }}
+              disabled={disabled || isThinking}
+              placeholder={placeholder}
+            />
           </div>
         </div>
-      )}
+      </>,
+      document.body,
+    );
+
+  return (
+    <div className={`relative mx-auto w-full max-w-[520px] ${className}`}>
+      {overlay}
 
       {/* Idle hero: smaller mascots behind controller; controller always visible */}
-      <div className="relative mx-auto h-[clamp(300px,84vw,380px)] w-full">
+      <div className="relative mx-auto h-[clamp(300px,84vw,480px)] w-full">
         {showSideCharacters && (
           <>
             <img
@@ -251,7 +270,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute left-0 z-[1] h-[clamp(190px,48vw,230px)] w-[42%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
+              className={`pointer-events-none absolute left-0 z-[1] h-[clamp(190px,48vw,260px)] w-[42%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}
@@ -261,7 +280,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute right-0 z-[1] h-[clamp(190px,48vw,230px)] w-[42%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
+              className={`pointer-events-none absolute right-0 z-[1] h-[clamp(190px,48vw,260px)] w-[42%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}

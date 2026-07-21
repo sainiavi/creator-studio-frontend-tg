@@ -115,54 +115,63 @@ const browseCategories: {
   icon: ComponentType<{ className?: string }>;
   iconColor: string;
   glow: string;
+  gradient: string;
 }[] = [
   {
     name: "Arcade",
     icon: Gamepad2,
     iconColor: "text-violet-400",
     glow: "shadow-[0_0_18px_rgba(167,139,250,0.35)]",
+    gradient: "from-violet-300 via-violet-500 to-purple-700",
   },
   {
     name: "Puzzle",
     icon: Puzzle,
     iconColor: "text-lime-400",
     glow: "shadow-[0_0_18px_rgba(163,230,53,0.35)]",
+    gradient: "from-lime-200 via-lime-400 to-green-600",
   },
   {
     name: "Sports",
     icon: Volleyball,
     iconColor: "text-orange-400",
     glow: "shadow-[0_0_18px_rgba(251,146,60,0.35)]",
+    gradient: "from-orange-200 via-orange-400 to-red-600",
   },
   {
     name: "Action",
     icon: Swords,
     iconColor: "text-amber-300",
     glow: "shadow-[0_0_18px_rgba(252,211,77,0.35)]",
+    gradient: "from-amber-200 via-amber-400 to-orange-600",
   },
   {
     name: "Strategy",
     icon: Trophy,
     iconColor: "text-sky-400",
     glow: "shadow-[0_0_18px_rgba(56,189,248,0.35)]",
+    gradient: "from-sky-200 via-sky-400 to-blue-600",
   },
   {
     name: "Adventure",
     icon: Mountain,
     iconColor: "text-teal-300",
     glow: "shadow-[0_0_18px_rgba(94,234,212,0.35)]",
+    gradient: "from-teal-200 via-teal-400 to-emerald-600",
   },
   {
     name: "RPG",
     icon: Shield,
     iconColor: "text-fuchsia-400",
     glow: "shadow-[0_0_18px_rgba(232,121,249,0.35)]",
+    gradient: "from-fuchsia-200 via-fuchsia-400 to-purple-700",
   },
   {
     name: "Multiplayer",
     icon: Users,
     iconColor: "text-rose-300",
     glow: "shadow-[0_0_18px_rgba(251,113,133,0.35)]",
+    gradient: "from-rose-200 via-rose-400 to-pink-600",
   },
 ];
 
@@ -756,11 +765,17 @@ export function Home() {
                               key={category.name}
                               type="button"
                               onClick={() => setMobileFeedTab(category.name)}
-                              className="relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0b0d14] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:border-white/20 hover:bg-[#12151f]"
+                              className="group relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0b0d14] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:border-white/20 hover:bg-[#12151f]"
                             >
-                              <span className="absolute right-2 top-2 size-1.5 rounded-full bg-white/20" />
-                              <span className={`grid place-items-center ${category.glow}`}>
-                                <Icon className={`size-8 ${category.iconColor}`} strokeWidth={1.75} />
+                              <span
+                                className={`relative grid size-12 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br ${category.gradient} shadow-[0_6px_14px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.5)] transition duration-300 group-hover:scale-105 group-active:scale-95 ${category.glow}`}
+                              >
+                                <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/0 to-black/15" />
+                                <span className="pointer-events-none absolute -left-2 -top-3 size-7 rounded-full bg-white/50 blur-md" />
+                                <Icon
+                                  className="relative size-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                                  strokeWidth={2}
+                                />
                               </span>
                               <span className={`text-[12px] font-bold leading-none ${category.iconColor}`}>
                                 {category.name}
@@ -772,11 +787,12 @@ export function Home() {
                           <button
                             type="button"
                             onClick={() => setBrowseCategoriesExpanded(true)}
-                            className="relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0b0d14] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:border-white/20 hover:bg-[#12151f]"
+                            className="group relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0b0d14] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:border-white/20 hover:bg-[#12151f]"
                           >
-                            <span className="absolute right-2 top-2 size-1.5 rounded-full bg-white/20" />
-                            <span className="grid place-items-center shadow-[0_0_18px_rgba(226,232,240,0.2)]">
-                              <LayoutGrid className="size-8 text-slate-200" strokeWidth={1.75} />
+                            <span className="relative grid size-12 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-slate-300 via-slate-400 to-slate-600 shadow-[0_6px_14px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.5)] transition duration-300 group-hover:scale-105 group-active:scale-95">
+                              <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/0 to-black/15" />
+                              <span className="pointer-events-none absolute -left-2 -top-3 size-7 rounded-full bg-white/50 blur-md" />
+                              <LayoutGrid className="relative size-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" strokeWidth={2} />
                             </span>
                             <span className="text-[12px] font-bold leading-none text-slate-200">More</span>
                           </button>

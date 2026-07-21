@@ -11,7 +11,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
 import { CreatePageSkeleton } from "@/components/studio/PageSkeletons";
 import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
-import { KultLogo } from "@/components/studio/KultLogo";
+import { AppHeader } from "@/components/studio/AppHeader";
 import { useCreateChatFlow } from "@/hooks/useCreateChatFlow";
 import { vibeIdeas } from "@/lib/createChatFlow";
 import cyberpunkSuggestion from "@/assets/create-suggestion-cyberpunk.webp";
@@ -343,6 +343,7 @@ function Create() {
 
   return (
     <div className="relative min-h-screen text-white">
+      <AppHeader />
       <div className="relative z-10 mx-auto max-w-3xl px-4 pb-28 pt-2 sm:px-6 sm:pb-6 sm:pt-4">
         {generationNotice && (
           <div
@@ -371,19 +372,6 @@ function Create() {
             )}
           </div>
         )}
-
-        <header className="sticky top-0 z-30 mb-4 flex items-center justify-between gap-3 py-2 sm:mb-5">
-          <div className="flex min-w-0 items-center gap-3 rounded-[1.35rem] border-2 border-white/70 bg-white/82 px-3.5 py-2.5 text-violet-950 shadow-[0_0_22px_rgba(168,85,247,0.3),inset_0_2px_10px_rgba(255,255,255,0.95)] backdrop-blur sm:rounded-[1.6rem] sm:px-4 sm:py-3">
-            <KultLogo className="h-7 w-auto max-w-[100px] object-contain sm:h-8 sm:max-w-[120px]" />
-            <div>
-              <p className="font-display text-xl font-black leading-none text-violet-900 sm:text-2xl">Create</p>
-              <p className="text-[11px] font-bold text-violet-600 sm:text-xs">Describe it. AI builds it.</p>
-            </div>
-          </div>
-          <span className="hidden shrink-0 items-center gap-2 rounded-[1.6rem] border-2 border-violet-300/60 bg-white/82 px-4 py-3 font-display text-sm font-black text-violet-800 shadow-[inset_0_2px_10px_rgba(255,255,255,0.9),0_0_18px_rgba(168,85,247,0.3)] backdrop-blur sm:inline-flex">
-            <Bot className="size-6 text-violet-700" /> AI Game Studio
-          </span>
-        </header>
 
         {templateSeed && (
           <div className="mb-4 flex gap-2.5 rounded-[1.25rem] border-2 border-fuchsia-200 bg-white/85 p-2.5 text-violet-950 shadow-[0_0_16px_rgba(168,85,247,0.28)] backdrop-blur sm:gap-3 sm:rounded-[1.5rem] sm:p-3">

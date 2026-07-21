@@ -124,7 +124,7 @@ export function MobileHomeHero({
             </p>
           </div>
         </div>
-        <div className="animate-float-up relative mt-6 opacity-0" style={{ animationDelay: "90ms" }}>
+        <div className="animate-fade-in relative mt-6 opacity-0" style={{ animationDelay: "90ms" }}>
           <ConsoleHero
             value={value}
             onChange={onChange}

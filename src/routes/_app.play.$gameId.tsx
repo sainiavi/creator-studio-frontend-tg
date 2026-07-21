@@ -1255,7 +1255,7 @@ function PlayFeed() {
       {/* Mobile reel actions — stacked up from bottom-right */}
       <aside
         data-reel-actions
-        className={`absolute bottom-[max(4.25rem,calc(env(safe-area-inset-bottom)+3.25rem))] right-2 z-40 flex flex-col-reverse items-center gap-2.5 lg:hidden transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        className={`absolute bottom-[max(4.25rem,calc(env(safe-area-inset-bottom)+3.25rem))] right-2 z-40 flex flex-col-reverse items-center gap-2.5 lg:hidden [@media(max-height:480px)]:bottom-10 [@media(max-height:480px)]:gap-1 transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
       >
         <ActionButton
           icon={<MoreVertical className="size-5" />}
@@ -1297,7 +1297,7 @@ function PlayFeed() {
           animating={social.likeAnimating}
         />
         <div className="relative mb-0.5">
-          <div className="grid size-10 place-items-center rounded-full border border-white/25 bg-white/10 font-display text-sm font-black shadow-lg backdrop-blur-md">
+          <div className="grid size-10 place-items-center rounded-full border border-white/25 bg-white/10 font-display text-sm font-black shadow-lg backdrop-blur-md [@media(max-height:480px)]:size-8">
             {profile.avatar}
           </div>
           {!follow.isSelf && (
@@ -1393,13 +1393,13 @@ function ActionButton({
       className={`group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 lg:min-w-12 ${active ? "text-white/100" : ""}`}
     >
       <span
-        className={`grid size-11 place-items-center rounded-full transition lg:size-10 ${
+        className={`grid size-11 place-items-center rounded-full transition lg:size-10 [@media(max-height:480px)]:size-8 ${
           active ? "bg-white/25 ring-1 ring-white/30" : "bg-white/10 group-hover:bg-white/18"
         }`}
       >
         <div className="scale-75">{icon}</div>
       </span>
-      <span className="text-[10px] font-black lg:text-[10px]">{label}</span>
+      <span className="text-[10px] font-black lg:text-[10px] [@media(max-height:480px)]:hidden">{label}</span>
     </button>
   );
 }
@@ -1429,7 +1429,7 @@ function FollowSidebarButton({
           <UserPlus className="size-5 text-white" />
         )}
       </span>
-      <span className="text-[10px] font-black lg:text-[10px]">
+      <span className="text-[10px] font-black lg:text-[10px] [@media(max-height:480px)]:hidden">
         {following ? "Following" : "Follow"}
       </span>
     </button>
@@ -1451,7 +1451,7 @@ function RemixSidebarButton({
       <span className="grid size-11 place-items-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.42)] transition duration-300 group-hover:brightness-110 lg:size-10">
         <Shuffle className="size-5 text-white" />
       </span>
-      <span className="text-[10px] font-black lg:text-[10px]">
+      <span className="text-[10px] font-black lg:text-[10px] [@media(max-height:480px)]:hidden">
         {formatCount(count)}
       </span>
     </button>
@@ -1475,7 +1475,7 @@ function LikeButton({
       className="group flex min-w-12 flex-col items-center gap-1.5 transition-transform active:scale-90 lg:min-w-12"
     >
       <span
-        className={`grid size-11 place-items-center rounded-full transition lg:size-10 ${
+        className={`grid size-11 place-items-center rounded-full transition lg:size-10 [@media(max-height:480px)]:size-8 ${
           liked ? "bg-rose-500/30 ring-1 ring-rose-400/50" : "bg-white/10 group-hover:bg-white/18"
         }`}
       >
@@ -1486,7 +1486,7 @@ function LikeButton({
         />
       </span>
       <span
-        className={`text-[10px] font-black lg:text-[10px] ${liked ? "text-rose-400" : "text-white"}`}
+        className={`text-[10px] font-black lg:text-[10px] [@media(max-height:480px)]:hidden ${liked ? "text-rose-400" : "text-white"}`}
       >
         {count > 0 ? formatCount(count) : "Like"}
       </span>
@@ -1511,7 +1511,7 @@ function FavoriteButton({
       className="group flex min-w-12 flex-col items-center gap-1.5 transition-transform active:scale-90 lg:min-w-12"
     >
       <span
-        className={`grid size-11 place-items-center rounded-full transition lg:size-10 ${
+        className={`grid size-11 place-items-center rounded-full transition lg:size-10 [@media(max-height:480px)]:size-8 ${
           favorited
             ? "bg-amber-500/30 ring-1 ring-amber-400/50"
             : "bg-white/10 group-hover:bg-white/18"
@@ -1526,7 +1526,7 @@ function FavoriteButton({
         )}
       </span>
       <span
-        className={`text-[10px] font-black lg:text-[10px] ${favorited ? "text-amber-400" : "text-white"}`}
+        className={`text-[10px] font-black lg:text-[10px] [@media(max-height:480px)]:hidden ${favorited ? "text-amber-400" : "text-white"}`}
       >
         {count > 0 ? formatCount(count) : "Favorite"}
       </span>
@@ -1801,13 +1801,13 @@ function ShareButton({
         className="group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 disabled:cursor-not-allowed disabled:opacity-35 lg:min-w-12"
       >
         <span
-          className={`grid size-11 place-items-center rounded-full transition lg:size-10 ${
+          className={`grid size-11 place-items-center rounded-full transition lg:size-10 [@media(max-height:480px)]:size-8 ${
             open ? "bg-white/25 ring-1 ring-white/30" : "bg-white/10 group-hover:bg-white/18"
           }`}
         >
           <Send className="size-5" />
         </span>
-        <span className="text-[10px] font-black lg:text-[10px]">
+        <span className="text-[10px] font-black lg:text-[10px] [@media(max-height:480px)]:hidden">
           {count > 0 ? formatCount(count) : "Share"}
         </span>
       </button>
