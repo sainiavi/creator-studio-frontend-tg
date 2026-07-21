@@ -1,15 +1,15 @@
 import { ArrowRight } from "lucide-react";
 import { ConsoleHero } from "./ConsoleHero";
 import type { ChatMessage, ChatStage } from "@/lib/createChatFlow";
-import flow1Img from "@/assets/flow1Img.png";
-import flow2Img from "@/assets/flow2Img.png";
-import flow3Img from "@/assets/flow3Img.png";
-import flow4Img from "@/assets/flow4Img.png";
-import goalArena from "@/assets/goalArena.png";
-import turboLeague from "@/assets/turuboLeague.png";
-import dragonRealms from "@/assets/dragonRealms.png";
-import aiBattleDome from "@/assets/aiBattleDorm.png";
-import skyKingdom from "@/assets/skyKingdom.png";
+import flow1Img from "@/assets/flow1Img.webp";
+import flow2Img from "@/assets/flow2Img.webp";
+import flow3Img from "@/assets/flow3Img.webp";
+import flow4Img from "@/assets/flow4Img.webp";
+import goalArena from "@/assets/goalArena.webp";
+import turboLeague from "@/assets/turuboLeague.webp";
+import dragonRealms from "@/assets/dragonRealms.webp";
+import aiBattleDome from "@/assets/aiBattleDorm.webp";
+import skyKingdom from "@/assets/skyKingdom.webp";
 
 const FLOW_STEPS = [
   {

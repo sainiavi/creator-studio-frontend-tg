@@ -43,9 +43,9 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { VIEWS_TOP_LIMIT } from "@/lib/pagination";
 import type { Game } from "@/lib/games-data";
 import { fetchCreatorScoreLeaderboard, type CreatorScoreEntry } from "@/lib/api/leaderboards";
-import rankOneAvatar from "@/assets/leaderboard-rank-1.png";
-import rankTwoAvatar from "@/assets/leaderboard-rank-2.png";
-import rankThreeAvatar from "@/assets/leaderboard-rank-3.png";
+import rankOneAvatar from "@/assets/leaderboard-rank-1.webp";
+import rankTwoAvatar from "@/assets/leaderboard-rank-2.webp";
+import rankThreeAvatar from "@/assets/leaderboard-rank-3.webp";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
 import {

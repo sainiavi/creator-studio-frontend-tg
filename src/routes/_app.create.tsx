@@ -15,8 +15,8 @@ import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
 import { KultLogo } from "@/components/studio/KultLogo";
 import { useCreateChatFlow } from "@/hooks/useCreateChatFlow";
 import { vibeIdeas } from "@/lib/createChatFlow";
-import cyberpunkSuggestion from "@/assets/create-suggestion-cyberpunk.png";
-import farmSuggestion from "@/assets/create-suggestion-farm.png";
+import cyberpunkSuggestion from "@/assets/create-suggestion-cyberpunk.webp";
+import farmSuggestion from "@/assets/create-suggestion-farm.webp";
 
 export const Route = createFileRoute("/_app/create")({
   pendingComponent: CreatePageSkeleton,

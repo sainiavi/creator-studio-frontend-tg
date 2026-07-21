@@ -8,12 +8,12 @@ import { MorePageSkeleton } from "@/components/studio/PageSkeletons";
 import { type Game } from "@/lib/games-data";
 import momentsOne from "@/assets/moments-1.jpg";
 import momentsTwo from "@/assets/moments2.jpg";
-import warzoneWarriors from "@/assets/game1.png";
-import highwayHustle from "@/assets/game2.png";
-import zeroGPool from "@/assets/game3.png";
-import guessTheAi from "@/assets/games4.png";
-import zeroDash from "@/assets/game5.png";
-import roboWars from "@/assets/game6.png";
+import warzoneWarriors from "@/assets/game1.webp";
+import highwayHustle from "@/assets/game2.webp";
+import zeroGPool from "@/assets/game3.webp";
+import guessTheAi from "@/assets/games4.webp";
+import zeroDash from "@/assets/game5.webp";
+import roboWars from "@/assets/game6.webp";
 
 const arenaVideos = [
   {

@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
 import { Crown, Trophy, UserRound } from "lucide-react";
-import rankOneAvatar from "@/assets/leaderboard-rank-1.png";
-import rankTwoAvatar from "@/assets/leaderboard-rank-2.png";
-import rankThreeAvatar from "@/assets/leaderboard-rank-3.png";
+import rankOneAvatar from "@/assets/leaderboard-rank-1.webp";
+import rankTwoAvatar from "@/assets/leaderboard-rank-2.webp";
+import rankThreeAvatar from "@/assets/leaderboard-rank-3.webp";
 import { LeaderboardSkeleton } from "@/components/studio/PageSkeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";

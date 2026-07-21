@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import character1 from "@/assets/character1.png";
-import character2 from "@/assets/character2.png";
-import gameControllerCard from "@/assets/gameControllerCard.png";
+import character1 from "@/assets/character1.webp";
+import character2 from "@/assets/character2.webp";
+import gameControllerCard from "@/assets/gameControllerCard.webp";
 import { ConsoleChatMessages } from "./ConsoleChatMessages";
 import { CreateConsolePanel } from "./CreateConsolePanel";
 import type { ChatMessage, ChatStage } from "@/lib/createChatFlow";

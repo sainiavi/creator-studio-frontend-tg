@@ -48,6 +48,10 @@ import { api } from "@/lib/api";
 import type { LeaderboardEntry } from "@/lib/api/leaderboards";
 import type { SharePlatform } from "@/lib/api/social";
 import { qualifyReferral } from "@/lib/api/referral";
+import {
+  clearPlayReturnPath,
+  readPlayReturnPath,
+} from "@/lib/playNavigation";
 
 export const Route = createFileRoute("/_app/play/$gameId")({
   pendingComponent: PlayPageSkeleton,
@@ -554,10 +558,70 @@ function PlayFeed() {
 
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const isUiHidden = false;
-  const [, setIsTransitioning] = useState(false);
   const startY = useRef(0);
   const cooldownRef = useRef(false);
+  const transitionTimerRef = useRef<number | null>(null);
+
+  const slideDistance = useCallback(
+    () => (typeof window !== "undefined" ? Math.min(window.innerHeight * 0.42, 520) : 420),
+    [],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current !== null) {
+        window.clearTimeout(transitionTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setIsDragging(false);
+    cooldownRef.current = false;
+    setIsGameActive(false);
+  }, [gameId]);
+
+  const navigateToReelGame = useCallback(
+    (nextGameId: string, direction: "next" | "prev") => {
+      navigate({
+        to: "/play/$gameId",
+        params: { gameId: nextGameId },
+        replace: true,
+        resetScroll: false,
+      });
+      setDragY(direction === "next" ? slideDistance() * 0.18 : -slideDistance() * 0.18);
+      requestAnimationFrame(() => {
+        setDragY(0);
+        setIsTransitioning(false);
+        transitionTimerRef.current = window.setTimeout(() => {
+          cooldownRef.current = false;
+        }, 280);
+      });
+    },
+    [navigate, slideDistance],
+  );
+
+  const handlePlayBack = useCallback(() => {
+    const returnTo = readPlayReturnPath();
+    if (returnTo) {
+      clearPlayReturnPath();
+      const [pathname, search = ""] = returnTo.split("?");
+      if (search) {
+        const params = Object.fromEntries(new URLSearchParams(search));
+        navigate({ to: pathname, search: params });
+      } else {
+        navigate({ to: pathname });
+      }
+      return;
+    }
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    navigate({ to: "/" });
+  }, [navigate]);
 
   const trendingIds = useMemo(
     () => [
@@ -663,58 +727,55 @@ function PlayFeed() {
   const handleTabClick = useCallback(
     (tabLabel: string, defaultGameId: string) => {
       setActiveTab(tabLabel);
-      navigate({ to: "/play/$gameId", params: { gameId: defaultGameId } });
+      navigate({
+        to: "/play/$gameId",
+        params: { gameId: defaultGameId },
+        replace: true,
+        resetScroll: false,
+      });
     },
     [navigate],
   );
 
   const triggerNextGame = useCallback(() => {
-    if (cooldownRef.current || activeGamesList.length === 0) return;
+    if (cooldownRef.current || activeGamesList.length === 0 || isTransitioning) return;
     const indexInList = activeGamesList.findIndex((t: any) => t.id === gameId);
     const currentIndex = indexInList === -1 ? 0 : indexInList;
     const nextIndex = (currentIndex + 1) % activeGamesList.length;
     const nextGame = activeGamesList[nextIndex];
-    if (nextGame) {
-      cooldownRef.current = true;
-      setIsTransitioning(true);
-      setDragY(-800);
-      setTimeout(() => {
-        navigate({ to: "/play/$gameId", params: { gameId: nextGame.id } });
-        setDragY(800);
-        setTimeout(() => {
-          setIsTransitioning(false);
-          setDragY(0);
-          setTimeout(() => {
-            cooldownRef.current = false;
-          }, 300);
-        }, 50);
-      }, 300);
+    if (!nextGame || nextGame.id === gameId) return;
+
+    cooldownRef.current = true;
+    setIsTransitioning(true);
+    setDragY(-slideDistance());
+
+    if (transitionTimerRef.current !== null) {
+      window.clearTimeout(transitionTimerRef.current);
     }
-  }, [gameId, activeGamesList, navigate]);
+    transitionTimerRef.current = window.setTimeout(() => {
+      navigateToReelGame(nextGame.id, "next");
+    }, 260);
+  }, [gameId, activeGamesList, isTransitioning, navigateToReelGame, slideDistance]);
 
   const triggerPrevGame = useCallback(() => {
-    if (cooldownRef.current || activeGamesList.length === 0) return;
+    if (cooldownRef.current || activeGamesList.length === 0 || isTransitioning) return;
     const indexInList = activeGamesList.findIndex((t: any) => t.id === gameId);
     const currentIndex = indexInList === -1 ? 0 : indexInList;
     const prevIndex = (currentIndex - 1 + activeGamesList.length) % activeGamesList.length;
     const prevGame = activeGamesList[prevIndex];
-    if (prevGame) {
-      cooldownRef.current = true;
-      setIsTransitioning(true);
-      setDragY(800);
-      setTimeout(() => {
-        navigate({ to: "/play/$gameId", params: { gameId: prevGame.id } });
-        setDragY(-800);
-        setTimeout(() => {
-          setIsTransitioning(false);
-          setDragY(0);
-          setTimeout(() => {
-            cooldownRef.current = false;
-          }, 300);
-        }, 50);
-      }, 300);
+    if (!prevGame || prevGame.id === gameId) return;
+
+    cooldownRef.current = true;
+    setIsTransitioning(true);
+    setDragY(slideDistance());
+
+    if (transitionTimerRef.current !== null) {
+      window.clearTimeout(transitionTimerRef.current);
     }
-  }, [gameId, activeGamesList, navigate]);
+    transitionTimerRef.current = window.setTimeout(() => {
+      navigateToReelGame(prevGame.id, "prev");
+    }, 260);
+  }, [gameId, activeGamesList, isTransitioning, navigateToReelGame, slideDistance]);
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
@@ -735,27 +796,28 @@ function PlayFeed() {
   };
 
   const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging || cooldownRef.current) return;
+    if (!isDragging || cooldownRef.current || isTransitioning) return;
     const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
     const deltaY = clientY - startY.current;
-    setDragY(deltaY * 0.8);
-    // Prevent the page from bouncing while swiping the reel feed.
+    setDragY(deltaY * 0.72);
     if (Math.abs(deltaY) > 8 && "touches" in e) {
       e.preventDefault();
     }
   };
 
   const handleDragEnd = () => {
-    if (!isDragging) return;
+    if (!isDragging || isTransitioning) return;
     setIsDragging(false);
 
-    if (dragY < -80) {
+    if (dragY < -72) {
       triggerNextGame();
-    } else if (dragY > 80) {
-      triggerPrevGame();
-    } else {
-      setDragY(0);
+      return;
     }
+    if (dragY > 72) {
+      triggerPrevGame();
+      return;
+    }
+    setDragY(0);
   };
 
   useEffect(() => {
@@ -771,10 +833,10 @@ function PlayFeed() {
         return;
       }
 
-      if (Math.abs(e.deltaY) < 15) return;
+      if (Math.abs(e.deltaY) < 12) return;
 
       const now = Date.now();
-      if (now - lastWheelTime < 1000) return;
+      if (now - lastWheelTime < 520) return;
 
       e.preventDefault();
       if (e.deltaY > 0) {
@@ -876,13 +938,7 @@ function PlayFeed() {
       {/* Mobile back */}
       <button
         type="button"
-        onClick={() => {
-          if (typeof window !== "undefined" && window.history.length > 1) {
-            window.history.back();
-            return;
-          }
-          navigate({ to: "/" });
-        }}
+        onClick={handlePlayBack}
         aria-label="Go back"
         className="absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-50 grid size-10 place-items-center rounded-full border border-white/20 bg-black/55 text-white shadow-lg backdrop-blur-md transition active:scale-95 lg:hidden"
       >
@@ -933,8 +989,12 @@ function PlayFeed() {
         onTouchEnd={handleDragEnd}
         className="absolute inset-0 h-full w-full select-none cursor-grab active:cursor-grabbing"
         style={{
-          transform: `translateY(${dragY}px)`,
-          transition: isDragging ? "none" : "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+          transform: `translate3d(0, ${dragY}px, 0)`,
+          transition: isDragging
+            ? "none"
+            : "transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease",
+          opacity: isTransitioning ? 0.94 : 1,
+          willChange: isDragging || isTransitioning ? "transform" : "auto",
         }}
       >
         <div
@@ -1903,15 +1963,23 @@ function DetailsModal({
 // ═══════════════════════════════════════════════════════════════════════════
 
 function FeedLink({ to, label, icon }: { to: string; label: string; icon: ReactNode }) {
+  const navigate = useNavigate();
   return (
-    <Link
-      to="/play/$gameId"
-      params={{ gameId: to }}
+    <button
+      type="button"
+      onClick={() =>
+        navigate({
+          to: "/play/$gameId",
+          params: { gameId: to },
+          replace: true,
+          resetScroll: false,
+        })
+      }
       aria-label={label}
       title={label}
       className="grid size-16 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/18"
     >
       {icon}
-    </Link>
+    </button>
   );
 }

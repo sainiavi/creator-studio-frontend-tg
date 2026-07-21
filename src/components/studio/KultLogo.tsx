@@ -1,4 +1,4 @@
-import creatorStudioLogo from "@/assets/creatorStudioLogo.png";
+import creatorStudioLogo from "@/assets/creatorStudioLogo.webp";
 
 type KultLogoProps = {
   className?: string;
