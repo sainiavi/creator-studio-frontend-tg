@@ -32,10 +32,8 @@ function Templates() {
   if (loading) return <TemplatesGridSkeleton />;
 
   return (
-    <div className="relative min-h-screen overflow-hidden text-violet-950">
-      <div className="relative z-10">
-        <PageHeader title="Templates" subtitle="Pick a base. Remix it. Ship instantly." />
-      </div>
+    <div className="relative min-h-screen text-violet-950">
+      <PageHeader title="Templates" subtitle="Pick a base. Remix it. Ship instantly." />
 
       <div className="relative z-10 px-3 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-10">
         <div className="flex items-center justify-center sm:justify-start">

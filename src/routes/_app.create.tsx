@@ -342,7 +342,7 @@ function Create() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden text-white">
+    <div className="relative min-h-screen text-white">
       <div className="relative z-10 mx-auto max-w-3xl px-4 pb-28 pt-2 sm:px-6 sm:pb-6 sm:pt-4">
         {generationNotice && (
           <div
@@ -372,7 +372,7 @@ function Create() {
           </div>
         )}
 
-        <header className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
+        <header className="sticky top-0 z-30 mb-4 flex items-center justify-between gap-3 py-2 sm:mb-5">
           <div className="flex min-w-0 items-center gap-3 rounded-[1.35rem] border-2 border-white/70 bg-white/82 px-3.5 py-2.5 text-violet-950 shadow-[0_0_22px_rgba(168,85,247,0.3),inset_0_2px_10px_rgba(255,255,255,0.95)] backdrop-blur sm:rounded-[1.6rem] sm:px-4 sm:py-3">
             <KultLogo className="h-7 w-auto max-w-[100px] object-contain sm:h-8 sm:max-w-[120px]" />
             <div>

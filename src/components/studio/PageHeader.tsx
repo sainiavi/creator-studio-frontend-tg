@@ -11,7 +11,7 @@ export function PageHeader({
 
   return (
     <>
-      <header className="-mx-0 border-b border-violet-400/25 bg-[#160b2e] px-5 py-3.5 text-center text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] sm:hidden">
+      <header className="sticky top-0 z-30 -mx-0 border-b border-violet-400/25 bg-[#160b2e] px-5 py-3.5 text-center text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] sm:hidden">
         <h1 className="font-display text-[1.75rem] font-black leading-none tracking-tight text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.45)]">
           {title}
         </h1>

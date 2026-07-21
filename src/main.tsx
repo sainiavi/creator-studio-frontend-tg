@@ -1,9 +1,6 @@
 import { createRoot } from "react-dom/client";
-import { RouterProvider } from "@tanstack/react-router";
-import { PrivyProvider } from "@privy-io/react-auth";
+import { Suspense, lazy } from "react";
 import { Buffer } from "buffer";
-import { getRouter } from "./router";
-import { VITE_PRIVY_APP_ID, PRIVY_CLIENT_ID, privyConfig } from "./lib/privyConfig";
 
 // TON's browser bundle still reads the Node Buffer global while its module is
 // being initialized. The create route is lazy-loaded, so install the browser
@@ -25,8 +22,41 @@ if (import.meta.env.DEV) {
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("#root not found");
 
+// Privy pulls in the Coinbase Wallet SDK, WalletConnect, viem, Solana, and TON
+// support code (~700KB gzipped) even though this app only uses email/telegram
+// login. Loading it lazily behind Suspense lets the shell paint immediately
+// instead of every route blocking on that one download.
+const App = lazy(() => import("./App"));
+
+function LoadingShell() {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#0a0118",
+      }}
+    >
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          border: "3px solid rgba(255,255,255,0.2)",
+          borderTopColor: "#d946ef",
+          animation: "spin 0.8s linear infinite",
+        }}
+      />
+      <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
+    </div>
+  );
+}
+
 createRoot(rootEl).render(
-  <PrivyProvider appId={VITE_PRIVY_APP_ID} clientId={PRIVY_CLIENT_ID} config={privyConfig}>
-    <RouterProvider router={getRouter()} />
-  </PrivyProvider>,
+  <Suspense fallback={<LoadingShell />}>
+    <App />
+  </Suspense>,
 );

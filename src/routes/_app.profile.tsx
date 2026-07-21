@@ -596,12 +596,12 @@ function Profile() {
   });
 
   return (
-    <div className="relative min-h-screen overflow-hidden sm:min-h-0">
-      <div className="relative z-10 hidden sm:block">
+    <div className="relative min-h-screen sm:min-h-0">
+      <div className="hidden sm:block">
         <PageHeader title="Profile" subtitle="Your creator identity · Published games" />
       </div>
       <div className="relative z-10 px-4 pb-8 pt-0 sm:px-6 sm:py-8 lg:px-10">
-        <div className="relative -mx-4 mb-5 grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-violet-400/25 bg-[#160b2e] px-3 py-2.5 text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] md:hidden">
+        <div className="sticky top-0 z-30 relative -mx-4 mb-5 grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-violet-400/25 bg-[#160b2e] px-3 py-2.5 text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] md:hidden">
           <KultLogo className="h-6 w-auto max-w-[72px] shrink-0 object-contain object-left" />
           <h1 className="min-w-0 truncate text-center font-display text-2xl font-black text-white">Profile</h1>
           <button

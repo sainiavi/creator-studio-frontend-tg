@@ -251,7 +251,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute left-0 z-[1] h-[clamp(155px,40vw,185px)] w-[36%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
+              className={`pointer-events-none absolute left-0 z-[1] h-[clamp(190px,48vw,230px)] w-[42%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}
@@ -261,7 +261,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute right-0 z-[1] h-[clamp(155px,40vw,185px)] w-[36%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
+              className={`pointer-events-none absolute right-0 z-[1] h-[clamp(190px,48vw,230px)] w-[42%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}
