@@ -96,16 +96,23 @@ export function CreateConsolePanel({
   };
 
   const shellClass = fillScreen
-    ? "box-border flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden bg-transparent px-[3%] pb-[2%] pt-[5%]"
+    ? "box-border flex h-full min-h-0 w-full max-w-full flex-col justify-end overflow-hidden bg-transparent px-[3.5%] pb-[0.5%] pt-[14%]"
     : embedded
       ? "flex h-full min-h-0 flex-col rounded-sm bg-[#090018]/96 px-[clamp(4px,1.2vw,7px)] py-[clamp(4px,1.2vw,6px)] shadow-[inset_0_1px_8px_rgba(255,255,255,0.06)]"
       : "rounded-[1.2rem] border border-fuchsia-300/45 bg-[#090018]/95 p-3 shadow-[0_0_24px_rgba(124,58,237,0.4),inset_0_1px_12px_rgba(255,255,255,0.1)] sm:rounded-[1.35rem] sm:p-4";
 
   const headingClass = fillScreen
-    ? "mb-[3%] shrink-0 text-center font-display text-[length:clamp(4.5px,9.5cqh,7px)] font-black uppercase leading-[1.15] tracking-[0.02em] text-fuchsia-400"
+    ? "mb-[2%] shrink-0 text-center font-display text-[length:clamp(4.5px,9cqh,6.5px)] font-black uppercase leading-[1.15] tracking-[0.04em] text-fuchsia-400"
     : embedded
       ? "mb-[clamp(2px,0.6vw,3px)] shrink-0 font-display text-[clamp(4px,1.15vw,5.5px)] font-black uppercase tracking-[0.05em] text-fuchsia-400"
       : "mb-2 font-display text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-300 sm:text-xs";
+
+  const fieldIdleGlow =
+    !value.trim() && !showExpanded
+      ? fillScreen || !embedded
+        ? "animate-prompt-pulse border-fuchsia-300 shadow-[0_0_18px_rgba(217,70,239,0.75),inset_0_0_10px_rgba(244,114,182,0.25)]"
+        : ""
+      : "";
 
   const fieldShellClass = showExpanded
     ? fillScreen
@@ -114,18 +121,18 @@ export function CreateConsolePanel({
         ? "flex min-h-0 flex-1 flex-col gap-[4%] rounded-[3px] border border-fuchsia-500/80 bg-[#12082a] p-[4%]"
         : "flex min-h-[148px] flex-col gap-2 rounded-xl border-2 border-fuchsia-300 bg-[#16082f] p-2.5 shadow-[0_0_20px_rgba(217,70,239,0.55),inset_0_1px_10px_rgba(255,255,255,0.1)] sm:min-h-[168px] sm:p-3"
     : fillScreen
-      ? "box-border flex h-[44%] w-full max-w-full min-w-0 shrink-0 items-center gap-[2%] overflow-hidden rounded-[2px] border border-fuchsia-500/70 bg-[#12082a] px-[4%] py-[5%]"
+      ? `box-border flex h-[32%] w-full max-w-full min-w-0 shrink-0 items-center gap-[2%] overflow-hidden rounded-[3px] border-2 border-fuchsia-400/80 bg-[#12082a] px-[4%] py-[3.5%] ${fieldIdleGlow}`
       : embedded
         ? "flex shrink-0 items-center gap-[2%] rounded-[2px] border border-fuchsia-500/70 bg-[#12082a] px-[3%] [height:34%]"
-        : "flex min-h-[3.5rem] items-center gap-2 rounded-xl border border-fuchsia-400/70 bg-[#190b3d] px-2.5 py-2 shadow-[0_0_12px_rgba(168,85,247,0.32),inset_0_1px_8px_rgba(255,255,255,0.08)] sm:min-h-16 sm:px-3 sm:py-2.5";
+        : `flex min-h-[3rem] items-center gap-2 rounded-xl border-2 border-fuchsia-400/80 bg-[#190b3d] px-2.5 py-2 shadow-[0_0_16px_rgba(168,85,247,0.4),inset_0_1px_8px_rgba(255,255,255,0.08)] sm:min-h-[3.5rem] sm:px-3 sm:py-2.5 ${fieldIdleGlow}`;
 
   const inputClass = showExpanded
     ? embedded || fillScreen
       ? "min-h-0 min-w-0 max-w-full flex-1 w-full resize-none overflow-y-auto overflow-x-hidden bg-transparent text-[length:clamp(6px,14cqh,10px)] font-semibold leading-tight text-white outline-none placeholder:text-violet-300/55 [scrollbar-width:thin] box-border"
       : "min-h-[80px] w-full resize-none bg-transparent text-sm font-semibold leading-relaxed text-white outline-none placeholder:text-violet-300/70 sm:min-h-[96px] sm:text-base"
     : fillScreen
-      ? "min-w-0 flex-1 bg-transparent text-[length:clamp(6px,13cqh,9px)] font-semibold text-white outline-none placeholder:text-violet-300/50"
-      : "min-w-0 flex-1 bg-transparent text-sm font-bold text-white outline-none placeholder:text-violet-300/70";
+      ? "min-w-0 flex-1 bg-transparent text-[length:clamp(6.5px,14cqh,10px)] font-bold text-white outline-none placeholder:animate-pulse placeholder:text-fuchsia-200/85"
+      : "min-w-0 flex-1 bg-transparent text-sm font-bold text-white outline-none placeholder:animate-pulse placeholder:text-fuchsia-200/80 sm:text-base";
 
   const sendButtonClass = fillScreen
     ? "grid aspect-square h-[85%] max-h-full shrink-0 place-items-center rounded-[3px] bg-[linear-gradient(145deg,#f472b6,#a855f7)] text-white disabled:opacity-60"
@@ -139,9 +146,22 @@ export function CreateConsolePanel({
       ? "size-[clamp(8px,2.2vw,10px)]"
       : "size-4";
 
+  const promptPlaceholder =
+    !value.trim() && (fillScreen || !embedded)
+      ? "Type your game idea here…"
+      : placeholder;
+
   return (
     <section className={`${shellClass} ${className}`}>
-      <p className={`${headingClass} ${fillScreen && showExpanded ? "sr-only" : ""}`}>What do you want to create?</p>
+      <p className={`${headingClass} ${fillScreen && showExpanded ? "sr-only" : ""}`}>
+        {fillScreen ? "Tap below · write your prompt" : "What do you want to create?"}
+      </p>
+
+      {fillScreen && !showExpanded && !value.trim() && (
+        <p className="mb-[2%] shrink-0 text-center text-[length:clamp(4px,8cqh,5.5px)] font-black uppercase tracking-[0.1em] text-fuchsia-300/90 animate-pulse">
+          ↓ Write it here ↓
+        </p>
+      )}
 
       <label htmlFor={inputId} className={`${fieldShellClass} transition-all duration-200 ease-out`}>
         {showExpanded ? (
@@ -155,7 +175,7 @@ export function CreateConsolePanel({
               onBlur={() => {
                 if (!value.trim()) collapse();
               }}
-              placeholder={placeholder}
+              placeholder={promptPlaceholder}
               disabled={disabled}
               rows={embedded ? 2 : 4}
               className={inputClass}
@@ -201,7 +221,7 @@ export function CreateConsolePanel({
                 setExpandedState(true);
               }}
               onKeyDown={handleKeyDown}
-              placeholder={placeholder}
+              placeholder={promptPlaceholder}
               disabled={disabled}
               className={inputClass}
             />
@@ -233,10 +253,10 @@ export function CreateConsolePanel({
         <div
           className={`grid min-h-0 grid-cols-4 ${
             fillScreen
-              ? "mt-[2%] grid min-h-0 w-full max-w-full flex-1 grid-cols-4 gap-[2%]"
+              ? "mt-[2.5%] h-[30%] w-full max-w-full shrink-0 grid-cols-4 gap-[2.5%]"
               : embedded
                 ? "mt-[clamp(2px,0.6vw,3px)] gap-[clamp(1px,0.45vw,2px)]"
-                : "mt-2 gap-1.5 sm:mt-3 sm:gap-2"
+                : "mt-2 gap-1.5 sm:mt-2.5 sm:gap-2"
           }`}
         >
           {defaultCreateCategories.map((item) => {
@@ -249,28 +269,28 @@ export function CreateConsolePanel({
                 onClick={() => pickCategory(item.seed)}
                 className={
                   fillScreen
-                    ? "box-border flex h-full min-h-0 flex-col items-center justify-center gap-[8%] rounded-[2px] border border-fuchsia-500/55 bg-[#180a3a]/90 px-[6%] py-[10%] text-violet-50"
+                    ? "box-border flex h-full min-h-0 flex-col items-center justify-center gap-[5%] rounded-[3px] border border-fuchsia-300/70 bg-[linear-gradient(160deg,#2a1258_0%,#14062e_100%)] px-[3%] py-[5%] text-violet-50 shadow-[inset_0_1px_6px_rgba(255,255,255,0.12),0_0_8px_rgba(168,85,247,0.25)]"
                     : embedded
                       ? "grid aspect-[1.05] place-items-center rounded border border-fuchsia-500/60 bg-[#180a3a] text-violet-50"
-                      : "grid aspect-[1.05] place-items-center rounded-lg border border-fuchsia-400/55 bg-[#180a3a] py-1.5 text-violet-50"
+                      : "flex flex-col items-center justify-center gap-0.5 rounded-xl border border-fuchsia-400/60 bg-[linear-gradient(160deg,#2a1258,#14062e)] px-1 py-1.5 text-violet-50 shadow-[inset_0_1px_6px_rgba(255,255,255,0.1)] sm:py-2"
                 }
               >
                 <Icon
                   className={
                     fillScreen
-                      ? "size-[length:clamp(8px,16cqh,12px)]"
+                      ? "size-[length:clamp(7px,14cqh,11px)] text-fuchsia-200"
                       : embedded
                         ? "size-[clamp(8px,2.2vw,10px)]"
-                        : "size-3.5 sm:size-4"
+                        : "size-3 text-fuchsia-200 sm:size-3.5"
                   }
                 />
                 <span
                   className={
                     fillScreen
-                      ? "text-[length:clamp(4px,9cqh,6px)] font-black leading-none"
+                      ? "text-[length:clamp(4px,8.5cqh,5.5px)] font-black leading-none text-white"
                       : embedded
                         ? "text-[clamp(3.5px,1vw,4.5px)] font-black leading-none"
-                        : "mt-0.5 text-[9px] font-black sm:text-[10px]"
+                        : "text-[8px] font-black leading-none sm:text-[9px]"
                   }
                 >
                   {item.label}

@@ -73,9 +73,8 @@ const rankAvatars: Record<1 | 2 | 3, string> = {
 const podiumStyle = {
   1: {
     order: "order-2",
-    size: "size-24 sm:size-32",
-    badge: "size-9 text-base",
-    lift: "-translate-y-5",
+    size: "size-20 sm:size-28",
+    badge: "size-8 text-sm sm:size-9 sm:text-base",
     ring: "border-amber-300",
     glow: "shadow-[0_0_42px_-8px_oklch(0.86_0.19_85_/_0.9),0_18px_60px_-26px_rgba(250,204,21,0.95)]",
     crown: "text-amber-600",
@@ -84,9 +83,8 @@ const podiumStyle = {
   },
   2: {
     order: "order-1",
-    size: "size-20 sm:size-28",
-    badge: "size-8 text-sm",
-    lift: "translate-y-3",
+    size: "size-16 sm:size-24",
+    badge: "size-7 text-xs sm:size-8 sm:text-sm",
     ring: "border-slate-200",
     glow: "shadow-[0_0_36px_-10px_oklch(0.86_0.02_270_/_0.75),0_18px_54px_-30px_rgba(226,232,240,0.9)]",
     crown: "text-slate-500",
@@ -95,9 +93,8 @@ const podiumStyle = {
   },
   3: {
     order: "order-3",
-    size: "size-20 sm:size-28",
-    badge: "size-8 text-sm",
-    lift: "translate-y-4",
+    size: "size-16 sm:size-24",
+    badge: "size-7 text-xs sm:size-8 sm:text-sm",
     ring: "border-orange-300",
     glow: "shadow-[0_0_36px_-10px_oklch(0.74_0.14_55_/_0.75),0_18px_54px_-30px_rgba(251,146,60,0.9)]",
     crown: "text-orange-600",
@@ -114,6 +111,12 @@ function isCurrentUserRow(row: RankRow, currentUsername: string, currentWallet: 
   );
 }
 
+function shortName(name: string, max = 14) {
+  const trimmed = name.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1)}…`;
+}
+
 function Podium({
   rows,
   isCreator,
@@ -126,34 +129,32 @@ function Podium({
   currentWallet: string | null;
 }) {
   const podiumRows = rows.slice(0, 3);
-  const layoutClass = podiumRows.length === 1
-    ? "flex min-h-44 items-center justify-center sm:min-h-56"
-    : podiumRows.length === 2
-      ? "grid min-h-44 grid-cols-2 items-center justify-center gap-4 sm:min-h-56 sm:gap-8"
-      : "grid min-h-44 grid-cols-3 items-center gap-2 sm:min-h-56 sm:gap-6";
+  const layoutClass =
+    podiumRows.length === 1
+      ? "flex min-h-40 items-center justify-center sm:min-h-52"
+      : podiumRows.length === 2
+        ? "grid min-h-40 grid-cols-2 items-start justify-center gap-3 sm:min-h-52 sm:gap-8"
+        : "grid min-h-40 grid-cols-3 items-start gap-1.5 sm:min-h-52 sm:gap-4";
 
   return (
-    <div className="relative mb-6 overflow-hidden rounded-[1.75rem] border-2 border-fuchsia-200/80 bg-white/80 px-3 py-8 text-violet-950 shadow-[0_12px_30px_rgba(124,58,237,0.2),0_0_26px_rgba(217,70,239,0.22),inset_0_1px_12px_rgba(255,255,255,0.92)] backdrop-blur sm:px-6 sm:py-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(250,204,21,0.26),transparent_31%),radial-gradient(circle_at_24%_38%,rgba(168,85,247,0.18),transparent_30%),radial-gradient(circle_at_76%_40%,rgba(251,146,60,0.18),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.36),transparent_42%)]" />
-      <div className="pointer-events-none absolute inset-x-5 top-4 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-6 top-20 h-36 rounded-full bg-white/8 blur-3xl" />
-      <div className="pointer-events-none absolute inset-x-12 bottom-8 h-12 rounded-full bg-cyan-300/12 blur-2xl" />
+    <div className="relative mb-6 overflow-hidden rounded-[1.75rem] border-2 border-fuchsia-200/80 bg-white/90 px-2.5 py-7 text-violet-950 shadow-[0_12px_30px_rgba(124,58,237,0.2),0_0_26px_rgba(217,70,239,0.22),inset_0_1px_12px_rgba(255,255,255,0.92)] backdrop-blur sm:px-6 sm:py-10">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(250,204,21,0.22),transparent_31%),radial-gradient(circle_at_24%_38%,rgba(168,85,247,0.14),transparent_30%),radial-gradient(circle_at_76%_40%,rgba(251,146,60,0.14),transparent_31%)]" />
       <div className={`relative ${layoutClass}`}>
         {podiumRows.map((row, index) => {
           const style = podiumStyle[row.rank as 1 | 2 | 3];
           const avatar = rankAvatars[row.rank as 1 | 2 | 3];
           const isYou = isCurrentUserRow(row, currentUsername, currentWallet);
-          const placementClass = podiumRows.length < 3 ? "" : `${style.order} ${style.lift}`;
+          const placementClass =
+            podiumRows.length < 3 ? "" : `${style.order} ${row.rank === 1 ? "pt-0" : "pt-6 sm:pt-8"}`;
           return (
             <div
               key={`podium-${row.rank}`}
-              className={`animate-float-up flex min-w-0 flex-col items-center justify-self-center ${placementClass}`}
+              className={`animate-float-up flex w-full min-w-0 max-w-full flex-col items-center justify-self-center overflow-hidden px-0.5 ${placementClass}`}
               style={{ animationDelay: `${(index + 1) * 70}ms`, opacity: 0 }}
             >
-              <Crown className={`mb-1 size-6 drop-shadow-[0_0_10px_currentColor] ${style.crown} sm:size-8`} />
-              <div className="relative">
+              <Crown className={`mb-1 size-5 drop-shadow-[0_0_10px_currentColor] ${style.crown} sm:size-7`} />
+              <div className="relative shrink-0">
                 <div className={`absolute inset-0 rounded-full blur-xl ${style.halo}`} />
-                <div className="absolute -inset-2 rounded-full border border-white/10 bg-white/5 blur-[1px]" />
                 <div
                   className={`relative overflow-hidden rounded-full border-4 bg-background ring-1 ring-white/20 ${style.size} ${style.ring} ${style.glow}`}
                 >
@@ -161,24 +162,33 @@ function Podium({
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/18 via-transparent to-black/18" />
                 </div>
                 <div
-                  className={`absolute -bottom-3 left-1/2 grid -translate-x-1/2 place-items-center rounded-full border-2 border-background font-display font-black ring-1 ring-white/25 ${style.badge} ${style.rankBg}`}
+                  className={`absolute -bottom-2.5 left-1/2 grid -translate-x-1/2 place-items-center rounded-full border-2 border-background font-display font-black ring-1 ring-white/25 ${style.badge} ${style.rankBg}`}
                 >
                   {row.rank}
                 </div>
               </div>
-              <div className="mt-5 min-w-0 text-center">
-                <div className="flex items-center justify-center gap-1.5">
-                  <p className="truncate font-display text-xs font-black sm:text-sm">{row.name}</p>
+              <div className="mt-5 w-full min-w-0 max-w-full space-y-0.5 text-center">
+                <div className="flex min-w-0 items-center justify-center gap-1">
+                  <p
+                    className="min-w-0 truncate font-display text-[11px] font-black leading-tight sm:text-sm"
+                    title={row.name}
+                  >
+                    {shortName(row.name, row.rank === 1 ? 16 : 12)}
+                  </p>
                   {isYou && (
-                    <span className="rounded-full bg-gradient-to-r from-primary to-[oklch(0.65_0.25_295)] px-2 py-0.5 text-[9px] font-black text-primary-foreground shadow-[0_0_14px_-6px_oklch(0.72_0.27_340)]">
+                    <span className="shrink-0 rounded-full bg-gradient-to-r from-primary to-[oklch(0.65_0.25_295)] px-1.5 py-0.5 text-[8px] font-black text-primary-foreground">
                       You
                     </span>
                   )}
                 </div>
-                  <p className="mt-1 truncate font-mono text-[10px] font-bold text-violet-500 sm:text-xs">
+                <p className="truncate font-mono text-[9px] font-bold text-violet-500 sm:text-[11px]">
                   {compactWallet(row)}
                 </p>
-                <p className={`mt-1 text-sm font-black drop-shadow-sm sm:text-base ${isCreator ? "text-violet-900 [text-shadow:0_0_8px_rgba(139,92,246,0.35)]" : "text-fuchsia-800 [text-shadow:0_0_8px_rgba(217,70,239,0.3)]"}`} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif", letterSpacing: "0.02em" }}>
+                <p
+                  className={`font-display text-base font-black tabular-nums sm:text-lg ${
+                    isCreator ? "text-violet-900" : "text-fuchsia-800"
+                  }`}
+                >
                   {formatStat(getScore(row))}
                 </p>
               </div>

@@ -80,29 +80,38 @@ export function GamePosterCard({
       ? "text-[15px] leading-tight sm:text-base"
       : size === "standard"
         ? "text-[13px] leading-tight sm:text-sm"
-        : "text-xs leading-tight";
+        : "text-[11px] leading-tight";
 
   const playClass =
     size === "featured" ? "text-xs" : size === "standard" ? "text-[11px]" : "text-[10px]";
 
-  const avatarSize = size === "featured" ? "size-8" : "size-7";
+  const avatarSize = size === "featured" ? "size-8" : size === "standard" ? "size-7" : "size-6";
+
+  const aspectClass = size === "compact" ? "aspect-[3/4]" : "aspect-[4/5]";
+  const radiusClass =
+    size === "compact"
+      ? "rounded-2xl sm:rounded-[1.25rem]"
+      : "rounded-[1.35rem] sm:rounded-[1.45rem]";
 
   const stopPress = (event: MouseEvent | ReactPointerEvent) => {
     event.stopPropagation();
   };
 
   return (
-    <div className={`flex w-full min-w-0 flex-col gap-2 ${className}`}>
+    <div
+      className={`flex w-full min-w-0 flex-col ${size === "compact" ? "gap-1.5" : "gap-2.5"} ${className}`}
+    >
       <article
         onClick={onClick}
-        className={`group relative aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-[1.25rem] bg-[#12032b] shadow-[0_12px_32px_rgba(49,16,110,0.24)] transition duration-300 active:scale-[0.985] sm:rounded-[1.35rem] ${
+        className={`group relative ${aspectClass} w-full cursor-pointer overflow-hidden ${radiusClass} border border-white/35 bg-[#12032b] shadow-[0_10px_28px_rgba(49,16,110,0.28),0_0_0_1px_rgba(168,85,247,0.12)] transition duration-300 active:scale-[0.985] ${
           animated ? "animate-float-up" : ""
         }`}
         style={animated ? { animationDelay: `${index * 50}ms`, opacity: 0 } : undefined}
       >
         <PosterArtwork game={game} size={size} />
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[38%] bg-gradient-to-b from-black/55 via-black/10 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,0,24,0.72)_0%,transparent_34%,transparent_58%,rgba(8,0,24,0.55)_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
 
         <h3
           className={`absolute inset-x-0 top-0 line-clamp-2 px-3 pb-1 pt-3 font-display font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] ${titleClass}`}
@@ -112,7 +121,7 @@ export function GamePosterCard({
 
         {game.plays && (
           <div
-            className={`absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 font-bold text-white backdrop-blur-md ${playClass}`}
+            className={`absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-2.5 py-1 font-bold text-white shadow-[0_4px_12px_rgba(0,0,0,0.35)] backdrop-blur-md ${playClass}`}
           >
             <Play className="size-3 shrink-0 fill-white" />
             <span>{game.plays}</span>
@@ -156,7 +165,7 @@ export function GamePosterCard({
 
       <div className="flex min-w-0 items-center gap-2 px-0.5">
         <span
-          className={`grid ${avatarSize} shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br ${gradientClass[game.gradient]} font-black text-white ring-2 ring-white/50 shadow-[0_2px_8px_rgba(124,58,237,0.25)]`}
+          className={`grid ${avatarSize} shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br ${gradientClass[game.gradient]} font-black text-white shadow-[0_2px_8px_rgba(124,58,237,0.3)] ring-2 ring-violet-200/80`}
         >
           {game.thumbnailUrl ? (
             <img src={game.thumbnailUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -165,11 +174,13 @@ export function GamePosterCard({
           )}
         </span>
         <span
-          className={`truncate text-sm font-semibold ${
+          className={`truncate text-[12px] font-bold ${
             metaTheme === "dark" ? "text-white/92" : "text-violet-950"
           }`}
         >
-          {game.creator}
+          {game.creator.length > 16
+            ? `${game.creator.slice(0, 6)}…${game.creator.slice(-4)}`
+            : game.creator}
         </span>
       </div>
     </div>

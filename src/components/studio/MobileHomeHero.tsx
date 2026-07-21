@@ -91,9 +91,9 @@ export function MobileHomeHero({
   isThinking,
 }: MobileHomeHeroProps) {
   return (
-    <section className="relative z-10 space-y-4 px-3 pb-2 pt-3 sm:hidden">
+    <section className="relative z-10 space-y-5 px-3 pb-4 pt-4 sm:hidden">
       <div className="mx-auto w-full max-w-[520px]">
-        <div className="mb-3 text-center">
+        <div className="relative z-20 mb-1 text-center">
           <p className="font-display text-[10px] font-black uppercase tracking-[0.14em] text-violet-700">
             ✧ AI BUILDS. YOU IMAGINE. ✧
           </p>
@@ -108,24 +108,26 @@ export function MobileHomeHero({
               Worlds
             </span>
           </h1>
-          <p className="mx-auto mt-3 max-w-[280px] text-sm font-semibold leading-snug text-violet-950">
+          <p className="mx-auto mt-2.5 max-w-[280px] text-sm font-semibold leading-snug text-violet-950">
             Describe your game idea and our AI crafts the game, agents, and world.
           </p>
         </div>
-        <ConsoleHero
-          value={value}
-          onChange={onChange}
-          onSubmit={onSubmit}
-          onCategoryPick={onCategoryPick}
-          messages={messages}
-          chatStage={chatStage}
-          onQuickReply={onQuickReply}
-          isThinking={isThinking}
-          characterBottom="42%"
-          placeholder="Describe your game idea..."
-          className="w-full"
-        />
-
+        {/* Clear air under copy; characters sit high enough that only lower legs go under the bezel */}
+        <div className="relative z-0 mt-8">
+          <ConsoleHero
+            value={value}
+            onChange={onChange}
+            onSubmit={onSubmit}
+            onCategoryPick={onCategoryPick}
+            messages={messages}
+            chatStage={chatStage}
+            onQuickReply={onQuickReply}
+            isThinking={isThinking}
+            characterBottom="50%"
+            placeholder="Type your game idea here…"
+            className="w-full"
+          />
+        </div>
       </div>
 
       <div className="mx-auto rounded-[1.35rem] border border-white/90 bg-white/88 px-2.5 py-3 shadow-[0_8px_22px_rgba(124,58,237,0.16),0_0_16px_rgba(255,255,255,0.65),inset_0_1px_9px_rgba(255,255,255,0.92)] backdrop-blur-sm">
@@ -200,21 +202,24 @@ function PopularWorldCard({
     <button
       type="button"
       onClick={() => onPick(world.seed)}
-      className="w-full overflow-hidden rounded-xl border border-violet-300/45 bg-[linear-gradient(180deg,#e9ddff_0%,#c4b5fd_40%,#8b5cf6_78%,#6d28d9_100%)] text-left shadow-[0_6px_16px_rgba(109,40,217,0.24)] transition active:scale-[0.98]"
+      className="group w-full overflow-hidden rounded-2xl border-2 border-white/70 bg-[linear-gradient(165deg,#f3e8ff_0%,#c4b5fd_42%,#8b5cf6_78%,#5b21b6_100%)] text-left shadow-[0_8px_18px_rgba(109,40,217,0.28),inset_0_1px_10px_rgba(255,255,255,0.55)] transition active:scale-[0.97]"
     >
-      <div className="flex h-[72px] items-end justify-center px-1.5 pt-2">
+      <div className="relative flex h-[76px] items-end justify-center px-1.5 pt-2">
+        <div className="pointer-events-none absolute inset-x-2 top-1.5 h-8 rounded-full bg-white/25 blur-md" />
         <img
           src={world.image}
           alt=""
-          className="max-h-[64px] w-full object-contain object-bottom drop-shadow-[0_6px_12px_rgba(76,29,149,0.32)]"
+          className="relative max-h-[66px] w-full object-contain object-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.4)] transition duration-300 group-hover:scale-[1.04]"
           draggable={false}
         />
       </div>
-      <div className="px-2 pb-2 pt-0.5 text-center">
-        <p className="truncate text-[10px] font-black leading-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]">
+      <div className="border-t border-white/25 bg-black/15 px-2 pb-2 pt-1.5 text-center backdrop-blur-[2px]">
+        <p className="truncate text-[10px] font-black leading-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
           {world.title}
         </p>
-        <p className="text-[9px] font-bold text-white/80">{world.category}</p>
+        <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-violet-100/90">
+          {world.category}
+        </p>
       </div>
     </button>
   );

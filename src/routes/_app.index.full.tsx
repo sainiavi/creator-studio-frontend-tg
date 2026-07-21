@@ -66,7 +66,8 @@ import { TonWalletSignInButton } from "@/components/studio/TonWalletSignInButton
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentUserId } from "@/lib/identity";
 
-// Full home page — lazy-loaded from _app.index.tsx (not a registered route file).
+// Full home page — loaded by _app.index.tsx.
+// Keep shelves / categories / creators as fixed grids (no horizontal carousels).
 // export const Route = createFileRoute("/_app/")({
 //   head: () => ({
 //     meta: [
@@ -117,50 +118,50 @@ const browseCategories: {
   {
     name: "Action",
     icon: Swords,
-    chip: "border-neon-pink/30 bg-neon-pink/10",
-    iconColor: "text-neon-pink",
+    chip: "border-fuchsia-200 bg-fuchsia-100",
+    iconColor: "text-fuchsia-600",
   },
   {
     name: "Arcade",
     icon: Gamepad2,
-    chip: "border-neon-violet/35 bg-neon-violet/10",
-    iconColor: "text-neon-violet",
+    chip: "border-violet-200 bg-violet-100",
+    iconColor: "text-violet-600",
   },
   {
     name: "Puzzle",
     icon: Puzzle,
-    chip: "border-blue-400/30 bg-blue-400/10",
-    iconColor: "text-blue-400",
+    chip: "border-sky-200 bg-sky-100",
+    iconColor: "text-sky-600",
   },
   {
     name: "Sports",
     icon: Volleyball,
-    chip: "border-emerald-400/30 bg-emerald-400/10",
-    iconColor: "text-emerald-400",
+    chip: "border-emerald-200 bg-emerald-100",
+    iconColor: "text-emerald-600",
   },
   {
     name: "Strategy",
     icon: Trophy,
-    chip: "border-cyan-400/30 bg-cyan-400/10",
-    iconColor: "text-cyan-400",
+    chip: "border-cyan-200 bg-cyan-100",
+    iconColor: "text-cyan-600",
   },
   {
     name: "Adventure",
     icon: Mountain,
-    chip: "border-teal-300/30 bg-teal-300/10",
-    iconColor: "text-teal-300",
+    chip: "border-teal-200 bg-teal-100",
+    iconColor: "text-teal-600",
   },
   {
     name: "RPG",
     icon: Shield,
-    chip: "border-orange-400/30 bg-orange-400/10",
-    iconColor: "text-orange-400",
+    chip: "border-orange-200 bg-orange-100",
+    iconColor: "text-orange-600",
   },
   {
     name: "Multiplayer",
     icon: Users,
-    chip: "border-violet-400/30 bg-violet-400/10",
-    iconColor: "text-violet-400",
+    chip: "border-purple-200 bg-purple-100",
+    iconColor: "text-purple-600",
   },
 ];
 
@@ -168,9 +169,8 @@ const homeFeedTabs = ["For You", "Trending", "New", ...browseCategories.map((c) 
 
 function shortAddress(value: string | undefined) {
   if (!value) return "";
-  return value.startsWith("0x") && value.length > 12
-    ? `${value.slice(0, 6)}...${value.slice(-4)}`
-    : value;
+  if (value.length <= 14) return value;
+  return `${value.slice(0, 6)}…${value.slice(-4)}`;
 }
 
 function homeCategory(category: string | undefined) {
@@ -677,10 +677,10 @@ export function Home() {
         </DialogContent>
       </Dialog>
 
-      <div className="relative z-10 grid gap-3 px-3 pb-3 pt-2 sm:pt-0 xl:grid-cols-[minmax(0,1fr)_310px]">
+      <div className="relative z-10 grid gap-3 px-3 pb-[calc(7.5rem+env(safe-area-inset-bottom))] pt-3 sm:pb-6 sm:pt-0 xl:grid-cols-[minmax(0,1fr)_310px]">
         <main className="min-w-0 space-y-3">
           <section className="min-[1190px]:hidden">
-            <div className="mx-auto w-full max-w-2xl space-y-6 px-1">
+            <div className="mx-auto w-full max-w-2xl space-y-7 px-1">
               {searchQuery.trim() ? (
                 <FeedGrid
                   games={visibleShelves[0]?.games ?? []}
@@ -742,28 +742,33 @@ export function Home() {
                     />
 
                     <section>
-                      <h2 className="mb-3 font-display text-2xl font-black text-violet-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
-                        Browse by Category
-                      </h2>
-                      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <h2 className="font-display text-xl font-black tracking-tight text-violet-950">
+                          Browse by Category
+                        </h2>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
                         {browseCategories.map((category) => {
                           const Icon = category.icon;
+                          const count = categoryCounts[category.name] ?? 0;
                           return (
                             <button
                               key={category.name}
                               type="button"
                               onClick={() => setMobileFeedTab(category.name)}
-                              className="flex min-w-[230px] shrink-0 items-center gap-3 rounded-[1.25rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1c0846,#0b0224)] px-4 py-3.5 text-left text-white shadow-[0_0_24px_rgba(217,70,239,0.58),inset_0_1px_14px_rgba(255,255,255,0.12)] transition hover:border-fuchsia-100 hover:brightness-110"
+                              className="flex items-center gap-2.5 rounded-2xl border border-violet-200/90 bg-white px-2.5 py-2.5 text-left text-violet-950 shadow-[0_4px_12px_rgba(124,58,237,0.1)] transition active:scale-[0.98] hover:border-fuchsia-300 hover:shadow-[0_6px_16px_rgba(168,85,247,0.16)]"
                             >
-                              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/10 shadow-[inset_0_1px_8px_rgba(255,255,255,0.16)]">
-                                <Icon className={`size-5 ${category.iconColor}`} />
+                              <span
+                                className={`grid size-9 shrink-0 place-items-center rounded-xl border ${category.chip}`}
+                              >
+                                <Icon className={`size-4 ${category.iconColor}`} />
                               </span>
                               <span className="min-w-0">
-                                <span className="block whitespace-nowrap text-base font-black text-white">
+                                <span className="block truncate text-[13px] font-black leading-tight">
                                   {category.name}
                                 </span>
-                                <span className="block whitespace-nowrap text-sm font-bold text-violet-200/80">
-                                  {formatCount(categoryCounts[category.name] ?? 0)} Games
+                                <span className="block text-[10px] font-bold text-violet-600/75">
+                                  {formatCount(count)} {count === 1 ? "game" : "games"}
                                 </span>
                               </span>
                             </button>
@@ -1193,18 +1198,9 @@ function GamesFeedSkeleton() {
       {Array.from({ length: 2 }).map((_, section) => (
         <div key={section}>
           <Skeleton className="mb-3 h-7 w-40 rounded-lg" />
-          <div className="-mx-4 flex gap-3 overflow-hidden px-4">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div
-                key={index}
-                className={
-                  section === 0
-                    ? "w-[66%] shrink-0 sm:w-[40%] sm:max-w-[240px]"
-                    : "w-[44%] shrink-0 sm:w-[30%] sm:max-w-[200px]"
-                }
-              >
-                <PlaceholderTile />
-              </div>
+          <div className="grid grid-cols-2 gap-x-2.5 gap-y-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <PlaceholderTile key={index} />
             ))}
           </div>
         </div>
@@ -1218,7 +1214,7 @@ function MobileShelf({
   games,
   onViewAll,
   onOpen,
-  cardSize = "standard",
+  cardSize: _cardSize = "standard",
   emptyText = "No games found.",
 }: {
   title: string;
@@ -1228,19 +1224,16 @@ function MobileShelf({
   cardSize?: GamePosterSize;
   emptyText?: string;
 }) {
-  const slotWidth =
-    cardSize === "featured"
-      ? "w-[66%] shrink-0 snap-start sm:w-[40%] sm:max-w-[240px]"
-      : "w-[44%] shrink-0 snap-start sm:w-[30%] sm:max-w-[200px]";
+  const visible = games.slice(0, 4);
 
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-xl font-black tracking-tight text-violet-950">{title}</h2>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="min-w-0 font-display text-xl font-black tracking-tight text-violet-950">{title}</h2>
         <button
           type="button"
           onClick={onViewAll}
-          className="flex items-center gap-0.5 text-sm font-bold text-violet-800/90 transition hover:text-violet-950"
+          className="flex shrink-0 items-center gap-0.5 text-sm font-bold text-violet-800/90 transition hover:text-violet-950"
         >
           View all <ChevronRight className="size-4" />
         </button>
@@ -1248,16 +1241,15 @@ function MobileShelf({
       {games.length === 0 ? (
         <p className="py-8 text-center text-sm font-semibold text-violet-700">{emptyText}</p>
       ) : (
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {games.slice(0, 10).map((game, index) => (
-            <div key={`${game.templateId ?? game.title}-${index}`} className={slotWidth}>
-              <GameTile
-                game={game}
-                onOpen={() => onOpen(game)}
-                size={cardSize}
-                metaTheme="light"
-              />
-            </div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+          {visible.map((game, index) => (
+            <GameTile
+              key={`${game.templateId ?? game.title}-${index}`}
+              game={game}
+              onOpen={() => onOpen(game)}
+              size="compact"
+              metaTheme="light"
+            />
           ))}
         </div>
       )}
@@ -1328,31 +1320,37 @@ function TopCreatorsRow({
   creators: CreatorScoreEntry[];
   onViewAll: () => void;
 }) {
+  const visible = creators.slice(0, 4);
+
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-2xl font-black text-violet-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
-          👑 Top Creators
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="font-display text-xl font-black tracking-tight text-violet-950">
+          Top Creators
         </h2>
         <button
           type="button"
           onClick={onViewAll}
-          className="flex items-center gap-0.5 text-sm font-black text-black transition hover:text-violet-800"
+          className="flex shrink-0 items-center gap-0.5 text-sm font-bold text-violet-800/90 transition hover:text-violet-950"
         >
           View all <ChevronRight className="size-4" />
         </button>
       </div>
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {creators.map((entry) => {
+      <div className="overflow-hidden rounded-2xl border-2 border-violet-200/80 bg-white/90 shadow-[0_6px_16px_rgba(124,58,237,0.12)] backdrop-blur">
+        {visible.map((entry, index) => {
           const avatar = rankAvatars[entry.rank];
-          const label = shortAddress(entry.creatorId) || entry.name;
+          const label = shortAddress(entry.creatorId) || shortAddress(entry.name) || entry.name;
           return (
-            <div
+            <button
               key={entry.id ?? entry.creatorId}
-              className="flex shrink-0 items-center gap-3 rounded-2xl border border-fuchsia-200/80 bg-white/80 py-3 pl-3 pr-5 text-violet-950 shadow-[0_6px_18px_rgba(124,58,237,0.16)] backdrop-blur"
+              type="button"
+              onClick={onViewAll}
+              className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-violet-950 transition active:bg-violet-50 hover:bg-violet-50/80 ${
+                index > 0 ? "border-t border-violet-100" : ""
+              }`}
             >
               <div className="relative shrink-0">
-                <span className="block size-11 overflow-hidden rounded-full border border-white/15 bg-gradient-to-br from-[oklch(0.65_0.25_295)] to-[oklch(0.72_0.27_340)]">
+                <span className="block size-10 overflow-hidden rounded-full border-2 border-white bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-[0_4px_12px_rgba(124,58,237,0.35)]">
                   {avatar ? (
                     <img src={avatar} alt="" className="size-full object-cover" />
                   ) : (
@@ -1362,18 +1360,19 @@ function TopCreatorsRow({
                   )}
                 </span>
                 <span
-                  className={`absolute -bottom-0.5 -left-0.5 grid size-5 place-items-center rounded-full border-2 border-background text-[10px] font-black ${rankBadgeClass(entry.rank)}`}
+                  className={`absolute -bottom-0.5 -left-0.5 grid size-5 place-items-center rounded-full border-2 border-white text-[10px] font-black shadow-sm ${rankBadgeClass(entry.rank)}`}
                 >
                   {entry.rank}
                 </span>
               </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold">{label}</p>
-                <p className="text-xs font-semibold text-primary">
-                  {formatCount(entry.creatorScore)} Points
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-black leading-tight">{label}</p>
+                <p className="mt-0.5 text-[11px] font-bold text-fuchsia-600">
+                  {formatCount(entry.creatorScore)} CS
                 </p>
               </div>
-            </div>
+              <ChevronRight className="size-4 shrink-0 text-violet-400" />
+            </button>
           );
         })}
       </div>

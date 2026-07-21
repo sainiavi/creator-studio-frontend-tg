@@ -33,92 +33,87 @@ function Templates() {
 
   return (
     <div className="relative min-h-screen overflow-hidden text-violet-950">
-      <div className="relative z-10 hidden sm:block">
-        <PageHeader title="Templates" subtitle="Pick a base · Remix with a prompt · Ship instantly" />
+      <div className="relative z-10">
+        <PageHeader title="Templates" subtitle="Pick a base. Remix it. Ship instantly." />
       </div>
 
-      <div className="relative z-10 px-4 pb-8 pt-0 sm:px-6 sm:pt-6 lg:px-10">
-        <section className="-mx-4 border-b border-violet-400/25 bg-[#160b2e] px-5 py-4 text-center text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] md:hidden">
-          <p className="font-display text-3xl font-black text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.45)]">
-            Templates
-          </p>
-          <p className="mt-1 text-xs font-black text-violet-100">Pick a base. Remix it. Ship instantly.</p>
-        </section>
-
-        <div className="mt-5 flex items-center justify-center sm:mt-0 sm:justify-start">
-          <div className="inline-flex rounded-2xl border-2 border-violet-300/70 bg-white/70 p-1 shadow-[0_0_18px_rgba(168,85,247,0.24),inset_0_1px_8px_rgba(255,255,255,0.9)] backdrop-blur">
-          {engines.map((e) => (
-            <button
-              key={e.id}
-              onClick={() => studio.setEngine(e.id)}
-              className={`rounded-xl px-5 py-2 font-display text-xs font-black transition-all ${
-                studio.engine === e.id
-                  ? "bg-[linear-gradient(135deg,#a855f7,#ec4899)] text-white shadow-[0_4px_14px_rgba(168,85,247,0.45)]"
-                  : "text-violet-700 hover:text-violet-950"
-              }`}
-            >
-              {e.label}
-            </button>
-          ))}
+      <div className="relative z-10 px-3 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-10">
+        <div className="flex items-center justify-center sm:justify-start">
+          <div className="inline-flex rounded-full border-2 border-violet-300/70 bg-white/75 p-1 shadow-[0_0_18px_rgba(168,85,247,0.24),inset_0_1px_8px_rgba(255,255,255,0.9)] backdrop-blur">
+            {engines.map((e) => (
+              <button
+                key={e.id}
+                onClick={() => studio.setEngine(e.id)}
+                className={`rounded-full px-5 py-2 font-display text-xs font-black transition-all ${
+                  studio.engine === e.id
+                    ? "bg-[linear-gradient(135deg,#a855f7,#ec4899)] text-white shadow-[0_4px_14px_rgba(168,85,247,0.45)]"
+                    : "text-violet-700 hover:text-violet-950"
+                }`}
+              >
+                {e.label}
+              </button>
+            ))}
           </div>
         </div>
 
-      <div className="grid grid-cols-2 gap-3 px-4 py-8 sm:grid-cols-2 sm:gap-4 sm:px-6 md:grid-cols-3 xl:grid-cols-4 lg:px-10">
-        {list.map((t: any, i: number) => (
-          <article
-            key={t.id}
-            className="animate-float-up group flex flex-col overflow-hidden rounded-[1.35rem] border border-violet-200/80 bg-white/90 shadow-[0_8px_20px_rgba(124,58,237,0.12)] backdrop-blur transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-[0_12px_28px_rgba(124,58,237,0.2)]"
-            style={{ animationDelay: `${i * 50}ms`, opacity: 0 }}
-          >
-            <div className={`relative flex aspect-[16/11] items-center justify-center overflow-hidden bg-gradient-to-br ${gradientClass[gradientForId(t.id)]}`}>
-              {getThumbnailUrl(t.id) ? (
-                <>
-                  <img
-                    src={getThumbnailUrl(t.id)}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" />
-                </>
-              ) : (
-                <span className="text-5xl transition-transform group-hover:scale-110 sm:text-6xl">
-                  {templateEmoji[t.id] ?? "🎮"}
+        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+          {list.map((t: any, i: number) => (
+            <article
+              key={t.id}
+              className="animate-float-up group flex flex-col overflow-hidden rounded-[1.25rem] border border-violet-200/80 bg-white/95 shadow-[0_8px_20px_rgba(124,58,237,0.12)] backdrop-blur transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-[0_12px_28px_rgba(124,58,237,0.2)] sm:rounded-[1.35rem]"
+              style={{ animationDelay: `${i * 50}ms`, opacity: 0 }}
+            >
+              <div
+                className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br ${gradientClass[gradientForId(t.id)]}`}
+              >
+                {getThumbnailUrl(t.id) ? (
+                  <>
+                    <img
+                      src={getThumbnailUrl(t.id)}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
+                  </>
+                ) : (
+                  <span className="text-4xl transition-transform group-hover:scale-110 sm:text-5xl">
+                    {templateEmoji[t.id] ?? "🎮"}
+                  </span>
+                )}
+                <span className="absolute left-2 top-2 rounded-md bg-black/50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/95 backdrop-blur-sm sm:left-3 sm:top-3 sm:px-2 sm:text-[10px]">
+                  {t.category}
                 </span>
-              )}
-              <span className="absolute left-3 top-3 rounded-md bg-black/45 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/95 backdrop-blur-sm">
-                {t.category}
-              </span>
-              <button
-                type="button"
-                onClick={() => navigate({ to: "/play/$gameId", params: { gameId: t.id } })}
-                aria-label={`Play ${t.name}`}
-                className="absolute bottom-3 right-3 grid size-9 place-items-center rounded-full border border-white/40 bg-white/90 text-violet-800 opacity-95 shadow-md transition hover:scale-105 hover:bg-white sm:size-10"
-              >
-                <Play className="size-4 fill-current" />
-              </button>
-            </div>
-            <div className="flex flex-1 flex-col gap-3 p-3.5 sm:p-4">
-              <div className="min-w-0 flex-1">
-                <h3 className="font-display text-[15px] font-bold leading-snug text-violet-950 sm:text-lg">
-                  {t.name}
-                </h3>
-                <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-violet-700/70 sm:text-sm">
-                  {t.mechanic}
-                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/play/$gameId", params: { gameId: t.id } })}
+                  aria-label={`Play ${t.name}`}
+                  className="absolute inset-0 m-auto grid size-10 place-items-center rounded-full border border-white/50 bg-white/92 text-violet-800 opacity-95 shadow-md transition hover:scale-105 hover:bg-white sm:size-11"
+                >
+                  <Play className="size-4 fill-current sm:size-[1.125rem]" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => openInStudio(t.id)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[linear-gradient(135deg,#7c3aed,#db2777)] py-2.5 text-sm font-bold text-white shadow-[0_6px_16px_rgba(124,58,237,0.28)] transition hover:brightness-110"
-              >
-                Use template
-                <ArrowUpRight className="size-4 opacity-90" />
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
+              <div className="flex flex-1 flex-col gap-2.5 p-2.5 sm:gap-3 sm:p-4">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-display text-[13px] font-bold leading-snug text-violet-950 sm:text-lg">
+                    {t.name}
+                  </h3>
+                  <p className="mt-0.5 line-clamp-2 text-[10px] leading-relaxed text-violet-700/70 sm:mt-1 sm:text-sm">
+                    {t.mechanic}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openInStudio(t.id)}
+                  className="flex w-full items-center justify-center gap-1 rounded-full bg-[linear-gradient(135deg,#7c3aed,#db2777)] py-2 text-[11px] font-bold text-white shadow-[0_6px_16px_rgba(124,58,237,0.28)] transition hover:brightness-110 sm:gap-1.5 sm:rounded-xl sm:py-2.5 sm:text-sm"
+                >
+                  Use template
+                  <ArrowUpRight className="size-3.5 opacity-90 sm:size-4" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </div>
   );

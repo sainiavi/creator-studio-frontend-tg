@@ -614,12 +614,10 @@ function Profile() {
           </button>
         </div>
 
-        <div className="space-y-4 sm:hidden">
-          <section className="relative overflow-hidden rounded-[2rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1b0744,#09011c)] p-5 text-white shadow-[0_0_0_4px_rgba(217,70,239,0.32),0_0_34px_rgba(217,70,239,0.7),0_14px_30px_rgba(91,33,182,0.38),inset_0_1px_20px_rgba(255,255,255,0.14)]">
-            <div className="pointer-events-none absolute -left-16 top-0 h-28 w-44 rotate-[-18deg] bg-white/10 blur-2xl" />
-            <div className="absolute -right-8 -bottom-8 size-36 rounded-full bg-fuchsia-300/35 blur-xl" />
-            <div className="relative flex items-center gap-5">
-              <div className="grid size-24 shrink-0 place-items-center rounded-full border-[5px] border-fuchsia-300 bg-[radial-gradient(circle,#3e196f,#16072f_70%)] text-5xl shadow-[0_0_22px_rgba(245,132,255,0.9)] sm:size-28 sm:border-[6px] sm:text-6xl">
+        <div className="space-y-3 sm:hidden">
+          <section className="relative overflow-hidden rounded-[1.75rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1b0744,#09011c)] p-4 text-white shadow-[0_0_0_3px_rgba(217,70,239,0.28),0_0_28px_rgba(217,70,239,0.55),inset_0_1px_16px_rgba(255,255,255,0.12)]">
+            <div className="relative flex items-center gap-4">
+              <div className="grid size-20 shrink-0 place-items-center rounded-full border-4 border-fuchsia-300 bg-[radial-gradient(circle,#3e196f,#16072f_70%)] text-4xl shadow-[0_0_18px_rgba(245,132,255,0.75)]">
                 🎮
               </div>
               <div className="min-w-0 flex-1">
@@ -634,12 +632,12 @@ function Profile() {
                       }}
                       autoFocus
                       maxLength={32}
-                      className="min-w-0 flex-1 rounded-xl border border-fuchsia-300/70 bg-[#24104d]/80 px-3 py-1.5 font-display text-2xl font-black text-white outline-none"
+                      className="min-w-0 flex-1 rounded-xl border border-fuchsia-300/70 bg-[#24104d]/80 px-3 py-1.5 font-display text-xl font-black text-white outline-none"
                     />
                   ) : (
-                    <h2 className="truncate font-display text-3xl font-black text-white">{displayName}</h2>
+                    <h2 className="truncate font-display text-2xl font-black text-white">{displayName}</h2>
                   )}
-                  <BadgeCheck className="size-6 shrink-0 fill-fuchsia-400 text-[#14062e]" />
+                  <BadgeCheck className="size-5 shrink-0 fill-fuchsia-400 text-[#14062e]" />
                   {editingDisplayName ? (
                     <>
                       <button
@@ -676,80 +674,78 @@ function Profile() {
                 <button
                   type="button"
                   onClick={copyIdentity}
-                  className="mt-3 flex max-w-full items-center gap-2 text-left font-display text-sm font-black text-violet-200"
+                  className="mt-2 flex max-w-full items-center gap-2 text-left text-xs font-bold text-violet-200"
                 >
-                  <span className="truncate">{compactIdentity}</span>
-                  {identityCopied ? <Check className="size-4 shrink-0" /> : <Copy className="size-4 shrink-0" />}
+                  <span className="truncate font-mono">{compactIdentity}</span>
+                  {identityCopied ? <Check className="size-3.5 shrink-0" /> : <Copy className="size-3.5 shrink-0" />}
                 </button>
-                <p className="mt-2 text-sm font-black text-violet-100">
+                <p className="mt-1 text-xs font-bold text-violet-100/80">
                   Joined {joined ?? "11 June 2026"}
                 </p>
                 {achievementSummary?.inventory.genesisFounderBadge && (
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-full border-2 border-yellow-300/75 bg-[#21110b] px-4 py-2 font-display text-xs font-black text-yellow-300 shadow-[0_0_18px_rgba(250,204,21,0.36)]">
-                    <BadgeCheck className="size-4 fill-yellow-300 text-[#21110b]" /> Genesis Founder
+                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-yellow-300/75 bg-[#21110b] px-3 py-1 font-display text-[10px] font-black text-yellow-300">
+                    <BadgeCheck className="size-3.5 fill-yellow-300 text-[#21110b]" /> Genesis Founder
                   </div>
                 )}
               </div>
             </div>
           </section>
 
-          <section className="relative overflow-hidden rounded-[1.45rem] border-2 border-yellow-200 bg-[linear-gradient(145deg,#2b170c,#140705)] px-6 py-5 shadow-[0_8px_20px_rgba(92,53,8,0.28),0_0_30px_rgba(250,204,21,0.52),inset_0_1px_18px_rgba(255,255,255,0.14)]">
-            <Star className="absolute right-36 top-6 size-7 fill-yellow-400/10 text-yellow-300/15" />
-            <Star className="absolute right-24 top-16 size-5 fill-yellow-400/10 text-yellow-300/25" />
-            <Star className="absolute right-5 top-5 size-4 fill-yellow-300 text-yellow-200 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
-            <Star className="absolute right-28 bottom-8 size-4 fill-yellow-300 text-yellow-200 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
-            <Trophy className="absolute right-7 top-1/2 size-16 -translate-y-1/2 text-yellow-300 drop-shadow-[0_0_14px_rgba(250,204,21,0.9)]" />
-            <p className="font-display text-sm font-black tracking-[0.22em] text-yellow-200">CREATOR SCORE</p>
-            <p className="mt-2 font-display text-6xl font-black leading-none text-yellow-300">
-              {formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore)}
-            </p>
-          </section>
-
-          <section className="relative overflow-hidden rounded-[1.45rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1a0646,#0b0224)] px-6 py-5 shadow-[0_8px_20px_rgba(91,33,182,0.3),0_0_34px_rgba(217,70,239,0.72),inset_0_1px_18px_rgba(255,255,255,0.15)]">
-            <Star className="absolute right-36 top-7 size-3.5 fill-fuchsia-300 text-fuchsia-200 drop-shadow-[0_0_8px_rgba(245,132,255,0.85)]" />
-            <Star className="absolute right-5 top-6 size-4 fill-fuchsia-300 text-fuchsia-200 drop-shadow-[0_0_8px_rgba(245,132,255,0.85)]" />
-            <Star className="absolute right-40 bottom-8 size-4 fill-fuchsia-300 text-fuchsia-200 drop-shadow-[0_0_8px_rgba(245,132,255,0.85)]" />
-            <Star className="absolute right-7 bottom-5 size-3.5 fill-fuchsia-300 text-fuchsia-200 drop-shadow-[0_0_8px_rgba(245,132,255,0.85)]" />
-            <div className="absolute right-6 top-1/2 grid size-20 -translate-y-1/2 place-items-center rounded-full border-4 border-fuchsia-200 bg-fuchsia-400 font-display text-2xl font-black text-white shadow-[0_0_20px_rgba(245,132,255,0.95)]">
-              KP
+          <section className="relative overflow-hidden rounded-[1.35rem] border-2 border-yellow-200/90 bg-[linear-gradient(145deg,#2b170c,#140705)] px-4 py-4 shadow-[0_0_24px_rgba(250,204,21,0.4),inset_0_1px_14px_rgba(255,255,255,0.12)]">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-display text-[11px] font-black tracking-[0.18em] text-yellow-200">CREATOR SCORE</p>
+                <p className="mt-1 font-display text-4xl font-black leading-none tabular-nums text-yellow-300">
+                  {formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore)}
+                </p>
+              </div>
+              <Trophy className="size-12 shrink-0 text-yellow-300 drop-shadow-[0_0_12px_rgba(250,204,21,0.85)]" />
             </div>
-            <p className="font-display text-sm font-black tracking-[0.22em] text-fuchsia-300">KULT POINTS (KP)</p>
-            <p className="mt-3 max-w-[74%] truncate font-display text-5xl font-black leading-none text-fuchsia-300 min-[420px]:text-6xl">
-              {formatKultPoints(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
-            </p>
-            <p className="mt-2 font-display text-sm font-black tracking-[0.28em] text-fuchsia-200">
-              LEVEL {pointSummary?.level?.level ?? 1}
-            </p>
           </section>
 
-          <section className="grid grid-cols-3 overflow-hidden rounded-[1.35rem] border-2 border-violet-200 bg-[linear-gradient(145deg,#1c0846,#0b0224)] text-center text-white shadow-[0_0_28px_rgba(124,58,237,0.65),inset_0_1px_16px_rgba(255,255,255,0.13)]">
+          <section className="relative overflow-hidden rounded-[1.35rem] border-2 border-fuchsia-200/90 bg-[linear-gradient(145deg,#1a0646,#0b0224)] px-4 py-4 shadow-[0_0_28px_rgba(217,70,239,0.55),inset_0_1px_14px_rgba(255,255,255,0.12)]">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-display text-[11px] font-black tracking-[0.18em] text-fuchsia-300">KULT POINTS (KP)</p>
+                <p className="mt-1 font-display text-4xl font-black leading-none tabular-nums text-fuchsia-300">
+                  {formatKultPoints(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
+                </p>
+                <p className="mt-1.5 font-display text-xs font-black tracking-[0.2em] text-fuchsia-200/90">
+                  LEVEL {pointSummary?.level?.level ?? 1}
+                </p>
+              </div>
+              <div className="grid size-14 shrink-0 place-items-center rounded-full border-4 border-fuchsia-200 bg-fuchsia-400 font-display text-lg font-black text-white shadow-[0_0_16px_rgba(245,132,255,0.9)]">
+                KP
+              </div>
+            </div>
+          </section>
+
+          <section className="grid grid-cols-3 overflow-hidden rounded-[1.25rem] border-2 border-violet-200/90 bg-[linear-gradient(145deg,#1c0846,#0b0224)] text-center text-white shadow-[0_0_22px_rgba(124,58,237,0.5),inset_0_1px_12px_rgba(255,255,255,0.1)]">
             {[
-              [<Gamepad2 className="size-9 text-violet-300" />, formatStat(createdGames.length), "Games"],
-              [<Users className="size-9 text-fuchsia-300" />, formatStat(creatorStats?.followers), "Followers"],
-              [<Users className="size-9 text-blue-300" />, formatStat(followingCount), "Following"],
+              [<Gamepad2 className="size-5 text-violet-300" />, formatStat(createdGames.length), "Games"],
+              [<Users className="size-5 text-fuchsia-300" />, formatStat(creatorStats?.followers), "Followers"],
+              [<Users className="size-5 text-blue-300" />, formatStat(followingCount), "Following"],
             ].map(([icon, value, label], index) => (
-              <div key={String(label)} className={`flex items-center justify-center gap-3 px-3 py-4 ${index > 0 ? "border-l border-violet-300/30" : ""}`}>
+              <div key={String(label)} className={`flex flex-col items-center justify-center gap-1 px-2 py-3.5 ${index > 0 ? "border-l border-violet-300/30" : ""}`}>
                 {icon}
-                <div>
-                  <p className="font-display text-3xl font-black leading-none">{value}</p>
-                  <p className="text-xs font-bold text-violet-100">{label}</p>
-                </div>
+                <p className="font-display text-xl font-black leading-none tabular-nums">{value}</p>
+                <p className="text-[10px] font-bold text-violet-100/90">{label}</p>
               </div>
             ))}
           </section>
 
           <section className="grid grid-cols-3 gap-2 text-center text-white">
             {[
-              [<Heart className="size-8 fill-pink-400 text-pink-300" />, formatStat(creatorStats?.likes), "Likes"],
-              [<Send className="size-8 fill-teal-300 text-teal-200" />, formatStat(creatorStats?.shares), "Shares"],
-              [<Repeat2 className="size-8 text-blue-300" />, formatStat(creatorStats?.remixes), "Remixes"],
+              [<Heart className="size-5 fill-pink-400 text-pink-300" />, formatStat(creatorStats?.likes), "Likes"],
+              [<Send className="size-5 fill-teal-300 text-teal-200" />, formatStat(creatorStats?.shares), "Shares"],
+              [<Repeat2 className="size-5 text-blue-300" />, formatStat(creatorStats?.remixes), "Remixes"],
             ].map(([icon, value, label]) => (
-              <div key={String(label)} className="rounded-[1.25rem] border-2 border-violet-200/90 bg-[linear-gradient(145deg,#1c0846,#0b0224)] px-3 py-4 shadow-[0_0_24px_rgba(124,58,237,0.58),inset_0_1px_14px_rgba(255,255,255,0.12)]">
-                <div className="flex items-center justify-center gap-3">
+              <div key={String(label)} className="rounded-[1.15rem] border-2 border-violet-200/80 bg-[linear-gradient(145deg,#1c0846,#0b0224)] px-2 py-3 shadow-[0_0_18px_rgba(124,58,237,0.45),inset_0_1px_10px_rgba(255,255,255,0.1)]">
+                <div className="flex items-center justify-center gap-1.5">
                   {icon}
-                  <p className="font-display text-3xl font-black leading-none">{value}</p>
+                  <p className="font-display text-xl font-black leading-none tabular-nums">{value}</p>
                 </div>
-                <p className="mt-1 text-xs font-bold text-violet-100">{label}</p>
+                <p className="mt-1 text-[10px] font-bold text-violet-100/90">{label}</p>
               </div>
             ))}
           </section>
@@ -757,43 +753,38 @@ function Profile() {
           <button
             type="button"
             onClick={() => setOpenPanel("challenges")}
-            className="relative flex w-full items-center justify-between overflow-hidden rounded-[1.55rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1c0846,#0b0224)] p-5 text-left text-white shadow-[0_0_34px_rgba(217,70,239,0.72),inset_0_1px_18px_rgba(255,255,255,0.15)]"
+            className="relative flex w-full items-center gap-3 overflow-hidden rounded-[1.35rem] border-2 border-fuchsia-200/90 bg-[linear-gradient(145deg,#1c0846,#0b0224)] p-4 text-left text-white shadow-[0_0_26px_rgba(217,70,239,0.55),inset_0_1px_14px_rgba(255,255,255,0.12)]"
           >
-            <CalendarDays className="size-20 text-violet-300 drop-shadow-[0_0_14px_rgba(196,181,253,0.9)]" />
-            <span className="min-w-0 flex-1 px-4">
-              <span className="block font-display text-2xl font-black">Daily Challenges</span>
-              <span className="mt-1 block text-sm font-bold text-violet-100">
+            <CalendarDays className="size-10 shrink-0 text-violet-300" />
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-lg font-black">Daily Challenges</span>
+              <span className="mt-0.5 block text-xs font-bold text-violet-100">
                 {dailyChallenges.filter((c) => c.completed).length}/{dailyChallenges.length} complete
               </span>
-              <span className="mt-3 block h-4 overflow-hidden rounded-full border border-fuchsia-300/70 bg-[#2a1155]">
+              <span className="mt-2 block h-2.5 overflow-hidden rounded-full border border-fuchsia-300/70 bg-[#2a1155]">
                 <span
                   className="block h-full rounded-full bg-[linear-gradient(90deg,#e879f9,#a855f7)]"
                   style={{ width: `${dailyChallenges.length ? (dailyChallenges.filter((c) => c.completed).length / dailyChallenges.length) * 100 : 0}%` }}
                 />
               </span>
             </span>
-            <Gift className="size-20 text-fuchsia-300 drop-shadow-[0_0_14px_rgba(245,132,255,0.9)]" />
-            <Star className="absolute right-24 top-9 size-6 fill-yellow-300 text-yellow-300" />
+            <Gift className="size-9 shrink-0 text-fuchsia-300" />
           </button>
 
           <button
             type="button"
             onClick={() => setOpenPanel("achievements")}
-            className="relative flex w-full items-center justify-between overflow-hidden rounded-[1.55rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1c0846,#0b0224)] p-5 text-left text-white shadow-[0_0_34px_rgba(217,70,239,0.72),inset_0_1px_18px_rgba(255,255,255,0.15)]"
+            className="relative flex w-full items-center gap-3 overflow-hidden rounded-[1.35rem] border-2 border-fuchsia-200/90 bg-[linear-gradient(145deg,#1c0846,#0b0224)] p-4 text-left text-white shadow-[0_0_26px_rgba(217,70,239,0.55),inset_0_1px_14px_rgba(255,255,255,0.12)]"
           >
-            <span className="relative grid size-20 shrink-0 place-items-center rounded-full bg-[radial-gradient(circle,#ffe772_0%,#f5b914_48%,#7c3a12_100%)] shadow-[0_0_22px_rgba(250,204,21,0.75),inset_0_3px_10px_rgba(255,255,255,0.55)]">
-              <Trophy className="size-12 fill-yellow-200 text-yellow-950 drop-shadow-[0_2px_0_rgba(255,255,255,0.28)]" />
-              <span className="absolute left-4 top-3 size-3 rounded-full bg-white/70 blur-[1px]" />
-              <span className="absolute -bottom-1 h-2 w-12 rounded-full bg-yellow-300/70 blur-[2px]" />
+            <span className="relative grid size-12 shrink-0 place-items-center rounded-full bg-[radial-gradient(circle,#ffe772_0%,#f5b914_48%,#7c3a12_100%)] shadow-[0_0_16px_rgba(250,204,21,0.65)]">
+              <Trophy className="size-7 fill-yellow-200 text-yellow-950" />
             </span>
-            <span className="min-w-0 flex-1 px-4">
-              <span className="block font-display text-2xl font-black">Achievements</span>
-              <span className="mt-1 block text-sm font-bold text-violet-100">
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-lg font-black">Achievements</span>
+              <span className="mt-0.5 block text-xs font-bold text-violet-100">
                 {achievementSummary?.inventory.badges.length ?? 0} unlocked
               </span>
             </span>
-            <Star className="absolute right-24 top-8 size-5 fill-yellow-300 text-yellow-300" />
-            <Star className="absolute right-7 bottom-6 size-4 fill-fuchsia-300 text-fuchsia-200" />
           </button>
         </div>
 

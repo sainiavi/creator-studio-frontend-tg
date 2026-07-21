@@ -10,7 +10,6 @@ import { getTonWallet } from "@/lib/tonWallet";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
 import { CreatePageSkeleton } from "@/components/studio/PageSkeletons";
-import { ConsoleHero } from "@/components/studio/ConsoleHero";
 import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
 import { KultLogo } from "@/components/studio/KultLogo";
 import { useCreateChatFlow } from "@/hooks/useCreateChatFlow";
@@ -373,59 +372,22 @@ function Create() {
           </div>
         )}
 
-        <div className="relative z-10 mb-1 w-full sm:hidden">
-          <ConsoleHero
-            value={chatInput}
-            onChange={setChatInput}
-            onSubmit={submitComposerPrompt}
-            onCategoryPick={(seed) => {
-              if (chatStage === "game" || chatStage === "vibe" || chatStage === "concept") {
-                sendChatMessage(seed);
-              }
-            }}
-            messages={messages}
-            chatStage={chatStage}
-            onQuickReply={sendChatMessage}
-            isThinking={isThinking}
-            showSideCharacters={false}
-            disabled={phase === "building"}
-            placeholder={
-              chatStage === "game" ? "Describe your game idea..." : "Type a prompt..."
-            }
-          />
-        </div>
-
-        <header className="mb-5 hidden items-center justify-between gap-3 sm:flex">
-          <div className="flex min-w-0 items-center gap-3 rounded-[1.6rem] border-2 border-white/70 bg-white/82 px-4 py-3 text-violet-950 shadow-[0_0_28px_rgba(168,85,247,0.35),inset_0_2px_12px_rgba(255,255,255,0.95)] backdrop-blur">
-            <KultLogo className="h-8 w-auto max-w-[120px] object-contain" />
+        <header className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
+          <div className="flex min-w-0 items-center gap-3 rounded-[1.35rem] border-2 border-white/70 bg-white/82 px-3.5 py-2.5 text-violet-950 shadow-[0_0_22px_rgba(168,85,247,0.3),inset_0_2px_10px_rgba(255,255,255,0.95)] backdrop-blur sm:rounded-[1.6rem] sm:px-4 sm:py-3">
+            <KultLogo className="h-7 w-auto max-w-[100px] object-contain sm:h-8 sm:max-w-[120px]" />
             <div>
-              <p className="font-display text-2xl font-black leading-none text-violet-900">Create</p>
-              <p className="text-xs font-bold text-violet-600">Describe it. AI builds it.</p>
+              <p className="font-display text-xl font-black leading-none text-violet-900 sm:text-2xl">Create</p>
+              <p className="text-[11px] font-bold text-violet-600 sm:text-xs">Describe it. AI builds it.</p>
             </div>
           </div>
-          <span className="inline-flex shrink-0 items-center gap-2 rounded-[1.6rem] border-2 border-violet-300/60 bg-white/82 px-4 py-3 font-display text-sm font-black text-violet-800 shadow-[inset_0_2px_10px_rgba(255,255,255,0.9),0_0_18px_rgba(168,85,247,0.3)] backdrop-blur">
+          <span className="hidden shrink-0 items-center gap-2 rounded-[1.6rem] border-2 border-violet-300/60 bg-white/82 px-4 py-3 font-display text-sm font-black text-violet-800 shadow-[inset_0_2px_10px_rgba(255,255,255,0.9),0_0_18px_rgba(168,85,247,0.3)] backdrop-blur sm:inline-flex">
             <Bot className="size-6 text-violet-700" /> AI Game Studio
           </span>
         </header>
 
-        <div className="mb-5 hidden sm:block">
-          <CreateConsolePanel
-            value={chatInput}
-            onChange={setChatInput}
-            onSubmit={submitComposerPrompt}
-            onCategoryPick={(seed) => {
-              if (chatStage === "game" && messages.length <= 1) sendChatMessage(seed);
-            }}
-            disabled={phase === "building"}
-            placeholder={
-              chatStage === "game" ? "Describe your game idea..." : "Type a prompt or command..."
-            }
-          />
-        </div>
-
         {templateSeed && (
-          <div className="mb-4 flex gap-3 rounded-[1.5rem] border-2 border-fuchsia-200 bg-white/80 p-3 text-violet-950 shadow-[0_0_18px_rgba(168,85,247,0.3)] backdrop-blur">
-            <div className="relative size-16 shrink-0 overflow-hidden rounded-2xl border border-violet-200 bg-violet-100">
+          <div className="mb-4 flex gap-2.5 rounded-[1.25rem] border-2 border-fuchsia-200 bg-white/85 p-2.5 text-violet-950 shadow-[0_0_16px_rgba(168,85,247,0.28)] backdrop-blur sm:gap-3 sm:rounded-[1.5rem] sm:p-3">
+            <div className="relative size-12 shrink-0 overflow-hidden rounded-xl border border-violet-200 bg-violet-100 sm:size-16 sm:rounded-2xl">
               {getThumbnailUrl(templateSeed.id) ? (
                 <img
                   src={getThumbnailUrl(templateSeed.id)}
@@ -433,31 +395,31 @@ function Create() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="grid h-full place-items-center text-3xl">
+                <span className="grid h-full place-items-center text-2xl sm:text-3xl">
                   {templateEmoji[templateSeed.id] ?? "🎮"}
                 </span>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-600">
+              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-fuchsia-600 sm:text-[10px]">
                 Template selected
               </p>
-              <h2 className="truncate font-display text-lg font-black">{templateSeed.name}</h2>
-              <p className="line-clamp-2 text-xs font-semibold text-violet-700">
+              <h2 className="truncate font-display text-base font-black sm:text-lg">{templateSeed.name}</h2>
+              <p className="line-clamp-1 text-[11px] font-semibold text-violet-700 sm:line-clamp-2 sm:text-xs">
                 {templateSeed.mechanic}
               </p>
             </div>
             <button
               type="button"
               onClick={() => navigate({ to: "/templates" })}
-              className="self-center rounded-xl border border-violet-300 bg-white/80 px-3 py-2 text-xs font-black text-violet-700"
+              className="self-center rounded-lg border border-violet-300 bg-white/80 px-2.5 py-1.5 text-[11px] font-black text-violet-700 sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs"
             >
               Change
             </button>
           </div>
         )}
 
-        <section className={`overflow-hidden rounded-[1.75rem] border-[3px] border-white/80 bg-[radial-gradient(circle_at_50%_5%,rgba(168,85,247,0.28),transparent_24%),linear-gradient(180deg,#160543,#070018)] p-4 shadow-[0_0_0_2px_rgba(168,85,247,0.5),0_0_36px_rgba(168,85,247,0.75),inset_0_1px_22px_rgba(255,255,255,0.12)] sm:rounded-[2rem] sm:border-[5px] sm:p-5 ${freshChat ? "hidden sm:block" : ""}`}>
+        <section className="mb-4 overflow-hidden rounded-[1.5rem] border-[3px] border-white/80 bg-[radial-gradient(circle_at_50%_5%,rgba(168,85,247,0.28),transparent_24%),linear-gradient(180deg,#160543,#070018)] p-3.5 shadow-[0_0_0_2px_rgba(168,85,247,0.5),0_0_36px_rgba(168,85,247,0.75),inset_0_1px_22px_rgba(255,255,255,0.12)] sm:rounded-[2rem] sm:border-[5px] sm:p-5">
           <div className="hidden flex-col items-center text-center sm:flex">
             <span className="relative grid size-20 place-items-center rounded-full border-2 border-fuchsia-200 bg-[radial-gradient(circle_at_35%_25%,#ffb7ff,#a855f7_48%,#3b0764_100%)] shadow-[0_0_26px_rgba(217,70,239,0.9)]">
               <Bot className="size-11 text-cyan-200 drop-shadow-[0_0_10px_rgba(103,232,249,0.95)]" />
@@ -469,14 +431,17 @@ function Create() {
           </div>
 
           {freshChat ? (
-            <div className="mt-5 grid gap-3">
+            <div className="grid gap-2.5 sm:mt-5 sm:gap-3">
+              <p className="text-center font-display text-xs font-black text-fuchsia-200 sm:text-sm">
+                {templateSeed ? "Tell me how to remix it" : "Or try a starter idea"}
+              </p>
               {ideas.slice(0, 2).map((idea) => (
                 <button
                   key={idea.text}
                   onClick={() => sendChatMessage(idea.text)}
-                  className="group flex items-center gap-3 rounded-[1.35rem] border border-fuchsia-300/45 bg-[linear-gradient(135deg,rgba(72,20,137,0.92),rgba(38,10,91,0.96))] p-2.5 text-left shadow-[0_0_14px_rgba(168,85,247,0.28),inset_0_1px_12px_rgba(255,255,255,0.08)] transition hover:border-fuchsia-200"
+                  className="group flex items-center gap-2.5 rounded-[1.15rem] border border-fuchsia-300/45 bg-[linear-gradient(135deg,rgba(72,20,137,0.92),rgba(38,10,91,0.96))] p-2 text-left shadow-[0_0_14px_rgba(168,85,247,0.28),inset_0_1px_12px_rgba(255,255,255,0.08)] transition hover:border-fuchsia-200 sm:gap-3 sm:rounded-[1.35rem] sm:p-2.5"
                 >
-                  <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-fuchsia-200/50 bg-[radial-gradient(circle,#c084fc,#4c1d95_74%)] text-3xl shadow-[inset_0_2px_10px_rgba(255,255,255,0.22)]">
+                  <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-fuchsia-200/50 bg-[radial-gradient(circle,#c084fc,#4c1d95_74%)] text-xl shadow-[inset_0_2px_10px_rgba(255,255,255,0.22)] sm:size-16 sm:rounded-2xl sm:text-3xl">
                     {idea.image ? (
                       <img
                         src={idea.image}
@@ -488,23 +453,23 @@ function Create() {
                       idea.icon
                     )}
                   </span>
-                  <span className="min-w-0 flex-1 text-lg font-black leading-tight text-white">
+                  <span className="min-w-0 flex-1 text-[13px] font-black leading-tight text-white sm:text-lg">
                     {idea.text}
                   </span>
-                  <ArrowRight className="size-7 shrink-0 text-fuchsia-300 transition group-hover:translate-x-1" />
+                  <ArrowRight className="size-5 shrink-0 text-fuchsia-300 transition group-hover:translate-x-1 sm:size-7" />
                 </button>
               ))}
             </div>
           ) : (
             <>
-              <div className="mt-5 max-h-[36vh] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(232,121,249,0.75)_transparent]">
+              <div className="max-h-[32vh] space-y-2.5 overflow-y-auto pr-1 sm:mt-5 sm:max-h-[36vh] sm:space-y-3 [scrollbar-width:thin] [scrollbar-color:rgba(232,121,249,0.75)_transparent]">
                 {messages.map((message, index) => (
                   <div
                     key={`${message.role}-${index}`}
                     className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm font-semibold leading-relaxed ${
+                      className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold leading-relaxed sm:px-4 sm:py-3 sm:text-sm ${
                         message.role === "user"
                           ? "bg-fuchsia-400/35 text-white"
                           : "bg-white/8 text-violet-100"
@@ -515,12 +480,12 @@ function Create() {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-4 sm:gap-2">
                 {(chatStage === "game" ? ideas.map((i) => i.text) : vibeIdeas).map((idea) => (
                   <button
                     key={idea}
                     onClick={() => sendChatMessage(idea)}
-                    className="rounded-full border border-fuchsia-300/40 bg-white/8 px-4 py-2 text-xs font-bold text-violet-100 transition hover:border-fuchsia-200"
+                    className="rounded-full border border-fuchsia-300/40 bg-white/8 px-3 py-1.5 text-[11px] font-bold text-violet-100 transition hover:border-fuchsia-200 sm:px-4 sm:py-2 sm:text-xs"
                   >
                     {idea}
                   </button>
@@ -528,7 +493,7 @@ function Create() {
                 {chatStage === "concept" && (
                   <button
                     onClick={() => sendChatMessage("Ok, create it!")}
-                    className="rounded-full bg-fuchsia-400 px-4 py-2 text-xs font-black text-white"
+                    className="rounded-full bg-fuchsia-400 px-3 py-1.5 text-[11px] font-black text-white sm:px-4 sm:py-2 sm:text-xs"
                   >
                     Ok, create it!
                   </button>
@@ -537,6 +502,30 @@ function Create() {
             </>
           )}
         </section>
+
+        <div className="mb-4 w-full">
+          <div className="relative overflow-hidden rounded-[1.35rem] border-2 border-fuchsia-300/70 bg-[linear-gradient(160deg,#16082f_0%,#0a0118_55%,#1a0a3e_100%)] p-3 shadow-[0_0_0_1px_rgba(244,114,182,0.35),0_0_32px_rgba(168,85,247,0.45),inset_0_1px_16px_rgba(255,255,255,0.08)] sm:rounded-[1.5rem] sm:p-4">
+            <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-fuchsia-500/20 blur-3xl" />
+            <p className="relative mb-2 text-center font-display text-[10px] font-black uppercase tracking-[0.14em] text-fuchsia-300">
+              {templateSeed ? "Describe your remix" : "Type your game idea"}
+            </p>
+            <CreateConsolePanel
+              value={chatInput}
+              onChange={setChatInput}
+              onSubmit={submitComposerPrompt}
+              onCategoryPick={(seed) => {
+                if (chatStage === "game" || chatStage === "vibe" || chatStage === "concept") {
+                  sendChatMessage(seed);
+                }
+              }}
+              disabled={phase === "building" || isThinking}
+              placeholder={
+                chatStage === "game" ? "Type your game idea here…" : "Type a prompt…"
+              }
+              className="relative !rounded-[1.1rem] !border-2 !border-fuchsia-400/80 !bg-[#12082a]/95 !p-2.5 !shadow-[0_0_22px_rgba(217,70,239,0.45),inset_0_1px_10px_rgba(255,255,255,0.08)] sm:!p-3"
+            />
+          </div>
+        </div>
 
         <div
           ref={strategySectionRef}
@@ -603,17 +592,18 @@ function Create() {
         </div>
 
         {phase !== "idle" && (
-          <div className="animate-float-up mt-6 rounded-2xl border border-border/60 bg-card p-6 shadow-card">
+          <div className="animate-float-up mt-6 rounded-[1.75rem] border-2 border-fuchsia-200/80 bg-white/95 p-5 text-violet-950 shadow-[0_12px_32px_rgba(124,58,237,0.22)] sm:p-6">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-display text-lg font-bold">
-                  Build Console
-                  {builtGame?.title ? (
-                    <span className="text-muted-foreground"> · {builtGame.title}</span>
-                  ) : null}
+              <div className="min-w-0">
+                <h3 className="truncate font-display text-xl font-black sm:text-2xl">
+                  {builtGame?.title ?? "Build Console"}
                 </h3>
-                <p className="label-mono mt-1 text-[10px] text-muted-foreground">
-                  {activeBuild?.statusText ?? studio.agentStatus}
+                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-violet-500">
+                  {phase === "done"
+                    ? "AI Build Ready"
+                    : phase === "failed"
+                      ? "Build Failed"
+                      : activeBuild?.statusText ?? studio.agentStatus}
                   {phase === "building"
                     ? ` · ${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s`
                     : ""}
@@ -622,14 +612,14 @@ function Create() {
               {phase === "building" ? (
                 <button
                   onClick={cancelBuild}
-                  className="shrink-0 rounded-lg border border-destructive/50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-destructive transition hover:bg-destructive/10"
+                  className="shrink-0 rounded-full border border-rose-300/70 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-rose-600 transition hover:bg-rose-50"
                 >
-                  Cancel build
+                  Cancel
                 </button>
               ) : (
                 <button
                   onClick={cancelBuild}
-                  className="shrink-0 rounded-lg border border-border/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground transition hover:bg-secondary"
+                  className="shrink-0 rounded-full border border-violet-200 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-violet-600 transition hover:bg-violet-50"
                 >
                   Dismiss
                 </button>
@@ -640,19 +630,17 @@ function Create() {
                 const active = phase === "building" && i === step;
                 const complete = phase === "done" || phase === "failed" || i < step;
                 return (
-                  <li key={s} className="flex items-center gap-3 text-sm">
-                    <span className="flex size-6 items-center justify-center rounded-full border border-border/70">
+                  <li key={s} className="flex items-center gap-3 text-sm font-semibold">
+                    <span className="flex size-6 items-center justify-center rounded-full border border-violet-200 bg-violet-50">
                       {complete ? (
-                        <Check className="size-3.5 text-[oklch(0.85_0.2_150)]" />
+                        <Check className="size-3.5 text-emerald-500" />
                       ) : active ? (
-                        <Loader2 className="size-3.5 animate-spin text-primary" />
+                        <Loader2 className="size-3.5 animate-spin text-fuchsia-500" />
                       ) : (
-                        <span className="size-1.5 rounded-full bg-muted-foreground" />
+                        <span className="size-1.5 rounded-full bg-violet-300" />
                       )}
                     </span>
-                    <span
-                      className={complete || active ? "text-foreground" : "text-muted-foreground"}
-                    >
+                    <span className={complete || active ? "text-violet-950" : "text-violet-400"}>
                       {s}
                     </span>
                   </li>

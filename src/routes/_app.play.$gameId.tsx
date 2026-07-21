@@ -50,6 +50,7 @@ import type { SharePlatform } from "@/lib/api/social";
 import { qualifyReferral } from "@/lib/api/referral";
 import {
   clearPlayReturnPath,
+  getPlayBackFallback,
   readPlayReturnPath,
 } from "@/lib/playNavigation";
 
@@ -76,6 +77,32 @@ function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
+}
+
+function ReelPeekSlide({ game }: { game: any | null }) {
+  if (!game) return <div className="h-full w-full shrink-0 bg-black" />;
+  const thumb = getThumbnailUrl(String(game.id)) || resolveGameThumbnail(game);
+  return (
+    <div className="relative h-full w-full shrink-0 overflow-hidden bg-black">
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${gradientClass[gradientForId(String(game.id))]} opacity-50`}
+      />
+      {thumb ? (
+        <img src={thumb} alt="" className="absolute inset-0 h-full w-full object-cover opacity-55" />
+      ) : (
+        <div className="absolute inset-0 grid place-items-center text-6xl opacity-70">
+          {templateEmoji[game.id] ?? "🎮"}
+        </div>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      <div className="absolute inset-x-0 bottom-24 px-6 text-center">
+        <p className="font-display text-2xl font-black text-white drop-shadow-lg">{game.name}</p>
+        <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-white/70">
+          {game.category ?? "Game"}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -561,13 +588,25 @@ function PlayFeed() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const isUiHidden = false;
   const startY = useRef(0);
+  const startX = useRef(0);
+  const dragYRef = useRef(0);
+  const isDraggingRef = useRef(false);
+  const gestureModeRef = useRef<"undecided" | "reel" | "game">("undecided");
   const cooldownRef = useRef(false);
   const transitionTimerRef = useRef<number | null>(null);
+  const mainRef = useRef<HTMLElement | null>(null);
+  const reduceMotionRef = useRef(false);
 
   const slideDistance = useCallback(
-    () => (typeof window !== "undefined" ? Math.min(window.innerHeight * 0.42, 520) : 420),
+    () => (typeof window !== "undefined" ? window.innerHeight : 720),
     [],
   );
+
+  useEffect(() => {
+    reduceMotionRef.current =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -579,48 +618,55 @@ function PlayFeed() {
 
   useEffect(() => {
     setIsDragging(false);
-    cooldownRef.current = false;
+    isDraggingRef.current = false;
+    gestureModeRef.current = "undecided";
+    dragYRef.current = 0;
+    setDragY(0);
+    setIsTransitioning(false);
     setIsGameActive(false);
   }, [gameId]);
 
   const navigateToReelGame = useCallback(
-    (nextGameId: string, direction: "next" | "prev") => {
+    (nextGameId: string) => {
       navigate({
         to: "/play/$gameId",
         params: { gameId: nextGameId },
         replace: true,
         resetScroll: false,
       });
-      setDragY(direction === "next" ? slideDistance() * 0.18 : -slideDistance() * 0.18);
-      requestAnimationFrame(() => {
-        setDragY(0);
-        setIsTransitioning(false);
-        transitionTimerRef.current = window.setTimeout(() => {
-          cooldownRef.current = false;
-        }, 280);
-      });
+      // Snap track back instantly after route change (new game is already centered).
+      dragYRef.current = 0;
+      setDragY(0);
+      setIsTransitioning(false);
+      transitionTimerRef.current = window.setTimeout(() => {
+        cooldownRef.current = false;
+      }, 320);
     },
-    [navigate, slideDistance],
+    [navigate],
   );
 
   const handlePlayBack = useCallback(() => {
     const returnTo = readPlayReturnPath();
+    clearPlayReturnPath();
+
     if (returnTo) {
-      clearPlayReturnPath();
       const [pathname, search = ""] = returnTo.split("?");
-      if (search) {
-        const params = Object.fromEntries(new URLSearchParams(search));
-        navigate({ to: pathname, search: params });
-      } else {
-        navigate({ to: pathname });
+      const target = pathname || "/";
+      try {
+        if (search) {
+          const params = Object.fromEntries(new URLSearchParams(search));
+          navigate({ to: target, search: params });
+        } else {
+          navigate({ to: target });
+        }
+      } catch {
+        navigate({ to: getPlayBackFallback() });
       }
       return;
     }
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    navigate({ to: "/" });
+
+    // No remembered origin (direct link / refresh) → leave reels for home.
+    navigate({ to: getPlayBackFallback() });
   }, [navigate]);
 
   const trendingIds = useMemo(
@@ -747,14 +793,19 @@ function PlayFeed() {
 
     cooldownRef.current = true;
     setIsTransitioning(true);
-    setDragY(-slideDistance());
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    const distance = slideDistance();
+    dragYRef.current = -distance;
+    setDragY(-distance);
 
     if (transitionTimerRef.current !== null) {
       window.clearTimeout(transitionTimerRef.current);
     }
+    const delay = reduceMotionRef.current ? 40 : 340;
     transitionTimerRef.current = window.setTimeout(() => {
-      navigateToReelGame(nextGame.id, "next");
-    }, 260);
+      navigateToReelGame(nextGame.id);
+    }, delay);
   }, [gameId, activeGamesList, isTransitioning, navigateToReelGame, slideDistance]);
 
   const triggerPrevGame = useCallback(() => {
@@ -767,90 +818,172 @@ function PlayFeed() {
 
     cooldownRef.current = true;
     setIsTransitioning(true);
-    setDragY(slideDistance());
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    const distance = slideDistance();
+    dragYRef.current = distance;
+    setDragY(distance);
 
     if (transitionTimerRef.current !== null) {
       window.clearTimeout(transitionTimerRef.current);
     }
+    const delay = reduceMotionRef.current ? 40 : 340;
     transitionTimerRef.current = window.setTimeout(() => {
-      navigateToReelGame(prevGame.id, "prev");
-    }, 260);
+      navigateToReelGame(prevGame.id);
+    }, delay);
   }, [gameId, activeGamesList, isTransitioning, navigateToReelGame, slideDistance]);
 
-  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-    const target = e.target as HTMLElement;
-    if (
+  const shouldIgnoreReelTarget = (target: HTMLElement) =>
+    Boolean(
       target.closest("button") ||
-      target.closest("a") ||
-      target.closest("input") ||
-      target.closest("textarea") ||
-      target.closest("[data-reel-actions]") ||
-      (isGameActive && target.closest(".feed-game-frame"))
-    ) {
-      return;
-    }
+        target.closest("a") ||
+        target.closest("input") ||
+        target.closest("textarea") ||
+        target.closest("[data-reel-actions]") ||
+        target.closest(".comments-panel") ||
+        target.closest(".leaderboard-panel"),
+    );
 
-    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+  const handleDragStart = (clientX: number, clientY: number, target: HTMLElement) => {
+    if (cooldownRef.current || isTransitioning || shouldIgnoreReelTarget(target)) return false;
+    startX.current = clientX;
     startY.current = clientY;
+    dragYRef.current = 0;
+    gestureModeRef.current = "undecided";
+    isDraggingRef.current = true;
     setIsDragging(true);
+    setDragY(0);
+    return true;
   };
 
-  const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging || cooldownRef.current || isTransitioning) return;
-    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+  const handleDragMove = (clientX: number, clientY: number, event?: TouchEvent | MouseEvent) => {
+    if (!isDraggingRef.current || cooldownRef.current || isTransitioning) return;
+    const deltaX = clientX - startX.current;
     const deltaY = clientY - startY.current;
-    setDragY(deltaY * 0.72);
-    if (Math.abs(deltaY) > 8 && "touches" in e) {
-      e.preventDefault();
+
+    if (gestureModeRef.current === "undecided") {
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      if (absX < 10 && absY < 10) return;
+      // Vertical intent → reel. Horizontal / game-like → leave to the game.
+      if (absY > absX * 1.15 && absY > 12) {
+        gestureModeRef.current = "reel";
+      } else if (absX > absY * 1.05) {
+        gestureModeRef.current = "game";
+        isDraggingRef.current = false;
+        setIsDragging(false);
+        dragYRef.current = 0;
+        setDragY(0);
+        return;
+      } else {
+        return;
+      }
     }
+
+    if (gestureModeRef.current !== "reel") return;
+
+    event?.preventDefault();
+    const distance = slideDistance();
+    const next = Math.max(-distance, Math.min(distance, deltaY * 0.92));
+    dragYRef.current = next;
+    setDragY(next);
   };
 
   const handleDragEnd = () => {
-    if (!isDragging || isTransitioning) return;
+    if (!isDraggingRef.current || isTransitioning) return;
+    isDraggingRef.current = false;
     setIsDragging(false);
 
-    if (dragY < -72) {
+    if (gestureModeRef.current !== "reel") {
+      gestureModeRef.current = "undecided";
+      dragYRef.current = 0;
+      setDragY(0);
+      return;
+    }
+
+    const y = dragYRef.current;
+    const threshold = Math.min(96, slideDistance() * 0.14);
+    gestureModeRef.current = "undecided";
+
+    if (y < -threshold) {
       triggerNextGame();
       return;
     }
-    if (dragY > 72) {
+    if (y > threshold) {
       triggerPrevGame();
       return;
     }
+    dragYRef.current = 0;
     setDragY(0);
   };
+
+  const activeIndex = useMemo(() => {
+    const index = activeGamesList.findIndex((t: any) => t.id === gameId);
+    return index === -1 ? 0 : index;
+  }, [activeGamesList, gameId]);
+
+  const prevReelGame = activeGamesList.length
+    ? activeGamesList[(activeIndex - 1 + activeGamesList.length) % activeGamesList.length]
+    : null;
+  const nextReelGame = activeGamesList.length
+    ? activeGamesList[(activeIndex + 1) % activeGamesList.length]
+    : null;
+
+  const reelHandlersRef = useRef({
+    handleDragStart,
+    handleDragMove,
+    handleDragEnd,
+  });
+  reelHandlersRef.current = { handleDragStart, handleDragMove, handleDragEnd };
+
+  useEffect(() => {
+    const node = mainRef.current;
+    if (!node) return;
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      reelHandlersRef.current.handleDragStart(touch.clientX, touch.clientY, event.target as HTMLElement);
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      reelHandlersRef.current.handleDragMove(touch.clientX, touch.clientY, event);
+    };
+    const onTouchEnd = () => reelHandlersRef.current.handleDragEnd();
+    const onTouchCancel = () => reelHandlersRef.current.handleDragEnd();
+
+    node.addEventListener("touchstart", onTouchStart, { passive: true, capture: true });
+    node.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
+    node.addEventListener("touchend", onTouchEnd, { capture: true });
+    node.addEventListener("touchcancel", onTouchCancel, { capture: true });
+    return () => {
+      node.removeEventListener("touchstart", onTouchStart, true);
+      node.removeEventListener("touchmove", onTouchMove, true);
+      node.removeEventListener("touchend", onTouchEnd, true);
+      node.removeEventListener("touchcancel", onTouchCancel, true);
+    };
+  }, []);
 
   useEffect(() => {
     let lastWheelTime = 0;
     const handleWheel = (e: WheelEvent) => {
       const target = e.target as HTMLElement;
-      if (
-        target.closest(".comments-panel") ||
-        target.closest(".leaderboard-panel") ||
-        target.closest("[data-reel-actions]") ||
-        (isGameActive && target.closest(".feed-game-frame"))
-      ) {
-        return;
-      }
-
-      if (Math.abs(e.deltaY) < 12) return;
+      if (shouldIgnoreReelTarget(target)) return;
+      if (Math.abs(e.deltaY) < 10) return;
 
       const now = Date.now();
-      if (now - lastWheelTime < 520) return;
+      if (now - lastWheelTime < 480) return;
 
       e.preventDefault();
-      if (e.deltaY > 0) {
-        lastWheelTime = now;
-        triggerNextGame();
-      } else {
-        lastWheelTime = now;
-        triggerPrevGame();
-      }
+      lastWheelTime = now;
+      if (e.deltaY > 0) triggerNextGame();
+      else triggerPrevGame();
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
     return () => window.removeEventListener("wheel", handleWheel);
-  }, [triggerNextGame, triggerPrevGame, isGameActive]);
+  }, [triggerNextGame, triggerPrevGame]);
 
   const socialButtons = (
     <>
@@ -980,23 +1113,56 @@ function PlayFeed() {
       {/* (Old Right Sidebar removed, moved to Game Container wrapper) */}
 
       <main
-        onMouseDown={handleDragStart}
-        onMouseMove={handleDragMove}
+        ref={mainRef}
+        onMouseDown={(event) => {
+          handleDragStart(event.clientX, event.clientY, event.target as HTMLElement);
+        }}
+        onMouseMove={(event) => {
+          if (!isDraggingRef.current) return;
+          handleDragMove(event.clientX, event.clientY, event.nativeEvent);
+        }}
         onMouseUp={handleDragEnd}
         onMouseLeave={handleDragEnd}
-        onTouchStart={handleDragStart}
-        onTouchMove={handleDragMove}
-        onTouchEnd={handleDragEnd}
-        className="absolute inset-0 h-full w-full select-none cursor-grab active:cursor-grabbing"
-        style={{
-          transform: `translate3d(0, ${dragY}px, 0)`,
-          transition: isDragging
-            ? "none"
-            : "transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease",
-          opacity: isTransitioning ? 0.94 : 1,
-          willChange: isDragging || isTransitioning ? "transform" : "auto",
-        }}
+        className="absolute inset-0 h-full w-full select-none"
       >
+        {/* Adjacent reel peeks — continuous swipe feel */}
+        {nextReelGame && dragY < -4 && (
+          <div
+            className="pointer-events-none absolute inset-0 z-[5]"
+            style={{
+              transform: `translate3d(0, ${slideDistance() + dragY}px, 0)`,
+              transition: isDragging ? "none" : "transform 0.34s cubic-bezier(0.22, 1, 0.36, 1)",
+            }}
+            aria-hidden="true"
+          >
+            <ReelPeekSlide game={nextReelGame} />
+          </div>
+        )}
+        {prevReelGame && dragY > 4 && (
+          <div
+            className="pointer-events-none absolute inset-0 z-[5]"
+            style={{
+              transform: `translate3d(0, ${-slideDistance() + dragY}px, 0)`,
+              transition: isDragging ? "none" : "transform 0.34s cubic-bezier(0.22, 1, 0.36, 1)",
+            }}
+            aria-hidden="true"
+          >
+            <ReelPeekSlide game={prevReelGame} />
+          </div>
+        )}
+
+        <div
+          className="absolute inset-0 z-10 h-full w-full"
+          style={{
+            transform: `translate3d(0, ${dragY}px, 0)`,
+            transition: isDragging
+              ? "none"
+              : "transform 0.34s cubic-bezier(0.22, 1, 0.36, 1)",
+            opacity: isTransitioning ? 0.9 : 1,
+            willChange: isDragging || isTransitioning ? "transform" : "auto",
+            pointerEvents: Math.abs(dragY) > 10 || isTransitioning ? "none" : "auto",
+          }}
+        >
         <div
           className={`absolute inset-0 bg-gradient-to-br ${gradientClass[gradientForId(String(template?.id ?? gameId))]} opacity-30`}
         />
@@ -1082,6 +1248,7 @@ function PlayFeed() {
               {socialButtons}
             </aside>
           </div>
+        </div>
         </div>
       </main>
 

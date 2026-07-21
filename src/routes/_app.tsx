@@ -13,14 +13,18 @@ export const Route = createFileRoute("/_app")({
 function AppLayout() {
   const location = useLocation();
   const isPlayPage = location.pathname.startsWith("/play");
-  const prevLocationRef = useRef({ pathname: location.pathname, search: location.search });
+  const prevLocationRef = useRef({
+    pathname: location.pathname,
+    search: typeof location.search === "string" ? location.search : "",
+  });
 
   useEffect(() => {
     const prev = prevLocationRef.current;
+    const currentSearch = typeof location.search === "string" ? location.search : "";
     if (isPlayPath(location.pathname) && !isPlayPath(prev.pathname)) {
       rememberPlayReturnPath(prev.pathname, prev.search);
     }
-    prevLocationRef.current = { pathname: location.pathname, search: location.search };
+    prevLocationRef.current = { pathname: location.pathname, search: currentSearch };
   }, [location.pathname, location.search]);
 
   return (

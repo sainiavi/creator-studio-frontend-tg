@@ -14,12 +14,12 @@ const CARD_H = 224;
 /** Clears mobile bottom nav + FAB + safe area */
 const MOBILE_DOCK_CLEARANCE = "calc(7.25rem + env(safe-area-inset-bottom, 0px))";
 
-/** LCD bounds — full card UI */
+/** LCD bounds — inset slightly so UI doesn't kiss the bezel */
 const SCREEN = {
   left: 94 / CARD_W,
-  top: 16 / CARD_H,
+  top: 20 / CARD_H,
   width: 190 / CARD_W,
-  height: 108 / CARD_H,
+  height: 100 / CARD_H,
 } as const;
 
 /** Circular K badge on the pedestal */
@@ -236,14 +236,14 @@ export function ConsoleHero({
             </div>
           )}
 
-          <div className="pointer-events-auto w-[min(92vw,440px)] shrink-0 scale-[1.06] origin-bottom">
+          <div className="pointer-events-auto w-[min(96vw,480px)] shrink-0 scale-[1.1] origin-bottom">
             {controllerBlock}
           </div>
         </div>
       )}
 
-      {/* Idle — controller in hero above page content */}
-      <div className="relative mx-auto h-[clamp(300px,82vw,380px)] w-full">
+      {/* Idle — full torso visible above bezel; only lower legs sit under the controller */}
+      <div className="relative mx-auto h-[clamp(340px,92vw,430px)] w-full">
         {showSideCharacters && (
           <>
             <img
@@ -251,7 +251,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute -left-[4%] z-[8] h-[clamp(188px,50vw,240px)] w-[44%] object-contain object-right-bottom drop-shadow-[0_10px_18px_rgba(76,29,149,0.22)] transition-all duration-500 ${
+              className={`pointer-events-none absolute -left-[2%] z-0 h-[clamp(220px,58vw,280px)] w-[44%] object-contain object-right-bottom drop-shadow-[0_10px_18px_rgba(76,29,149,0.22)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}
@@ -261,7 +261,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute -right-[4%] z-[8] h-[clamp(188px,50vw,240px)] w-[44%] object-contain object-left-bottom drop-shadow-[0_10px_18px_rgba(76,29,149,0.22)] transition-all duration-500 ${
+              className={`pointer-events-none absolute -right-[2%] z-0 h-[clamp(220px,58vw,280px)] w-[44%] object-contain object-left-bottom drop-shadow-[0_10px_18px_rgba(76,29,149,0.22)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}
@@ -271,7 +271,7 @@ export function ConsoleHero({
 
         {!active && (
           <div
-            className="absolute bottom-0 left-1/2 z-10 w-[92%] -translate-x-1/2"
+            className="absolute bottom-0 left-1/2 z-20 w-[min(100%,520px)] -translate-x-1/2 scale-[1.06] origin-bottom"
             onClick={(event) => {
               if ((event.target as HTMLElement).closest("input, button, label, textarea")) return;
               openPopup();

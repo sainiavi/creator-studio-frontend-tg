@@ -252,6 +252,25 @@
     animation: lcd-idle-glow 2.8s ease-in-out infinite;
   }
 
+  @keyframes prompt-pulse {
+    0%,
+    100% {
+      box-shadow:
+        0 0 10px rgba(217, 70, 239, 0.45),
+        inset 0 0 8px rgba(244, 114, 182, 0.18);
+      border-color: rgba(232, 121, 249, 0.7);
+    }
+    50% {
+      box-shadow:
+        0 0 18px rgba(217, 70, 239, 0.95),
+        inset 0 0 12px rgba(244, 114, 182, 0.35);
+      border-color: rgba(244, 114, 182, 1);
+    }
+  }
+  .animate-prompt-pulse {
+    animation: prompt-pulse 1.8s ease-in-out infinite;
+  }
+
   @keyframes lcd-boot-flash {
     0% {
       filter: brightness(1);

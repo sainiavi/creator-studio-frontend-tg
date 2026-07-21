@@ -155,15 +155,14 @@ export function EditPageSkeleton() {
 export function TemplatesGridSkeleton() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#f4ddff]">
+      <Skeleton className="h-16 w-full rounded-none sm:mx-auto sm:mt-6 sm:h-20 sm:max-w-6xl sm:rounded-2xl sm:px-6" />
       <PageShell>
-        <Skeleton className="mb-6 hidden h-16 w-full rounded-2xl sm:block" />
-        <div className="mb-4 flex gap-2">
-          <Skeleton className="h-10 w-24 rounded-full" />
-          <Skeleton className="h-10 w-24 rounded-full" />
+        <div className="mb-4 flex justify-center sm:justify-start">
+          <Skeleton className="h-10 w-48 rounded-full" />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 9 }).map((_, index) => (
-            <Skeleton key={index} className="h-52 rounded-[1.4rem]" />
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <Skeleton key={index} className="aspect-[3/4] rounded-[1.25rem]" />
           ))}
         </div>
       </PageShell>
