@@ -503,6 +503,70 @@ function Create() {
           )}
         </section>
 
+        <div
+          ref={strategySectionRef}
+          className={`mb-4 grid gap-2 sm:grid-cols-2 ${freshChat ? "hidden sm:grid" : ""}`}
+        >
+          {chatStage === "ready" && phase === "idle" && (
+            <p className="sm:col-span-2 rounded-xl border border-fuchsia-200/70 bg-white/85 px-3 py-2 text-center text-xs font-black text-violet-900 shadow-[0_0_20px_rgba(168,85,247,0.35)]">
+              Prompt locked. Tap Hybrid Mode or Pure Agent to start building.
+            </p>
+          )}
+          <button
+            onClick={() => build("hybrid")}
+            disabled={phase === "building" || isPaying || (!finalPrompt && !chatPrompt && !studio.prompt)}
+            className="group relative flex items-center gap-2.5 overflow-hidden rounded-2xl border-2 border-fuchsia-200/80 bg-[linear-gradient(135deg,#a855f7,#6d28d9)] p-2.5 text-left shadow-[0_0_24px_rgba(168,85,247,0.65),inset_0_1px_16px_rgba(255,255,255,0.18)] disabled:opacity-60"
+          >
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20">
+              <Bot className="size-5 text-cyan-200" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-sm font-black text-white">HYBRID MODE</span>
+              <span className="block truncate text-[11px] font-bold text-violet-100">
+                {isPaying
+                  ? "Waiting for payment..."
+                  : buildingStrategy === "hybrid"
+                    ? "Building your game..."
+                    : "Best of both worlds."}
+              </span>
+            </span>
+            <span className="grid size-7 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
+              {buildingStrategy === "hybrid" || isPaying ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <ArrowRight className="size-4" />
+              )}
+            </span>
+          </button>
+
+          <button
+            onClick={() => build("pure-agent")}
+            disabled={phase === "building" || isPaying || (!finalPrompt && !chatPrompt && !studio.prompt)}
+            className="group flex items-center gap-2.5 rounded-2xl border-2 border-fuchsia-200/80 bg-[linear-gradient(135deg,#ec4899,#7e22ce)] p-2.5 text-left shadow-[0_0_24px_rgba(236,72,153,0.5),inset_0_1px_16px_rgba(255,255,255,0.18)] disabled:opacity-60"
+          >
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20">
+              <BriefcaseBusiness className="size-4.5 text-pink-100" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-sm font-black text-white">PURE AGENT</span>
+              <span className="block truncate text-[11px] font-bold text-pink-100">
+                {isPaying
+                  ? "Waiting for payment..."
+                  : buildingStrategy === "pure-agent"
+                    ? "Building your game..."
+                    : "AI handles everything."}
+              </span>
+            </span>
+            <span className="grid size-7 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
+              {buildingStrategy === "pure-agent" || isPaying ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <ArrowRight className="size-4" />
+              )}
+            </span>
+          </button>
+        </div>
+
         <div className="mb-4 w-full">
           <div className="relative overflow-hidden rounded-[1.35rem] border-2 border-fuchsia-300/70 bg-[linear-gradient(160deg,#16082f_0%,#0a0118_55%,#1a0a3e_100%)] p-3 shadow-[0_0_0_1px_rgba(244,114,182,0.35),0_0_32px_rgba(168,85,247,0.45),inset_0_1px_16px_rgba(255,255,255,0.08)] sm:rounded-[1.5rem] sm:p-4">
             <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-fuchsia-500/20 blur-3xl" />
@@ -525,70 +589,6 @@ function Create() {
               className="relative !rounded-[1.1rem] !border-2 !border-fuchsia-400/80 !bg-[#12082a]/95 !p-2.5 !shadow-[0_0_22px_rgba(217,70,239,0.45),inset_0_1px_10px_rgba(255,255,255,0.08)] sm:!p-3"
             />
           </div>
-        </div>
-
-        <div
-          ref={strategySectionRef}
-          className={`mt-5 grid gap-3 sm:grid-cols-2 ${freshChat ? "hidden sm:grid" : ""}`}
-        >
-          {chatStage === "ready" && phase === "idle" && (
-            <p className="sm:col-span-2 rounded-2xl border border-fuchsia-200/70 bg-white/85 px-4 py-3 text-center text-sm font-black text-violet-900 shadow-[0_0_20px_rgba(168,85,247,0.35)]">
-              Prompt locked. Tap Hybrid Mode or Pure Agent to start building.
-            </p>
-          )}
-          <button
-            onClick={() => build("hybrid")}
-            disabled={phase === "building" || isPaying || (!finalPrompt && !chatPrompt && !studio.prompt)}
-            className="group relative flex items-center gap-4 overflow-hidden rounded-[1.5rem] border-2 border-fuchsia-200/80 bg-[linear-gradient(135deg,#a855f7,#6d28d9)] p-4 text-left shadow-[0_0_24px_rgba(168,85,247,0.65),inset_0_1px_16px_rgba(255,255,255,0.18)] disabled:opacity-60"
-          >
-            <span className="grid size-16 shrink-0 place-items-center rounded-full bg-white/20">
-              <Bot className="size-10 text-cyan-200" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-2xl font-black text-white">HYBRID MODE</span>
-              <span className="mt-1 block text-sm font-bold text-violet-100">
-                {isPaying
-                  ? "Waiting for payment..."
-                  : buildingStrategy === "hybrid"
-                    ? "Building your game..."
-                    : "Best of both worlds."}
-              </span>
-            </span>
-            <span className="grid size-12 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
-              {buildingStrategy === "hybrid" || isPaying ? (
-                <Loader2 className="size-5 animate-spin" />
-              ) : (
-                <ArrowRight className="size-6" />
-              )}
-            </span>
-          </button>
-
-          <button
-            onClick={() => build("pure-agent")}
-            disabled={phase === "building" || isPaying || (!finalPrompt && !chatPrompt && !studio.prompt)}
-            className="group flex items-center gap-4 rounded-[1.5rem] border-2 border-fuchsia-200/80 bg-[linear-gradient(135deg,#ec4899,#7e22ce)] p-4 text-left shadow-[0_0_24px_rgba(236,72,153,0.5),inset_0_1px_16px_rgba(255,255,255,0.18)] disabled:opacity-60"
-          >
-            <span className="grid size-16 shrink-0 place-items-center rounded-full bg-white/20">
-              <BriefcaseBusiness className="size-9 text-pink-100" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-xl font-black text-white">PURE AGENT</span>
-              <span className="mt-1 block text-sm font-bold text-pink-100">
-                {isPaying
-                  ? "Waiting for payment..."
-                  : buildingStrategy === "pure-agent"
-                    ? "Building your game..."
-                    : "AI handles everything."}
-              </span>
-            </span>
-            <span className="grid size-12 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
-              {buildingStrategy === "pure-agent" || isPaying ? (
-                <Loader2 className="size-5 animate-spin" />
-              ) : (
-                <ArrowRight className="size-6" />
-              )}
-            </span>
-          </button>
         </div>
 
         {phase !== "idle" && (
