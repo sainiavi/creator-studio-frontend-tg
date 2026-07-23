@@ -77,7 +77,7 @@ export function AppHeader({ className = "" }: { className?: string }) {
             type="button"
             onClick={() => setSearchOpen(true)}
             aria-label="Search games"
-            className="grid size-9 shrink-0 place-items-center rounded-full border border-white/18 bg-[#1b1d27] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition active:scale-95 hover:border-white/30"
+            className="grid size-9 shrink-0 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition active:scale-95 hover:border-fuchsia-300/50"
           >
             <Search className="size-4 shrink-0 stroke-[1.75]" />
           </button>
@@ -86,14 +86,14 @@ export function AppHeader({ className = "" }: { className?: string }) {
             onClick={() => void openNotifications()}
             title="Open notifications"
             aria-label="Open notifications"
-            className="relative grid size-9 shrink-0 place-items-center rounded-full border border-white/18 bg-[#1b1d27] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition active:scale-95 hover:border-white/30"
+            className="relative grid size-9 shrink-0 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition active:scale-95 hover:border-fuchsia-300/50"
           >
             <Bell className="size-4 stroke-[1.75]" />
             {notifications.some((notification) => !notification.read) && (
               <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
             )}
           </button>
-          <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/18 bg-[#1b1d27] px-2.5 text-[11px] font-black tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:gap-2 sm:px-3 sm:text-xs">
+          <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/25 bg-[linear-gradient(135deg,#7c3aed,#d946ef)] px-2.5 text-[11px] font-black tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_2px_14px_rgba(217,70,239,0.45)] sm:gap-2 sm:px-3 sm:text-xs">
             <Zap className="size-3.5 shrink-0 fill-white text-white sm:size-4" strokeWidth={1.75} />
             <span className="sm:hidden">{formatCount(kultPoints)}</span>
             <span className="hidden sm:inline">

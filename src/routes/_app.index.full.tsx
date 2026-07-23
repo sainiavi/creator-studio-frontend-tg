@@ -49,7 +49,10 @@ import rankThreeAvatar from "@/assets/leaderboard-rank-3.webp";
 import categoryArcadeIcon from "@/assets/categoryArcade.webp";
 import categoryPuzzleIcon from "@/assets/categoryPuzzle.webp";
 import categorySportsIcon from "@/assets/categorySports.webp";
+import categoryAdventureIcon from "@/assets/categoryAdventure.png";
 import categoryActionIcon from "@/assets/categoryAction.webp";
+import categoryMultiplayerIcon from "@/assets/categoryMultiplayer.png";
+import categoryRPGIcon from "@/assets/categoryRPG.png";
 import categoryStrategyIcon from "@/assets/categoryStrategy.webp";
 import categoryMoreIcon from "@/assets/categoryMore.webp";
 import { useStudioContext } from "@/context/StudioContext";
@@ -166,6 +169,7 @@ const browseCategories: {
   {
     name: "Adventure",
     icon: Mountain,
+    image: categoryAdventureIcon,
     iconColor: "text-teal-300",
     glow: "shadow-[0_0_18px_rgba(94,234,212,0.35)]",
     gradient: "from-teal-200 via-teal-400 to-emerald-600",
@@ -173,6 +177,7 @@ const browseCategories: {
   {
     name: "RPG",
     icon: Shield,
+    image: categoryRPGIcon,
     iconColor: "text-fuchsia-400",
     glow: "shadow-[0_0_18px_rgba(232,121,249,0.35)]",
     gradient: "from-fuchsia-200 via-fuchsia-400 to-purple-700",
@@ -180,6 +185,7 @@ const browseCategories: {
   {
     name: "Multiplayer",
     icon: Users,
+    image: categoryMultiplayerIcon,
     iconColor: "text-rose-300",
     glow: "shadow-[0_0_18px_rgba(251,113,133,0.35)]",
     gradient: "from-rose-200 via-rose-400 to-pink-600",
@@ -248,7 +254,7 @@ export function Home() {
   const [searchResults, setSearchResults] = useState<Game[]>([]);
   const [kultPoints, setKultPoints] = useState(0);
   const [kpLevel, setKpLevel] = useState(1);
-  const [, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -435,10 +441,7 @@ export function Home() {
       .finally(() => setLoadingMoreGames(false));
   }, [gamesOffset, hasMoreGames, loadGamesPage, loadingMoreGames]);
 
-  const gamesLoadMoreRef = useInfiniteScroll(
-    loadMoreGames,
-    hasMoreGames && !searchQuery.trim(),
-  );
+  const gamesLoadMoreRef = useInfiniteScroll(loadMoreGames, hasMoreGames && !searchQuery.trim());
 
   const latestGames = useMemo(
     () =>
@@ -634,7 +637,10 @@ export function Home() {
                 )}
               </button>
               <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/25 bg-[linear-gradient(135deg,#7c3aed,#d946ef)] px-2.5 text-[11px] font-black tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_2px_14px_rgba(217,70,239,0.45)] sm:gap-2 sm:rounded-full sm:px-3 sm:text-xs">
-                <Zap className="size-3.5 shrink-0 fill-white text-white sm:size-4" strokeWidth={1.75} />
+                <Zap
+                  className="size-3.5 shrink-0 fill-white text-white sm:size-4"
+                  strokeWidth={1.75}
+                />
                 <span className="sm:hidden">{formatCount(kultPoints)}</span>
                 <span className="hidden sm:inline">
                   Level {kpLevel} · {formatCount(kultPoints)} KP
@@ -723,11 +729,15 @@ export function Home() {
           <section className="min-[1190px]:hidden">
             <div className="mx-auto w-full max-w-2xl space-y-7 px-1">
               {searchQuery.trim() ? (
-                <FeedGrid
-                  games={visibleShelves[0]?.games ?? []}
-                  onOpen={openGame}
-                  emptyText={`No games match "${searchQuery}".`}
-                />
+                isSearching && (visibleShelves[0]?.games.length ?? 0) === 0 ? (
+                  <GamesFeedSkeleton />
+                ) : (
+                  <FeedGrid
+                    games={visibleShelves[0]?.games ?? []}
+                    onOpen={openGame}
+                    emptyText={`No games match "${searchQuery}".`}
+                  />
+                )
               ) : (
                 <>
                   <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -805,7 +815,11 @@ export function Home() {
                             >
                               {category.image ? (
                                 <span
-                                  className="relative grid size-12 place-items-center transition duration-300 group-hover:scale-105 group-active:scale-95"
+                                  className={`relative grid place-items-center transition duration-300 group-hover:scale-105 group-active:scale-95 ${
+                                    ["Adventure", "RPG", "Multiplayer"].includes(category.name)
+                                      ? "size-[76px] -my-2"
+                                      : "size-12"
+                                  }`}
                                 >
                                   <img
                                     src={category.image}
@@ -826,7 +840,9 @@ export function Home() {
                                   />
                                 </span>
                               )}
-                              <span className={`text-[12px] font-bold leading-none ${category.iconColor}`}>
+                              <span
+                                className={`text-[12px] font-bold leading-none ${category.iconColor}`}
+                              >
                                 {category.name}
                               </span>
                             </button>
@@ -846,7 +862,9 @@ export function Home() {
                                 draggable={false}
                               />
                             </span>
-                            <span className="text-[12px] font-bold leading-none text-slate-200">More</span>
+                            <span className="text-[12px] font-bold leading-none text-slate-200">
+                              More
+                            </span>
                           </button>
                         )}
                       </div>
@@ -1304,7 +1322,9 @@ function MobileShelf({
   return (
     <section>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="min-w-0 font-display text-xl font-black tracking-tight text-violet-950">{title}</h2>
+        <h2 className="min-w-0 font-display text-xl font-black tracking-tight text-violet-950">
+          {title}
+        </h2>
         <button
           type="button"
           onClick={onViewAll}

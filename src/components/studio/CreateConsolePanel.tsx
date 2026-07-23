@@ -36,6 +36,8 @@ type CreateConsolePanelProps = {
    * always-on field for spacious contexts like the tall bottom sheet, instead of the
    * compact-input-that-morphs-into-a-textarea flow used on the small console screen. */
   persistExpanded?: boolean;
+  /** Larger neon treatment used by the create-game chat modal. */
+  modalTheme?: boolean;
   className?: string;
 };
 
@@ -53,6 +55,7 @@ export function CreateConsolePanel({
   delegateExpand = false,
   lockCompact = false,
   persistExpanded = false,
+  modalTheme = false,
   className = "",
 }: CreateConsolePanelProps) {
   const inputId = useId();
@@ -107,13 +110,17 @@ export function CreateConsolePanel({
     ? "box-border flex h-full min-h-0 w-full max-w-full flex-col justify-end overflow-hidden bg-transparent px-[3.5%] pb-[0.5%] pt-[14%]"
     : embedded
       ? "flex h-full min-h-0 flex-col rounded-sm bg-[#090018]/96 px-[clamp(4px,1.2vw,7px)] py-[clamp(4px,1.2vw,6px)] shadow-[inset_0_1px_8px_rgba(255,255,255,0.06)]"
-      : "rounded-[1.2rem] border border-fuchsia-300/45 bg-[#090018]/95 p-3 shadow-[0_0_24px_rgba(124,58,237,0.4),inset_0_1px_12px_rgba(255,255,255,0.1)] sm:rounded-[1.35rem] sm:p-4";
+      : modalTheme
+        ? "rounded-[1.35rem] border border-white/80 bg-[linear-gradient(160deg,rgba(35,4,74,0.98),rgba(13,2,40,0.98))] p-4 [font-family:Inter,sans-serif] shadow-[0_0_26px_rgba(168,85,247,0.4),inset_0_1px_14px_rgba(255,255,255,0.1)]"
+        : "rounded-[1.2rem] border border-fuchsia-300/45 bg-[#090018]/95 p-3 shadow-[0_0_24px_rgba(124,58,237,0.4),inset_0_1px_12px_rgba(255,255,255,0.1)] sm:rounded-[1.35rem] sm:p-4";
 
   const headingClass = fillScreen
     ? "mb-[2%] shrink-0 text-center font-display text-[length:clamp(4.5px,9cqh,6.5px)] font-black uppercase leading-[1.15] tracking-[0.04em] text-fuchsia-400"
     : embedded
       ? "mb-[clamp(2px,0.6vw,3px)] shrink-0 font-display text-[clamp(4px,1.15vw,5.5px)] font-black uppercase tracking-[0.05em] text-fuchsia-400"
-      : "mb-2 font-display text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-300 sm:text-xs";
+      : modalTheme
+        ? "mb-4 flex items-center gap-2 text-base font-semibold uppercase tracking-[0.02em] text-fuchsia-400"
+        : "mb-2 font-display text-[10px] font-black uppercase tracking-[0.12em] text-fuchsia-300 sm:text-xs";
 
   const fieldIdleGlow =
     !value.trim() && !showExpanded
@@ -127,7 +134,9 @@ export function CreateConsolePanel({
       ? "flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col gap-[3%] overflow-hidden rounded-[2px] border border-fuchsia-500/80 bg-[#12082a] p-[4%] box-border"
       : embedded
         ? "flex min-h-0 flex-1 flex-col gap-[4%] rounded-[3px] border border-fuchsia-500/80 bg-[#12082a] p-[4%]"
-        : "flex min-h-[148px] flex-col gap-2 rounded-xl border-2 border-fuchsia-300 bg-[#16082f] p-2.5 shadow-[0_0_20px_rgba(217,70,239,0.55),inset_0_1px_10px_rgba(255,255,255,0.1)] sm:min-h-[168px] sm:p-3"
+        : modalTheme
+          ? "relative flex min-h-[164px] flex-col gap-3 rounded-none border-0 bg-transparent p-0"
+          : "flex min-h-[148px] flex-col gap-2 rounded-xl border-2 border-fuchsia-300 bg-[#16082f] p-2.5 shadow-[0_0_20px_rgba(217,70,239,0.55),inset_0_1px_10px_rgba(255,255,255,0.1)] sm:min-h-[168px] sm:p-3"
     : fillScreen
       ? `box-border flex h-[32%] w-full max-w-full min-w-0 shrink-0 items-center gap-[2%] overflow-hidden rounded-[3px] border-2 border-fuchsia-400/80 bg-[#12082a] px-[4%] py-[3.5%] ${fieldIdleGlow}`
       : embedded
@@ -137,7 +146,9 @@ export function CreateConsolePanel({
   const inputClass = showExpanded
     ? embedded || fillScreen
       ? "min-h-0 min-w-0 max-w-full flex-1 w-full resize-none overflow-y-auto overflow-x-hidden bg-transparent text-[length:clamp(6px,14cqh,10px)] font-semibold leading-tight text-white outline-none placeholder:text-violet-300/55 [scrollbar-width:thin] box-border"
-      : "min-h-[120px] w-full resize-none bg-transparent font-sans text-sm font-semibold leading-relaxed text-white outline-none placeholder:text-violet-300/70 sm:min-h-[140px] sm:text-base"
+      : modalTheme
+        ? "min-h-[76px] w-full resize-none rounded-xl border border-fuchsia-400/80 bg-[#16052f]/95 px-4 py-3 pr-14 text-sm font-medium leading-relaxed text-white outline-none shadow-[inset_0_1px_10px_rgba(255,255,255,0.06),0_0_14px_rgba(217,70,239,0.2)] transition focus:border-fuchsia-200 placeholder:text-violet-300/55"
+        : "min-h-[120px] w-full resize-none bg-transparent font-sans text-sm font-semibold leading-relaxed text-white outline-none placeholder:text-violet-300/70 sm:min-h-[140px] sm:text-base"
     : fillScreen
       ? "min-w-0 flex-1 bg-transparent text-[length:clamp(6.5px,14cqh,10px)] font-bold text-white outline-none placeholder:animate-pulse placeholder:text-fuchsia-200/85"
       : "min-w-0 flex-1 bg-transparent text-sm font-bold text-white outline-none placeholder:animate-pulse placeholder:text-fuchsia-200/80 sm:text-base";
@@ -146,7 +157,9 @@ export function CreateConsolePanel({
     ? "grid aspect-square h-[85%] max-h-full shrink-0 place-items-center rounded-[3px] bg-[linear-gradient(145deg,#f472b6,#a855f7)] text-white disabled:opacity-60"
     : embedded
       ? "grid size-[clamp(16px,4.6vw,20px)] shrink-0 place-items-center rounded bg-[linear-gradient(145deg,#f472b6,#a855f7)] text-white disabled:opacity-60"
-      : "grid size-10 shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,#f472b6,#a855f7)] text-white shadow-[0_0_14px_rgba(217,70,239,0.85)] disabled:opacity-60 sm:size-11";
+      : modalTheme
+        ? "flex h-14 w-full shrink-0 items-center justify-center gap-2 rounded-xl border-[3px] border-cyan-400 bg-[linear-gradient(110deg,#e83bc5,#6628f4)] px-5 text-base font-bold uppercase tracking-wide text-white shadow-[0_8px_22px_rgba(126,34,206,0.45),inset_0_1px_0_rgba(255,255,255,0.28)] transition hover:brightness-110 active:scale-[0.99] disabled:opacity-50"
+        : "grid size-10 shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,#f472b6,#a855f7)] text-white shadow-[0_0_14px_rgba(217,70,239,0.85)] disabled:opacity-60 sm:size-11";
 
   const iconSize = fillScreen
     ? "size-[length:clamp(6px,10cqh,9px)]"
@@ -155,13 +168,12 @@ export function CreateConsolePanel({
       : "size-4";
 
   const promptPlaceholder =
-    !value.trim() && (fillScreen || !embedded)
-      ? "Type your game idea here…"
-      : placeholder;
+    !value.trim() && (fillScreen || !embedded) ? "Type your game idea here…" : placeholder;
 
   return (
     <section className={`${shellClass} ${className}`}>
       <p className={`${headingClass} ${fillScreen && showExpanded ? "sr-only" : ""}`}>
+        {modalTheme && <Sparkles className="size-7 shrink-0 text-fuchsia-400" />}
         {fillScreen ? "Tap below · write your prompt" : "What do you want to create?"}
       </p>
 
@@ -171,9 +183,17 @@ export function CreateConsolePanel({
         </p>
       )}
 
-      <label htmlFor={inputId} className={`${fieldShellClass} transition-all duration-200 ease-out`}>
+      <label
+        htmlFor={inputId}
+        className={`${fieldShellClass} transition-all duration-200 ease-out`}
+      >
         {showExpanded ? (
           <>
+            {modalTheme && (
+              <span className="pointer-events-none absolute right-3 top-3 z-10 grid size-11 place-items-center rounded-full border border-white/80 bg-[linear-gradient(145deg,#ef4ac5,#8b2be2)] text-white shadow-[0_0_16px_rgba(217,70,239,0.65)]">
+                <Wand2 className="size-5" />
+              </span>
+            )}
             <textarea
               id={inputId}
               ref={fieldRef as React.RefObject<HTMLTextAreaElement>}
@@ -211,7 +231,8 @@ export function CreateConsolePanel({
                 onClick={handleSubmit}
                 className={sendButtonClass}
               >
-                <Wand2 className={iconSize} />
+                <Wand2 className={modalTheme ? "size-5" : iconSize} />
+                {modalTheme && <span>Generate Game</span>}
               </button>
             </div>
           </>

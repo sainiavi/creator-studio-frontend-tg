@@ -171,8 +171,16 @@
     border-color: var(--color-border);
   }
 
+  html {
+    /* Stops iOS Safari's elastic rubber-band bounce at the top/bottom of the page —
+       that bounce briefly resizes the visual viewport and can make `position: sticky`
+       headers visibly detach and drift with the scroll during the overscroll. */
+    overscroll-behavior-y: none;
+  }
+
   body {
     overflow-x: hidden;
+    overscroll-behavior-y: none;
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);

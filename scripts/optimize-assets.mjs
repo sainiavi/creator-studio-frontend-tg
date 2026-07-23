@@ -44,6 +44,7 @@ const jobs = [
   ["chatAvatarLeft.webp", 260],
   ["chatAvatarRight.webp", 260],
   ["kultCartoonGlove.webp", 256],
+  ["robot.webp", 1300],
   // Navigation and category icons
   ["categoryAction.webp", 128],
   ["categoryArcade.webp", 128],

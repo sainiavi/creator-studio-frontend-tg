@@ -5,6 +5,8 @@ import character1 from "@/assets/left1.webp";
 import character2 from "@/assets/right1.webp";
 import gameControllerCard from "@/assets/center1.webp";
 import kultTapHand from "@/assets/kultCartoonGlove.webp";
+import robotCharacter from "@/assets/robot.webp";
+import creatorStudioLogo from "@/assets/creatorStudioLogo.webp";
 import { ConsoleChatMessages } from "./ConsoleChatMessages";
 import { CreateConsolePanel } from "./CreateConsolePanel";
 import type { ChatMessage, ChatStage } from "@/lib/createChatFlow";
@@ -65,9 +67,17 @@ export function ConsoleHero({
   className = "",
 }: ConsoleHeroProps) {
   const timersRef = useRef<number[]>([]);
+  const sheetScrollRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
   const [booting, setBooting] = useState(false);
   const showMessageList = active && Boolean(messages?.length);
+
+  useEffect(() => {
+    if (!active) return;
+    const el = sheetScrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [active, messages, isThinking]);
 
   useEffect(() => {
     onFocusChange?.(active || booting);
@@ -228,57 +238,81 @@ export function ConsoleHero({
 
         {/* Bottom sheet — tall, fixed-height panel so it always feels spacious */}
         <div
-          className={`fixed inset-x-0 bottom-0 z-[55] mx-auto flex h-[85dvh] w-full max-w-[480px] flex-col rounded-t-[1.75rem] border-x border-t border-fuchsia-400/40 bg-[linear-gradient(180deg,#1a0a35_0%,#0a0118_55%)] shadow-[0_-20px_60px_rgba(109,40,217,0.5),inset_0_1px_14px_rgba(255,255,255,0.08)] backdrop-blur-md transition-transform duration-300 ease-out ${
+          className={`fixed inset-x-0 bottom-0 z-[55] mx-auto flex w-full max-w-[480px] flex-col overflow-hidden rounded-t-[1.75rem] border-x border-t border-fuchsia-400/40 bg-[linear-gradient(180deg,#1a0a35_0%,#0a0118_55%)] shadow-[0_-20px_60px_rgba(109,40,217,0.5),inset_0_1px_14px_rgba(255,255,255,0.08)] backdrop-blur-md transition-transform duration-300 ease-out ${
             active ? "translate-y-0" : "translate-y-full"
           }`}
+          style={{
+            height: "96dvh",
+            maxHeight: "900px",
+            fontFamily: "Inter, sans-serif",
+          }}
         >
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-24 rounded-t-[1.75rem] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(217,70,239,0.16)_0%,transparent_100%)]" />
-
-          <div className="relative flex shrink-0 items-center justify-between px-4 pt-2.5">
-            <span className="h-1.5 w-10 rounded-full bg-white/20" />
-            <button
-              type="button"
-              aria-label="Close chat"
-              onClick={closePopup}
-              className="grid size-8 place-items-center rounded-full border border-fuchsia-300/35 bg-white/10 text-white transition active:scale-95"
-            >
-              <X className="size-4" strokeWidth={2.5} />
-            </button>
-          </div>
-
-          <div className="relative flex shrink-0 items-center gap-2 px-4 pb-3 pt-2">
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-600 shadow-[0_0_16px_rgba(217,70,239,0.5)]">
-              <Sparkles className="size-4 text-white" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="font-display text-base font-black leading-tight text-white">
-                Create Your Game
-              </h2>
-              <p className="truncate text-[11px] font-semibold text-violet-300/80">
-                Describe your idea and let AI build it
-              </p>
-            </div>
-          </div>
-
-          <div className="relative mx-4 mb-1 h-px shrink-0 bg-gradient-to-r from-transparent via-fuchsia-400/30 to-transparent" />
-
-          {showMessageList && messages ? (
-            <div className="min-h-0 flex-1 overflow-hidden px-3 pb-2 pt-3">
-              <ConsoleChatMessages
-                messages={messages}
-                chatStage={chatStage}
-                isThinking={isThinking}
-                onQuickReply={onQuickReply}
-                disabled={disabled}
-                className="h-full"
-              />
-            </div>
-          ) : (
-            <div className="min-h-0 flex-1" />
-          )}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-56 rounded-t-[1.75rem] bg-[radial-gradient(circle_at_82%_18%,rgba(89,208,255,0.22),transparent_34%),radial-gradient(circle_at_28%_20%,rgba(217,70,239,0.2),transparent_48%)]" />
 
           <div
-            className="relative shrink-0 px-3 pb-3 pt-1"
+            ref={sheetScrollRef}
+            className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:thin] [scrollbar-color:rgba(232,121,249,0.55)_transparent]"
+          >
+            <div
+              className="relative shrink-0 overflow-hidden border-b border-fuchsia-300/25 bg-[linear-gradient(100deg,#210052_0%,#18053e_47%,#071d4b_100%)] px-5 pb-4 pt-4"
+              style={{ minHeight: 210 }}
+            >
+              <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(168,85,247,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(168,85,247,0.12)_1px,transparent_1px)] [background-size:24px_24px]" />
+              <img
+                src={robotCharacter}
+                alt=""
+                aria-hidden="true"
+                draggable={false}
+                className="pointer-events-none absolute object-cover object-center opacity-95 [mask-image:linear-gradient(90deg,transparent_0%,black_22%,black_90%,transparent_100%)]"
+                style={{ right: -12, top: 0, width: 220, height: 210 }}
+              />
+              <button
+                type="button"
+                aria-label="Close chat"
+                onClick={closePopup}
+                className="absolute right-3 top-3 z-20 grid size-10 place-items-center rounded-full border border-white/40 bg-[#15062f]/80 text-white shadow-[0_0_16px_rgba(168,85,247,0.35)] backdrop-blur transition active:scale-95"
+              >
+                <X className="size-4" strokeWidth={2.5} />
+              </button>
+
+              <div className="relative z-10 max-w-[58%]">
+                <img
+                  src={creatorStudioLogo}
+                  alt="KULT Create"
+                  draggable={false}
+                  className="mb-5 h-auto object-contain object-left"
+                  style={{ width: 94, maxWidth: 94 }}
+                />
+                <h2 className="text-[1.65rem] font-black uppercase leading-[0.98] tracking-[-0.03em] text-white">
+                  Create Your
+                  <span className="block bg-[linear-gradient(90deg,#ffffff,#d946ef,#7c3aed)] bg-clip-text text-transparent">
+                    Next Game
+                  </span>
+                </h2>
+                <p className="mt-3 max-w-[190px] text-xs font-medium leading-snug text-violet-100/90">
+                  Describe your idea and generate a playable game instantly.
+                </p>
+              </div>
+            </div>
+
+            {showMessageList && messages ? (
+              <div className="px-3 pb-2 pt-3">
+                <ConsoleChatMessages
+                  messages={messages}
+                  chatStage={chatStage}
+                  isThinking={isThinking}
+                  onQuickReply={onQuickReply}
+                  disabled={disabled}
+                  className="h-full"
+                />
+              </div>
+            ) : (
+              <div className="min-h-0 flex-1" />
+            )}
+          </div>
+
+          <div
+            className="relative z-20 shrink-0 border-t border-fuchsia-300/25 bg-[#0a0118]/95 px-3 pb-3 pt-2 shadow-[0_-14px_30px_rgba(10,1,24,0.65)] backdrop-blur-xl"
             style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
           >
             <CreateConsolePanel
@@ -295,6 +329,7 @@ export function ConsoleHero({
               disabled={disabled || isThinking}
               placeholder={placeholder}
               persistExpanded
+              modalTheme
             />
           </div>
         </div>
@@ -318,7 +353,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute left-[1%] z-[1] h-[63%] w-[38%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
+              className={`pointer-events-none absolute left-[6%] z-[1] h-[63%] w-[38%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}
@@ -328,7 +363,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute right-[-3%] z-[1] h-[63%] w-[49%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
+              className={`pointer-events-none absolute right-[-8%] z-[1] h-[63%] w-[49%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: `calc(${characterBottom} + 4%)` }}
