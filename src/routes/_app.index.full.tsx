@@ -46,12 +46,12 @@ import { fetchCreatorScoreLeaderboard, type CreatorScoreEntry } from "@/lib/api/
 import rankOneAvatar from "@/assets/leaderboard-rank-1.webp";
 import rankTwoAvatar from "@/assets/leaderboard-rank-2.webp";
 import rankThreeAvatar from "@/assets/leaderboard-rank-3.webp";
-import categoryArcadeIcon from "@/assets/categoryArcade.png";
-import categoryPuzzleIcon from "@/assets/categoryPuzzle.png";
-import categorySportsIcon from "@/assets/categorySports.png";
-import categoryActionIcon from "@/assets/categoryAction.png";
-import categoryStrategyIcon from "@/assets/categoryStrategy.png";
-import categoryMoreIcon from "@/assets/categoryMore.png";
+import categoryArcadeIcon from "@/assets/categoryArcade.webp";
+import categoryPuzzleIcon from "@/assets/categoryPuzzle.webp";
+import categorySportsIcon from "@/assets/categorySports.webp";
+import categoryActionIcon from "@/assets/categoryAction.webp";
+import categoryStrategyIcon from "@/assets/categoryStrategy.webp";
+import categoryMoreIcon from "@/assets/categoryMore.webp";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
 import {

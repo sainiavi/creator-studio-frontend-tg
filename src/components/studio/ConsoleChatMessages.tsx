@@ -3,8 +3,8 @@ import { Loader2 } from "lucide-react";
 import type { ChatMessage } from "@/lib/createChatFlow";
 import { quickRepliesForStage } from "@/lib/createChatFlow";
 import type { ChatStage } from "@/lib/createChatFlow";
-import assistantAvatar from "@/assets/chatAvatarLeft.png";
-import userAvatar from "@/assets/chatAvatarRight.png";
+import assistantAvatar from "@/assets/chatAvatarLeft.webp";
+import userAvatar from "@/assets/chatAvatarRight.webp";
 
 type ConsoleChatMessagesProps = {
   messages: ChatMessage[];

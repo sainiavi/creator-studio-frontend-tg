@@ -28,21 +28,34 @@ const hasCwebp = hasCmd("cwebp");
 
 /** maxPx = longest edge (sips -Z) */
 const jobs = [
-  // Home — popular worlds (~108px cards, 3x retina)
-  ["goalArena.webp", 360],
-  ["turuboLeague.webp", 360],
-  ["dragonRealms.webp", 360],
-  ["aiBattleDorm.webp", 360],
-  ["skyKingdom.webp", 360],
-  // Home — flow step icons (~44px display)
-  ["flow1Img.webp", 160],
-  ["flow2Img.webp", 160],
-  ["flow3Img.webp", 160],
-  ["flow4Img.webp", 160],
-  // Console hero
-  ["character1.webp", 480],
-  ["character2.webp", 480],
-  ["gameControllerCard.webp", 400],
+  // Current mobile home artwork
+  ["background.webp", 2800],
+  ["Frame0.webp", 900],
+  ["Frame1.webp", 360],
+  ["Frame2.webp", 360],
+  ["Frame3.webp", 360],
+  ["Frame4.webp", 360],
+  ["Frame5.webp", 360],
+  ["heading1.webp", 360],
+  ["heading2.webp", 480],
+  ["left1.webp", 480],
+  ["right1.webp", 480],
+  ["center1.webp", 480],
+  ["chatAvatarLeft.webp", 260],
+  ["chatAvatarRight.webp", 260],
+  ["kultCartoonGlove.webp", 256],
+  // Navigation and category icons
+  ["categoryAction.webp", 128],
+  ["categoryArcade.webp", 128],
+  ["categoryMore.webp", 128],
+  ["categoryPuzzle.webp", 128],
+  ["categorySports.webp", 128],
+  ["categoryStrategy.webp", 128],
+  ["navHome.webp", 128],
+  ["navProfile.webp", 128],
+  ["navRanks.webp", 128],
+  ["navTemplates.webp", 128],
+  // Shared brand artwork
   ["creatorStudioLogo.webp", 320],
   // Create suggestions
   ["create-suggestion-cyberpunk.webp", 480],
@@ -53,8 +66,8 @@ const jobs = [
   ["games4.webp", 480],
   ["game5.webp", 480],
   ["game6.webp", 480],
-  ["moments-1.jpg", 640],
-  ["moments2.jpg", 640],
+  ["moments-1.webp", 640],
+  ["moments2.webp", 640],
   // Leaderboard avatars
   ["leaderboard-rank-1.webp", 128],
   ["leaderboard-rank-2.webp", 128],

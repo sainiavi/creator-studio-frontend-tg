@@ -46,10 +46,10 @@ import { useCreateChatFlow } from "@/hooks/useCreateChatFlow";
 import { vibeIdeas } from "@/lib/createChatFlow";
 import cyberpunkSuggestion from "@/assets/create-suggestion-cyberpunk.webp";
 import farmSuggestion from "@/assets/create-suggestion-farm.webp";
-import consoleControllerImg from "@/assets/center1.png";
-import girlCharacter from "@/assets/right1.png";
-import chatAvatarLeft from "@/assets/chatAvatarLeft.png";
-import chatAvatarRight from "@/assets/chatAvatarRight.png";
+import consoleControllerImg from "@/assets/center1.webp";
+import girlCharacter from "@/assets/right1.webp";
+import chatAvatarLeft from "@/assets/chatAvatarLeft.webp";
+import chatAvatarRight from "@/assets/chatAvatarRight.webp";
 
 export const Route = createFileRoute("/_app/create")({
   pendingComponent: CreatePageSkeleton,

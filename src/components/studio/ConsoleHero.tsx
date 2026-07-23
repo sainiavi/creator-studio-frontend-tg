@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Sparkles, X } from "lucide-react";
-import character1 from "@/assets/left1.png";
-import character2 from "@/assets/right1.png";
-import gameControllerCard from "@/assets/center1.png";
-import kultTapHand from "@/assets/kultCartoonGlove.png";
+import character1 from "@/assets/left1.webp";
+import character2 from "@/assets/right1.webp";
+import gameControllerCard from "@/assets/center1.webp";
+import kultTapHand from "@/assets/kultCartoonGlove.webp";
 import { ConsoleChatMessages } from "./ConsoleChatMessages";
 import { CreateConsolePanel } from "./CreateConsolePanel";
 import type { ChatMessage, ChatStage } from "@/lib/createChatFlow";

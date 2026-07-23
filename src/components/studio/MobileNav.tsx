@@ -1,9 +1,9 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import navHomeIcon from "@/assets/navHome.png";
-import navTemplatesIcon from "@/assets/navTemplates.png";
-import navRanksIcon from "@/assets/navRanks.png";
-import navProfileIcon from "@/assets/navProfile.png";
+import navHomeIcon from "@/assets/navHome.webp";
+import navTemplatesIcon from "@/assets/navTemplates.webp";
+import navRanksIcon from "@/assets/navRanks.webp";
+import navProfileIcon from "@/assets/navProfile.webp";
 
 const sideItems = [
   { to: "/", label: "Discover", iconSrc: navHomeIcon, exact: true },

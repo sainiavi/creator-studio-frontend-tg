@@ -1,7 +1,7 @@
 import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { Heart, Pencil, Play, X } from "lucide-react";
 import { type Game, gradientClass } from "@/lib/games-data";
-import defaultCreatorAvatar from "@/assets/navProfile.png";
+import defaultCreatorAvatar from "@/assets/navProfile.webp";
 
 const FALLBACK_COVER =
   "data:image/svg+xml;base64," +

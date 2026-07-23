@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { ConsoleHero } from "./ConsoleHero";
 import type { ChatMessage, ChatStage } from "@/lib/createChatFlow";
-import flowSteps from "@/assets/Frame0.png";
-import headingCreate from "@/assets/heading1.png";
-import headingPlayableWorlds from "@/assets/heading2.png";
-import goalArena from "@/assets/Frame1.png";
-import turboLeague from "@/assets/Frame2.png";
-import dragonRealms from "@/assets/Frame3.png";
-import aiBattleDome from "@/assets/Frame4.png";
-import skyKingdom from "@/assets/Frame5.png";
+import flowSteps from "@/assets/Frame0.webp";
+import headingCreate from "@/assets/heading1.webp";
+import headingPlayableWorlds from "@/assets/heading2.webp";
+import goalArena from "@/assets/Frame1.webp";
+import turboLeague from "@/assets/Frame2.webp";
+import dragonRealms from "@/assets/Frame3.webp";
+import aiBattleDome from "@/assets/Frame4.webp";
+import skyKingdom from "@/assets/Frame5.webp";
 
 const POPULAR_WORLDS = [
   {
