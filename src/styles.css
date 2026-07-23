@@ -1,4 +1,10 @@
-@import "tailwindcss";
+/*
+ * This repository contains a very large public/templates tree. Disable
+ * Tailwind's automatic project-wide source detection so the development
+ * watcher only observes the application source directories listed below.
+ * This prevents the macOS FSEvents queue from overflowing.
+ */
+@import "tailwindcss" source(none);
 @source "../src/components/**/*.{tsx,jsx}";
 @source "../src/context/**/*.{tsx}";
 @source "../src/routes/**/*.{tsx}";

@@ -82,7 +82,10 @@ export async function runCodeJob(
 const ACTIVE_BUILD_KEY = "kult-active-build";
 const BUILD_NOTIFICATION_PREFIX = "kult-build-notified";
 
+export type Tier = 1 | 2 | 3;
+
 export type ActiveBuild = {
+  tier: Tier;
   strategy: "hybrid" | "pure-agent";
   prompt: string;
   startedAt: number;
@@ -472,14 +475,19 @@ export function useCreatorStudio() {
   }, [options, selectedTemplate, themePresets]);
 
   const generateFromPrompt = useCallback(
-    async (strategy = "hybrid", promptOverride = "", paymentTxHash = "") => {
+    async (tier: Tier = 1, promptOverride = "", paymentTxHash = "") => {
+      // The tier owns the strategy: Tier 1 = hybrid (edit a seed), Tier 2 & 3 =
+      // pure-agent (write from scratch). The backend enforces the same mapping;
+      // this local copy only drives client-side pacing and fallbacks.
+      const strategy: "hybrid" | "pure-agent" = tier === 1 ? "hybrid" : "pure-agent";
       const effectivePrompt = promptOverride || prompt;
       const effectiveOptions = { ...options, prompt: effectivePrompt };
       const token = ++generationRef.current;
       // Pure-agent writes a game from scratch (slow); hybrid edits a working seed.
       const maxWaitMs = strategy === "pure-agent" ? 16 * 60 * 1000 : 8 * 60 * 1000;
       updateActiveBuild({
-        strategy: strategy === "pure-agent" ? "pure-agent" : "hybrid",
+        tier,
+        strategy,
         prompt: effectivePrompt,
         startedAt: Date.now(),
         maxWaitMs,
@@ -571,6 +579,7 @@ export function useCreatorStudio() {
               includeCode: false,
               includeAssets: false,
               strategy,
+              tier,
               ...(paymentTxHash ? { paymentTxHash } : {}),
             },
             { timeout: 90000 },
@@ -644,6 +653,7 @@ export function useCreatorStudio() {
               request: effectivePrompt,
               refinementLevel: customization,
               strategy,
+              tier,
               ...(paymentTxHash ? { paymentTxHash } : {}),
             },
             maxWaitMs,

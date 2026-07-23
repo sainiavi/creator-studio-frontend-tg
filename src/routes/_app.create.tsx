@@ -1,6 +1,36 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Rocket, Bot, Loader2, Check, Play, ArrowRight, BriefcaseBusiness, Wand2 } from "lucide-react";
+import { Rocket, Bot, Loader2, Check, Play, ArrowRight, Zap, Crown, Wand2 } from "lucide-react";
+
+// Three quality tiers. The tier the user taps owns the models AND the strategy
+// on the backend (Tier 1 = hybrid seed-edit, Tier 2 & 3 = fully agentic from
+// scratch), so the button only needs to send the tier number.
+const tierButtons = [
+  {
+    tier: 1 as const,
+    label: "HYBRID",
+    subtitle: "Fast build from a proven template. Best value.",
+    icon: Bot,
+    iconColor: "text-cyan-200",
+    gradient: "bg-[linear-gradient(135deg,#a855f7,#6d28d9)]",
+  },
+  {
+    tier: 2 as const,
+    label: "PRO",
+    subtitle: "Fully AI-built from scratch. Stronger results.",
+    icon: Zap,
+    iconColor: "text-pink-100",
+    gradient: "bg-[linear-gradient(135deg,#ec4899,#7e22ce)]",
+  },
+  {
+    tier: 3 as const,
+    label: "ULTRA",
+    subtitle: "Best models, best game. Premium.",
+    icon: Crown,
+    iconColor: "text-amber-200",
+    gradient: "bg-[linear-gradient(135deg,#f59e0b,#db2777)]",
+  },
+];
 import { useStudioContext } from "@/context/StudioContext";
 import { api, clearAuthToken, prefetchAuthToken } from "@/lib/api";
 import { findGameTemplate } from "@/lib/templates-loader";
@@ -97,7 +127,7 @@ function Create() {
   // renders whatever build is active until the user cancels/dismisses it.
   const activeBuild = studio.activeBuild;
   const phase: "idle" | "building" | "done" | "failed" = activeBuild ? activeBuild.phase : "idle";
-  const buildingStrategy = phase === "building" ? activeBuild!.strategy : null;
+  const buildingTier = phase === "building" ? activeBuild!.tier : null;
   const builtGame = activeBuild?.game ?? null;
   // Re-render once a second while building so the elapsed time and step list move
   // even between 5s job polls.
@@ -220,7 +250,7 @@ function Create() {
     return serverError || error?.message || "Could not start generation.";
   };
 
-  const build = async (strategy: "pure-agent" | "hybrid", promptOverride = "") => {
+  const build = async (tier: 1 | 2 | 3, promptOverride = "") => {
     const pendingInput = chatInput.trim();
     const promptWithPendingInput = [finalPrompt || chatPrompt || studio.prompt, pendingInput]
       .filter(Boolean)
@@ -230,7 +260,7 @@ function Create() {
     setGenerationNotice("");
     setGenerationNoticeKind("info");
     try {
-      const game = await studio.generateFromPrompt(strategy, buildPrompt);
+      const game = await studio.generateFromPrompt(tier, buildPrompt);
       if (game) addCreatedGame(game);
     } catch (error: any) {
       const payment = error?.response?.data?.payment;
@@ -269,7 +299,7 @@ function Create() {
           let game = null;
           for (let attempt = 1; attempt <= 2; attempt += 1) {
             try {
-              game = await studio.generateFromPrompt(strategy, buildPrompt, paymentTxHash);
+              game = await studio.generateFromPrompt(tier, buildPrompt, paymentTxHash);
               break;
             } catch (verifyError: any) {
               const waitingForTon =
@@ -340,9 +370,9 @@ function Create() {
     setMessages((current) => [
       ...current,
       ...(value ? [{ role: "user" as const, text: value }] : []),
-      { role: "assistant", text: "Starting Hybrid Mode build…" },
+      { role: "assistant", text: "Starting Hybrid build…" },
     ]);
-    void build("hybrid", prompt);
+    void build(1, prompt);
   };
 
   return (
@@ -530,66 +560,42 @@ function Create() {
 
         <div
           ref={strategySectionRef}
-          className={`mb-4 grid gap-2 sm:grid-cols-2 ${freshChat ? "hidden sm:grid" : ""}`}
+          className={`mb-4 grid gap-2 ${freshChat ? "hidden sm:grid" : ""}`}
         >
           {chatStage === "ready" && phase === "idle" && (
-            <p className="sm:col-span-2 rounded-xl border border-fuchsia-400/30 bg-[#160b2e] px-3 py-2 text-center text-xs font-black text-white shadow-[0_10px_28px_rgba(8,4,20,0.45)]">
-              Prompt locked. Tap Hybrid Mode or Pure Agent to start building.
+            <p className="rounded-xl border border-fuchsia-400/30 bg-[#160b2e] px-3 py-2 text-center text-xs font-black text-white shadow-[0_10px_28px_rgba(8,4,20,0.45)]">
+              Prompt locked. Tap a tier to start building.
             </p>
           )}
-          <button
-            onClick={() => build("hybrid")}
-            disabled={phase === "building" || isPaying || (!finalPrompt && !chatPrompt && !studio.prompt)}
-            className="group relative flex items-center gap-2.5 overflow-hidden rounded-2xl border-2 border-fuchsia-200/80 bg-[linear-gradient(135deg,#a855f7,#6d28d9)] p-2.5 text-left shadow-[0_0_24px_rgba(168,85,247,0.65),inset_0_1px_16px_rgba(255,255,255,0.18)] disabled:opacity-60"
-          >
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20">
-              <Bot className="size-5 text-cyan-200" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-sm font-black text-white">HYBRID MODE</span>
-              <span className="block truncate text-[11px] font-bold text-violet-100">
-                {isPaying
-                  ? "Waiting for payment..."
-                  : buildingStrategy === "hybrid"
-                    ? "Building your game..."
-                    : "Best of both worlds."}
+          {tierButtons.map((t) => (
+            <button
+              key={t.tier}
+              onClick={() => build(t.tier)}
+              disabled={phase === "building" || isPaying || (!finalPrompt && !chatPrompt && !studio.prompt)}
+              className={`group relative flex items-center gap-2.5 overflow-hidden rounded-2xl border-2 border-fuchsia-200/80 ${t.gradient} p-2.5 text-left shadow-[0_0_24px_rgba(168,85,247,0.55),inset_0_1px_16px_rgba(255,255,255,0.18)] disabled:opacity-60`}
+            >
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20">
+                <t.icon className={`size-5 ${t.iconColor}`} />
               </span>
-            </span>
-            <span className="grid size-7 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
-              {buildingStrategy === "hybrid" || isPaying ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <ArrowRight className="size-4" />
-              )}
-            </span>
-          </button>
-
-          <button
-            onClick={() => build("pure-agent")}
-            disabled={phase === "building" || isPaying || (!finalPrompt && !chatPrompt && !studio.prompt)}
-            className="group flex items-center gap-2.5 rounded-2xl border-2 border-fuchsia-200/80 bg-[linear-gradient(135deg,#ec4899,#7e22ce)] p-2.5 text-left shadow-[0_0_24px_rgba(236,72,153,0.5),inset_0_1px_16px_rgba(255,255,255,0.18)] disabled:opacity-60"
-          >
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20">
-              <BriefcaseBusiness className="size-4.5 text-pink-100" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-sm font-black text-white">PURE AGENT</span>
-              <span className="block truncate text-[11px] font-bold text-pink-100">
-                {isPaying
-                  ? "Waiting for payment..."
-                  : buildingStrategy === "pure-agent"
-                    ? "Building your game..."
-                    : "AI handles everything."}
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-sm font-black text-white">{t.label}</span>
+                <span className="block truncate text-[11px] font-bold text-violet-100">
+                  {isPaying && buildingTier === t.tier
+                    ? "Waiting for payment..."
+                    : buildingTier === t.tier
+                      ? "Building your game..."
+                      : t.subtitle}
+                </span>
               </span>
-            </span>
-            <span className="grid size-7 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
-              {buildingStrategy === "pure-agent" || isPaying ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <ArrowRight className="size-4" />
-              )}
-            </span>
-          </button>
+              <span className="grid size-7 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
+                {buildingTier === t.tier ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <ArrowRight className="size-4" />
+                )}
+              </span>
+            </button>
+          ))}
         </div>
 
         <div className="mb-4 w-full">
