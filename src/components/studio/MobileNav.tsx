@@ -45,9 +45,7 @@ function NavItem({
         alt=""
         aria-hidden="true"
         draggable={false}
-        className={`object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)] transition-transform ${
-          selected ? "size-[42px]" : "size-[36px]"
-        }`}
+        className="size-8 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
       />
       <span className="text-[10px] font-semibold leading-none tracking-wide">{label}</span>
     </Link>
