@@ -36,6 +36,8 @@ import { api, clearAuthToken, prefetchAuthToken } from "@/lib/api";
 import { findGameTemplate } from "@/lib/templates-loader";
 import { engineOf, getThumbnailUrl, templateEmoji } from "@/lib/studio-meta";
 import { sendTonGenerationPayment } from "@/lib/tonPayment";
+import { createGenerationStarsOrder, fetchStarsOrder } from "@/lib/api/stars";
+import { openTelegramInvoice } from "@/lib/telegramMiniApp";
 import { getTonWallet } from "@/lib/tonWallet";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
@@ -119,6 +121,16 @@ function Create() {
     "info",
   );
   const [isPaying, setIsPaying] = useState(false);
+  // When a 2nd+ game needs payment, we hold the pending build here and let the
+  // user pick TON or Telegram Stars instead of auto-charging.
+  const [paymentChoice, setPaymentChoice] = useState<{
+    tier: 1 | 2 | 3;
+    buildPrompt: string;
+    tonAmount: number;
+    tonCurrency: string;
+    starsAmount: number;
+    starsAvailable: boolean;
+  } | null>(null);
   const strategySectionRef = useRef<HTMLDivElement>(null);
   const noticeRef = useRef<HTMLDivElement>(null);
 
@@ -259,6 +271,7 @@ function Create() {
     if (!buildPrompt.trim() || phase === "building") return;
     setGenerationNotice("");
     setGenerationNoticeKind("info");
+    setPaymentChoice(null);
     try {
       const game = await studio.generateFromPrompt(tier, buildPrompt);
       if (game) addCreatedGame(game);
@@ -269,61 +282,16 @@ function Create() {
         (error?.response?.data?.code === "PAID_GENERATION_REQUIRED" || Boolean(payment?.required));
 
       if (isPaidRequired) {
-        const amount = payment?.amount ?? 1;
-        const currency = payment?.currency ?? "TON";
-        showNotice(formatPaidGenerationNotice(error), "payment");
-        try {
-          const tonWallet = getTonWallet(user);
-          if (!tonWallet) {
-            showNotice(
-              `${formatPaidGenerationNotice(error)} Connect your TON wallet in the header to continue.`,
-              "payment",
-            );
-            return;
-          }
-          setIsPaying(true);
-          let paymentTxHash = sessionStorage.getItem(PENDING_TON_GENERATION_PAYMENT_KEY) ?? "";
-          if (!paymentTxHash) {
-            showNotice(
-              `Confirm ${amount} ${currency} in your wallet to unlock another game.`,
-              "payment",
-            );
-            paymentTxHash = await sendTonGenerationPayment({
-              wallet: tonWallet,
-              amountTon: amount,
-              signRawHash,
-            });
-            sessionStorage.setItem(PENDING_TON_GENERATION_PAYMENT_KEY, paymentTxHash);
-          }
-          showNotice("Payment sent. Verifying on TON mainnet…", "info");
-          let game = null;
-          for (let attempt = 1; attempt <= 2; attempt += 1) {
-            try {
-              game = await studio.generateFromPrompt(tier, buildPrompt, paymentTxHash);
-              break;
-            } catch (verifyError: any) {
-              const waitingForTon =
-                verifyError?.response?.status === 402 &&
-                verifyError?.response?.data?.code === "PAYMENT_NOT_CONFIRMED";
-              if (!waitingForTon || attempt === 2) throw verifyError;
-              showNotice("Payment sent. Waiting for TON confirmation…", "info");
-              await new Promise((resolve) => setTimeout(resolve, 5000));
-            }
-          }
-          if (game) addCreatedGame(game);
-          sessionStorage.removeItem(PENDING_TON_GENERATION_PAYMENT_KEY);
-          setGenerationNotice("");
-          setGenerationNoticeKind("info");
-        } catch (paymentError: any) {
-          showNotice(
-            paymentError?.response?.data?.error ??
-              paymentError?.message ??
-              `Could not complete ${currency} payment. Please try again.`,
-            "error",
-          );
-        } finally {
-          setIsPaying(false);
-        }
+        // Present the choice: pay in TON or in Telegram Stars.
+        setPaymentChoice({
+          tier,
+          buildPrompt,
+          tonAmount: payment?.methods?.chain?.amount ?? payment?.amount ?? 1,
+          tonCurrency: payment?.methods?.chain?.currency ?? payment?.currency ?? "TON",
+          starsAmount: payment?.methods?.stars?.amount ?? 0,
+          starsAvailable: Boolean(payment?.methods?.stars?.available) && (payment?.methods?.stars?.amount ?? 0) > 0,
+        });
+        showNotice("Your first game was free. Choose how to pay for another one.", "payment");
       } else {
         const serverError = String(error?.response?.data?.error ?? error?.message ?? "").trim();
         if (error?.response?.status === 401 || /authorization token/i.test(serverError)) {
@@ -337,6 +305,96 @@ function Create() {
         }
         showNotice(formatPaidGenerationNotice(error), "error");
       }
+    }
+  };
+
+  // Pay for the pending build with TON, then generate.
+  const payWithTon = async () => {
+    if (!paymentChoice || isPaying) return;
+    const { tier, buildPrompt, tonAmount, tonCurrency } = paymentChoice;
+    setPaymentChoice(null);
+    try {
+      const tonWallet = getTonWallet(user);
+      if (!tonWallet) {
+        showNotice("Connect your TON wallet in the header to pay with TON.", "payment");
+        return;
+      }
+      setIsPaying(true);
+      let paymentTxHash = sessionStorage.getItem(PENDING_TON_GENERATION_PAYMENT_KEY) ?? "";
+      if (!paymentTxHash) {
+        showNotice(`Confirm ${tonAmount} ${tonCurrency} in your wallet to unlock another game.`, "payment");
+        paymentTxHash = await sendTonGenerationPayment({ wallet: tonWallet, amountTon: tonAmount, signRawHash });
+        sessionStorage.setItem(PENDING_TON_GENERATION_PAYMENT_KEY, paymentTxHash);
+      }
+      showNotice("Payment sent. Verifying on TON mainnet…", "info");
+      let game = null;
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          game = await studio.generateFromPrompt(tier, buildPrompt, { method: "ton", paymentTxHash });
+          break;
+        } catch (verifyError: any) {
+          const waitingForTon =
+            verifyError?.response?.status === 402 &&
+            verifyError?.response?.data?.code === "PAYMENT_NOT_CONFIRMED";
+          if (!waitingForTon || attempt === 2) throw verifyError;
+          showNotice("Payment sent. Waiting for TON confirmation…", "info");
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+        }
+      }
+      if (game) addCreatedGame(game);
+      sessionStorage.removeItem(PENDING_TON_GENERATION_PAYMENT_KEY);
+      setGenerationNotice("");
+      setGenerationNoticeKind("info");
+    } catch (paymentError: any) {
+      showNotice(
+        paymentError?.response?.data?.error ?? paymentError?.message ?? "Could not complete TON payment. Please try again.",
+        "error",
+      );
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
+  // Pay for the pending build with Telegram Stars, then generate. Creates an
+  // invoice, opens Telegram checkout, waits for the webhook to mark it paid,
+  // then generates referencing the paid order.
+  const payWithStars = async () => {
+    if (!paymentChoice || isPaying) return;
+    const { tier, buildPrompt, starsAmount } = paymentChoice;
+    setPaymentChoice(null);
+    try {
+      setIsPaying(true);
+      showNotice("Creating Telegram Stars invoice…", "payment");
+      const order = await createGenerationStarsOrder(tier);
+      if (!order.invoiceUrl) throw new Error("Telegram did not return an invoice link.");
+      showNotice(`Opening Telegram checkout for ${starsAmount} Stars…`, "payment");
+      const status = await openTelegramInvoice(order.invoiceUrl);
+      if (status === "cancelled" || status === "failed") {
+        throw new Error(status === "cancelled" ? "Payment cancelled." : "Payment failed.");
+      }
+      showNotice("Payment received. Confirming with Telegram…", "info");
+      // Wait for the bot webhook to mark the order PAID.
+      let paid = false;
+      for (let i = 0; i < 20; i += 1) {
+        const o = await fetchStarsOrder(order.id).catch(() => null);
+        if (o && (o.status === "PAID" || o.status === "FULFILLED")) {
+          paid = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+      if (!paid) throw new Error("Stars payment not confirmed yet. Tap a tier to try again in a moment.");
+      const game = await studio.generateFromPrompt(tier, buildPrompt, { method: "stars", starsOrderId: order.id });
+      if (game) addCreatedGame(game);
+      setGenerationNotice("");
+      setGenerationNoticeKind("info");
+    } catch (paymentError: any) {
+      showNotice(
+        paymentError?.response?.data?.error ?? paymentError?.message ?? "Could not complete Stars payment. Please try again.",
+        "error",
+      );
+    } finally {
+      setIsPaying(false);
     }
   };
 
@@ -399,9 +457,33 @@ function Create() {
                   : "Notice"}
             </p>
             <p className="mt-1 leading-snug">{generationNotice}</p>
-            {generationNoticeKind === "payment" && (
+            {generationNoticeKind === "payment" && paymentChoice && (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {paymentChoice.starsAvailable && (
+                  <button
+                    type="button"
+                    onClick={() => void payWithStars()}
+                    disabled={isPaying}
+                    className="flex flex-col items-center gap-0.5 rounded-xl border border-amber-300/50 bg-amber-400/20 px-3 py-2.5 text-amber-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60"
+                  >
+                    <span className="font-display text-sm font-black">⭐ {paymentChoice.starsAmount} Stars</span>
+                    <span className="text-[10px] font-bold opacity-75">Pay in Telegram</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void payWithTon()}
+                  disabled={isPaying}
+                  className={`flex flex-col items-center gap-0.5 rounded-xl border border-cyan-300/50 bg-cyan-400/15 px-3 py-2.5 text-cyan-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60 ${paymentChoice.starsAvailable ? "" : "col-span-2"}`}
+                >
+                  <span className="font-display text-sm font-black">💎 {paymentChoice.tonAmount} {paymentChoice.tonCurrency}</span>
+                  <span className="text-[10px] font-bold opacity-75">Pay with wallet</span>
+                </button>
+              </div>
+            )}
+            {generationNoticeKind === "payment" && !paymentChoice && (
               <p className="mt-2 text-xs font-bold opacity-80">
-                Your first game is free. Additional generations cost 1 TON.
+                Your first game is free. Additional generations require payment.
               </p>
             )}
           </div>

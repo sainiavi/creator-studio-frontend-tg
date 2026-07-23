@@ -84,6 +84,12 @@ const BUILD_NOTIFICATION_PREFIX = "kult-build-notified";
 
 export type Tier = 1 | 2 | 3;
 
+// How the user is paying for a 2nd+ game: on-chain (TON/0G) or Telegram Stars.
+// A bare string is accepted as a legacy TON tx-hash.
+export type GenerationPayment =
+  | string
+  | { method?: "ton" | "0g" | "stars"; paymentTxHash?: string; starsOrderId?: string };
+
 export type ActiveBuild = {
   tier: Tier;
   strategy: "hybrid" | "pure-agent";
@@ -475,7 +481,11 @@ export function useCreatorStudio() {
   }, [options, selectedTemplate, themePresets]);
 
   const generateFromPrompt = useCallback(
-    async (tier: Tier = 1, promptOverride = "", paymentTxHash = "") => {
+    async (tier: Tier = 1, promptOverride = "", payment: GenerationPayment = {}) => {
+      // Accept a legacy bare TON tx-hash string for backwards compatibility, or a
+      // {method, paymentTxHash, starsOrderId} descriptor for the Stars-vs-TON choice.
+      const pay: GenerationPayment = typeof payment === "string" ? { method: "ton", paymentTxHash: payment } : payment;
+      const paymentTxHash = pay.paymentTxHash ?? "";
       // The tier owns the strategy: Tier 1 = hybrid (edit a seed), Tier 2 & 3 =
       // pure-agent (write from scratch). The backend enforces the same mapping;
       // this local copy only drives client-side pacing and fallbacks.
@@ -501,7 +511,7 @@ export function useCreatorStudio() {
       setAgentStatus(`Routing ${strategy === "pure-agent" ? "pure agent" : "hybrid"} request…`);
       setOrchestrationPlan(null);
       setAssetResult(null);
-      if (!paymentTxHash) {
+      if (!paymentTxHash && !pay.starsOrderId) {
         try {
           await api.get("/games/generation-access", { timeout: 15000 });
         } catch (error: any) {
@@ -580,7 +590,9 @@ export function useCreatorStudio() {
               includeAssets: false,
               strategy,
               tier,
+              ...(pay.method ? { paymentMethod: pay.method } : {}),
               ...(paymentTxHash ? { paymentTxHash } : {}),
+              ...(pay.starsOrderId ? { starsOrderId: pay.starsOrderId } : {}),
             },
             { timeout: 90000 },
           );
@@ -654,7 +666,9 @@ export function useCreatorStudio() {
               refinementLevel: customization,
               strategy,
               tier,
+              ...(pay.method ? { paymentMethod: pay.method } : {}),
               ...(paymentTxHash ? { paymentTxHash } : {}),
+              ...(pay.starsOrderId ? { starsOrderId: pay.starsOrderId } : {}),
             },
             maxWaitMs,
             (statusText, stage) => {
