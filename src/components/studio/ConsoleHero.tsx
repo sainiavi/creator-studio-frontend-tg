@@ -4,7 +4,7 @@ import { Sparkles, X } from "lucide-react";
 import character1 from "@/assets/left1.png";
 import character2 from "@/assets/right1.png";
 import gameControllerCard from "@/assets/center1.png";
-import kultTapHand from "@/assets/kultTapHand.png";
+import kultTapHand from "@/assets/kultCartoonGlove.png";
 import { ConsoleChatMessages } from "./ConsoleChatMessages";
 import { CreateConsolePanel } from "./CreateConsolePanel";
 import type { ChatMessage, ChatStage } from "@/lib/createChatFlow";
@@ -192,35 +192,26 @@ export function ConsoleHero({
       />
 
       {!active && !booting && (
-        <>
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute z-[45] -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: `${(GENERATE_BTN.left + GENERATE_BTN.width / 2) * 100}%`,
-              top: `${(GENERATE_BTN.top + GENERATE_BTN.height / 2) * 100}%`,
-              width: "7%",
-              aspectRatio: "1",
-            }}
-          >
-            <span className="animate-kult-tap-ring block size-full rounded-full border-2 border-fuchsia-300/90" />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute z-50 -translate-x-[20%] -translate-y-[10%] rotate-6"
+          style={{
+            left: `${(GENERATE_BTN.left + GENERATE_BTN.width / 2) * 100}%`,
+            top: `${(GENERATE_BTN.top - GENERATE_BTN.height * 0.28) * 100}%`,
+            width: "calc(10% - 3px)",
+          }}
+        >
+          <span className="pointer-events-none absolute left-[20%] top-[10%] z-20 size-[68%] -translate-x-1/2 -translate-y-1/2">
+            <span className="animate-kult-tap-ring absolute inset-0 rounded-full border-[3px] border-white bg-fuchsia-400/35 shadow-[0_0_8px_3px_rgba(255,255,255,0.95),0_0_18px_7px_rgba(217,70,239,0.9)]" />
+            <span className="absolute inset-[38%] animate-pulse rounded-full bg-white shadow-[0_0_9px_4px_rgba(255,255,255,1)]" />
           </span>
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute z-50 w-[10%] -translate-x-1/2"
-            style={{
-              left: `${(GENERATE_BTN.left + GENERATE_BTN.width / 2) * 100}%`,
-              top: `${(GENERATE_BTN.top + GENERATE_BTN.height * 0.05) * 100}%`,
-            }}
-          >
-            <img
-              src={kultTapHand}
-              alt=""
-              draggable={false}
-              className="animate-kult-tap block h-auto w-full max-w-none drop-shadow-[0_4px_7px_rgba(0,0,0,0.35)]"
-            />
-          </span>
-        </>
+          <img
+            src={kultTapHand}
+            alt=""
+            draggable={false}
+            className="animate-kult-tap block h-auto w-full max-w-none drop-shadow-[0_0_5px_rgba(255,255,255,0.95)] drop-shadow-[0_0_11px_rgba(217,70,239,0.95)]"
+          />
+        </span>
       )}
     </div>
   );

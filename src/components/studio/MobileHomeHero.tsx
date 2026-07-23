@@ -97,7 +97,7 @@ export function MobileHomeHero({
             </p>
           </div>
         </div>
-        <div className="animate-fade-in relative mt-14 opacity-0" style={{ animationDelay: "90ms" }}>
+        <div className="animate-fade-in relative z-20 mt-14 opacity-0" style={{ animationDelay: "90ms" }}>
           <ConsoleHero
             value={value}
             onChange={onChange}
@@ -115,7 +115,7 @@ export function MobileHomeHero({
         </div>
       </div>
 
-      <div className="animate-float-up mx-auto opacity-0" style={{ animationDelay: "180ms" }}>
+      <div className="animate-float-up relative z-10 mx-auto opacity-0" style={{ animationDelay: "180ms" }}>
         <img src={flowSteps} alt="Describe, AI Builds, Playtest, Publish" className="w-full" draggable={false} />
       </div>
 
