@@ -569,7 +569,7 @@ export function Home() {
 
   return (
     <div className="relative min-h-screen text-violet-950">
-      <header className="sticky top-0 z-40 flex min-h-[56px] items-center justify-between gap-3 border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5),0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl md:mx-3 md:mt-3 md:min-h-16 md:rounded-[1.5rem] md:border md:border-fuchsia-200/45 md:bg-[#100528]/88 md:px-6 md:py-3 md:shadow-[0_10px_34px_rgba(65,24,138,0.45),0_0_24px_rgba(217,70,239,0.25),inset_0_1px_12px_rgba(255,255,255,0.1)]">
+      <header className="sticky top-0 z-40 box-border flex min-h-[56px] w-[100dvw] max-w-[100dvw] items-center justify-between gap-3 overflow-hidden border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5),0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl md:mx-3 md:mt-3 md:min-h-16 md:w-auto md:max-w-none md:rounded-[1.5rem] md:border md:border-fuchsia-200/45 md:bg-[#100528]/88 md:px-6 md:py-3 md:shadow-[0_10px_34px_rgba(65,24,138,0.45),0_0_24px_rgba(217,70,239,0.25),inset_0_1px_12px_rgba(255,255,255,0.1)]">
         {mobileSearchOpen ? (
           <div className="flex w-full items-center gap-2 sm:hidden">
             <label className="flex h-10 flex-1 items-center gap-2 rounded-xl border border-fuchsia-300/50 bg-white/10 px-3 shadow-[inset_0_1px_8px_rgba(255,255,255,0.12)]">

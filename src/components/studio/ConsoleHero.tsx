@@ -341,10 +341,7 @@ export function ConsoleHero({
     <div className={`relative mx-auto w-full max-w-[520px] ${className}`}>
       {overlay}
 
-      {/* Idle hero: smaller mascots behind controller; controller always visible.
-          Height is locked to width via aspect-ratio (not vw) so the controller and
-          characters always keep the same proportions instead of drifting apart
-          at in-between mobile widths. */}
+
       <div className="relative mx-auto aspect-[10/9] w-full">
         {showSideCharacters && (
           <>
@@ -353,7 +350,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute left-[6%] z-[1] h-[63%] w-[38%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
+              className={`pointer-events-none absolute left-[6%] z-[1] h-[54%] w-[32%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}
@@ -363,7 +360,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute right-[-8%] z-[1] h-[63%] w-[49%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
+              className={`pointer-events-none absolute right-0 z-[1] h-[58%] w-[45%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: `calc(${characterBottom} + 4%)` }}
