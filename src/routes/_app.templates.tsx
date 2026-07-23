@@ -58,7 +58,7 @@ function Templates() {
           {list.map((t: any, i: number) => (
             <article
               key={t.id}
-              className="animate-float-up group flex flex-col overflow-hidden rounded-[1.25rem] border border-violet-200/80 bg-white/95 shadow-[0_8px_20px_rgba(124,58,237,0.12)] backdrop-blur transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-[0_12px_28px_rgba(124,58,237,0.2)] sm:rounded-[1.35rem]"
+              className="animate-float-up group flex flex-col overflow-hidden rounded-[21px] border border-white bg-white/95 shadow-[0_8px_20px_rgba(124,58,237,0.12)] backdrop-blur transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(124,58,237,0.2)] sm:rounded-[23px]"
               style={{ animationDelay: `${i * 50}ms`, opacity: 0 }}
             >
               <div

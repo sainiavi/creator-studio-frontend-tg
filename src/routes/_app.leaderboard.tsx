@@ -137,7 +137,7 @@ function Podium({
         : "grid min-h-40 grid-cols-3 items-start gap-1.5 sm:min-h-52 sm:gap-4";
 
   return (
-    <div className="relative mb-6 overflow-hidden rounded-[1.75rem] border-2 border-fuchsia-200/80 bg-white/90 px-2.5 py-7 text-violet-950 shadow-[0_12px_30px_rgba(124,58,237,0.2),0_0_26px_rgba(217,70,239,0.22),inset_0_1px_12px_rgba(255,255,255,0.92)] backdrop-blur sm:px-6 sm:py-10">
+    <div className="relative mb-6 overflow-hidden rounded-[29px] border border-white bg-white/90 px-2.5 py-7 text-violet-950 shadow-[0_12px_30px_rgba(124,58,237,0.2),0_0_26px_rgba(217,70,239,0.22),inset_0_1px_12px_rgba(255,255,255,0.92)] backdrop-blur sm:px-6 sm:py-10">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(250,204,21,0.22),transparent_31%),radial-gradient(circle_at_24%_38%,rgba(168,85,247,0.14),transparent_30%),radial-gradient(circle_at_76%_40%,rgba(251,146,60,0.14),transparent_31%)]" />
       <div className={`relative ${layoutClass}`}>
         {podiumRows.map((row, index) => {
@@ -288,7 +288,7 @@ function Leaderboard() {
   return (
     <div className="relative min-h-screen text-violet-950">
       <div className="relative z-10 mx-auto max-w-5xl px-4 py-0 sm:px-6 sm:py-6 lg:px-10">
-        <section className="sticky top-0 z-30 relative -mx-4 mb-5 overflow-hidden border-b border-violet-400/25 bg-[#160b2e] px-4 py-3.5 text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] sm:mx-0 md:relative md:top-auto md:z-20 md:rounded-[1.65rem] md:border-2 md:border-fuchsia-200 md:border-b-2 md:bg-[#100528] md:px-6 md:py-4 md:shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] md:backdrop-blur">
+        <section className="sticky top-0 z-40 -mx-4 mb-5 overflow-hidden border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-4 py-3.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5)] backdrop-blur-xl sm:mx-0 sm:rounded-[1.5rem] sm:border sm:border-fuchsia-200/45 sm:bg-[#100528]/88 sm:px-6 sm:py-4 sm:shadow-[0_10px_34px_rgba(65,24,138,0.4),0_0_24px_rgba(217,70,239,0.22),inset_0_1px_12px_rgba(255,255,255,0.1)]">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(217,70,239,0.18),transparent_50%),radial-gradient(circle_at_10%_50%,rgba(139,92,246,0.15),transparent_50%)]" />
           <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           <div className="relative flex items-center justify-between">
@@ -356,7 +356,7 @@ function Leaderboard() {
           currentWallet={currentWallet}
         />
 
-        <div className="overflow-hidden rounded-[1.5rem] border-2 border-fuchsia-200/80 bg-white/82 text-violet-950 shadow-[0_10px_24px_rgba(124,58,237,0.18),0_0_20px_rgba(217,70,239,0.18),inset_0_1px_10px_rgba(255,255,255,0.92)] backdrop-blur">
+        <div className="overflow-hidden rounded-[25px] border border-white bg-white/82 text-violet-950 shadow-[0_10px_24px_rgba(124,58,237,0.18),0_0_20px_rgba(217,70,239,0.18),inset_0_1px_10px_rgba(255,255,255,0.92)] backdrop-blur">
           <div className="grid grid-cols-[64px_1fr_auto] gap-3 border-b border-violet-200/70 px-4 py-3 text-left sm:grid-cols-3 sm:px-5">
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-violet-500">Rank</span>
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-violet-500 sm:text-center">Name</span>

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
-import character1 from "@/assets/character1.webp";
-import character2 from "@/assets/character2.webp";
-import gameControllerCard from "@/assets/gameControllerCard.webp";
+import { Sparkles, X } from "lucide-react";
+import character1 from "@/assets/left1.png";
+import character2 from "@/assets/right1.png";
+import gameControllerCard from "@/assets/center1.png";
+import kultTapHand from "@/assets/kultTapHand.png";
 import { ConsoleChatMessages } from "./ConsoleChatMessages";
 import { CreateConsolePanel } from "./CreateConsolePanel";
 import type { ChatMessage, ChatStage } from "@/lib/createChatFlow";
@@ -189,6 +190,38 @@ export function ConsoleHero({
           height: `${GENERATE_BTN.height * 100}%`,
         }}
       />
+
+      {!active && !booting && (
+        <>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute z-[45] -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${(GENERATE_BTN.left + GENERATE_BTN.width / 2) * 100}%`,
+              top: `${(GENERATE_BTN.top + GENERATE_BTN.height / 2) * 100}%`,
+              width: "7%",
+              aspectRatio: "1",
+            }}
+          >
+            <span className="animate-kult-tap-ring block size-full rounded-full border-2 border-fuchsia-300/90" />
+          </span>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute z-50 w-[10%] -translate-x-1/2"
+            style={{
+              left: `${(GENERATE_BTN.left + GENERATE_BTN.width / 2) * 100}%`,
+              top: `${(GENERATE_BTN.top + GENERATE_BTN.height * 0.05) * 100}%`,
+            }}
+          >
+            <img
+              src={kultTapHand}
+              alt=""
+              draggable={false}
+              className="animate-kult-tap block h-auto w-full max-w-none drop-shadow-[0_4px_7px_rgba(0,0,0,0.35)]"
+            />
+          </span>
+        </>
+      )}
     </div>
   );
 
@@ -202,13 +235,15 @@ export function ConsoleHero({
           className="fixed inset-0 z-[54] bg-[#1a0a2e]/30 backdrop-blur-md"
         />
 
-        {/* Bottom sheet — docks to the screen edge and only grows as tall as its content */}
+        {/* Bottom sheet — tall, fixed-height panel so it always feels spacious */}
         <div
-          className={`fixed inset-x-0 bottom-0 z-[55] mx-auto flex max-h-[88dvh] w-full max-w-[480px] flex-col rounded-t-[1.75rem] border-x border-t border-fuchsia-400/40 bg-[#0a0118]/98 shadow-[0_-20px_60px_rgba(109,40,217,0.5),inset_0_1px_14px_rgba(255,255,255,0.08)] backdrop-blur-md transition-transform duration-300 ease-out ${
+          className={`fixed inset-x-0 bottom-0 z-[55] mx-auto flex h-[85dvh] w-full max-w-[480px] flex-col rounded-t-[1.75rem] border-x border-t border-fuchsia-400/40 bg-[linear-gradient(180deg,#1a0a35_0%,#0a0118_55%)] shadow-[0_-20px_60px_rgba(109,40,217,0.5),inset_0_1px_14px_rgba(255,255,255,0.08)] backdrop-blur-md transition-transform duration-300 ease-out ${
             active ? "translate-y-0" : "translate-y-full"
           }`}
         >
-          <div className="flex shrink-0 items-center justify-between px-4 pt-2.5">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-24 rounded-t-[1.75rem] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(217,70,239,0.16)_0%,transparent_100%)]" />
+
+          <div className="relative flex shrink-0 items-center justify-between px-4 pt-2.5">
             <span className="h-1.5 w-10 rounded-full bg-white/20" />
             <button
               type="button"
@@ -220,8 +255,24 @@ export function ConsoleHero({
             </button>
           </div>
 
-          {showMessageList && messages && (
-            <div className="min-h-0 flex-1 overflow-hidden px-3 pb-2 pt-2">
+          <div className="relative flex shrink-0 items-center gap-2 px-4 pb-3 pt-2">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-fuchsia-400 to-violet-600 shadow-[0_0_16px_rgba(217,70,239,0.5)]">
+              <Sparkles className="size-4 text-white" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-display text-base font-black leading-tight text-white">
+                Create Your Game
+              </h2>
+              <p className="truncate text-[11px] font-semibold text-violet-300/80">
+                Describe your idea and let AI build it
+              </p>
+            </div>
+          </div>
+
+          <div className="relative mx-4 mb-1 h-px shrink-0 bg-gradient-to-r from-transparent via-fuchsia-400/30 to-transparent" />
+
+          {showMessageList && messages ? (
+            <div className="min-h-0 flex-1 overflow-hidden px-3 pb-2 pt-3">
               <ConsoleChatMessages
                 messages={messages}
                 chatStage={chatStage}
@@ -231,10 +282,12 @@ export function ConsoleHero({
                 className="h-full"
               />
             </div>
+          ) : (
+            <div className="min-h-0 flex-1" />
           )}
 
           <div
-            className="shrink-0 px-3 pb-3 pt-1"
+            className="relative shrink-0 px-3 pb-3 pt-1"
             style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
           >
             <CreateConsolePanel
@@ -250,6 +303,7 @@ export function ConsoleHero({
               }}
               disabled={disabled || isThinking}
               placeholder={placeholder}
+              persistExpanded
             />
           </div>
         </div>
@@ -261,8 +315,11 @@ export function ConsoleHero({
     <div className={`relative mx-auto w-full max-w-[520px] ${className}`}>
       {overlay}
 
-      {/* Idle hero: smaller mascots behind controller; controller always visible */}
-      <div className="relative mx-auto h-[clamp(300px,84vw,480px)] w-full">
+      {/* Idle hero: smaller mascots behind controller; controller always visible.
+          Height is locked to width via aspect-ratio (not vw) so the controller and
+          characters always keep the same proportions instead of drifting apart
+          at in-between mobile widths. */}
+      <div className="relative mx-auto aspect-[10/9] w-full">
         {showSideCharacters && (
           <>
             <img
@@ -270,7 +327,7 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute left-0 z-[1] h-[clamp(190px,48vw,260px)] w-[42%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
+              className={`pointer-events-none absolute left-[1%] z-[1] h-[63%] w-[38%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
               style={{ bottom: characterBottom }}
@@ -280,10 +337,10 @@ export function ConsoleHero({
               alt=""
               aria-hidden="true"
               draggable={false}
-              className={`pointer-events-none absolute right-0 z-[1] h-[clamp(190px,48vw,260px)] w-[42%] object-contain object-left-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
+              className={`pointer-events-none absolute right-[-3%] z-[1] h-[63%] w-[49%] object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.2)] transition-all duration-500 ${
                 active ? "opacity-0" : ""
               }`}
-              style={{ bottom: characterBottom }}
+              style={{ bottom: `calc(${characterBottom} + 4%)` }}
             />
           </>
         )}

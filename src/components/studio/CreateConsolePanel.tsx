@@ -32,6 +32,10 @@ type CreateConsolePanelProps = {
   startExpanded?: boolean;
   /** Keep heading + input row + categories; never switch to textarea/Done UI */
   lockCompact?: boolean;
+  /** Always show the multi-line textarea with no Done/collapse control — a stable,
+   * always-on field for spacious contexts like the tall bottom sheet, instead of the
+   * compact-input-that-morphs-into-a-textarea flow used on the small console screen. */
+  persistExpanded?: boolean;
   className?: string;
 };
 
@@ -48,12 +52,13 @@ export function CreateConsolePanel({
   startExpanded = false,
   delegateExpand = false,
   lockCompact = false,
+  persistExpanded = false,
   className = "",
 }: CreateConsolePanelProps) {
   const inputId = useId();
   const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
-  const [expanded, setExpanded] = useState(startExpanded && !lockCompact);
-  const showExpanded = expanded && !lockCompact;
+  const [expanded, setExpanded] = useState((startExpanded || persistExpanded) && !lockCompact);
+  const showExpanded = (expanded || persistExpanded) && !lockCompact;
 
   useEffect(() => {
     if (startExpanded && !lockCompact) {
@@ -68,7 +73,10 @@ export function CreateConsolePanel({
     onExpandedChange?.(next);
   };
 
-  const collapse = () => setExpandedState(false);
+  const collapse = () => {
+    if (persistExpanded) return;
+    setExpandedState(false);
+  };
 
   const handleSubmit = () => {
     if (!value.trim() || disabled) return;
@@ -129,7 +137,7 @@ export function CreateConsolePanel({
   const inputClass = showExpanded
     ? embedded || fillScreen
       ? "min-h-0 min-w-0 max-w-full flex-1 w-full resize-none overflow-y-auto overflow-x-hidden bg-transparent text-[length:clamp(6px,14cqh,10px)] font-semibold leading-tight text-white outline-none placeholder:text-violet-300/55 [scrollbar-width:thin] box-border"
-      : "min-h-[80px] w-full resize-none bg-transparent text-sm font-semibold leading-relaxed text-white outline-none placeholder:text-violet-300/70 sm:min-h-[96px] sm:text-base"
+      : "min-h-[120px] w-full resize-none bg-transparent font-sans text-sm font-semibold leading-relaxed text-white outline-none placeholder:text-violet-300/70 sm:min-h-[140px] sm:text-base"
     : fillScreen
       ? "min-w-0 flex-1 bg-transparent text-[length:clamp(6.5px,14cqh,10px)] font-bold text-white outline-none placeholder:animate-pulse placeholder:text-fuchsia-200/85"
       : "min-w-0 flex-1 bg-transparent text-sm font-bold text-white outline-none placeholder:animate-pulse placeholder:text-fuchsia-200/80 sm:text-base";
@@ -173,7 +181,7 @@ export function CreateConsolePanel({
               onChange={(event) => onChange(event.target.value)}
               onKeyDown={handleKeyDown}
               onBlur={() => {
-                if (!value.trim()) collapse();
+                if (!persistExpanded && !value.trim()) collapse();
               }}
               placeholder={promptPlaceholder}
               disabled={disabled}
@@ -181,19 +189,21 @@ export function CreateConsolePanel({
               className={inputClass}
             />
             <div className="flex shrink-0 items-center justify-end gap-1">
-              <button
-                type="button"
-                onClick={collapse}
-                className={`rounded-full border border-white/15 font-bold text-violet-200 transition hover:bg-white/10 ${
-                  fillScreen
-                    ? "px-1 py-px text-[length:clamp(4px,9cqh,6px)]"
-                    : embedded
-                      ? "px-1.5 py-px text-[7px]"
-                      : "px-2.5 py-1 text-[10px]"
-                }`}
-              >
-                Done
-              </button>
+              {!persistExpanded && (
+                <button
+                  type="button"
+                  onClick={collapse}
+                  className={`rounded-full border border-white/15 font-bold text-violet-200 transition hover:bg-white/10 ${
+                    fillScreen
+                      ? "px-1 py-px text-[length:clamp(4px,9cqh,6px)]"
+                      : embedded
+                        ? "px-1.5 py-px text-[7px]"
+                        : "px-2.5 py-1 text-[10px]"
+                  }`}
+                >
+                  Done
+                </button>
+              )}
               <button
                 type="button"
                 aria-label="Start creating"

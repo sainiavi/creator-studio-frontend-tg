@@ -439,6 +439,50 @@
   .animate-char-right-active {
     animation: char-lean-right 2.4s ease-in-out infinite;
   }
+
+  @keyframes kult-tap {
+    0%, 18%, 100% {
+      transform: translate3d(0, 7px, 0) scale(0.96);
+    }
+    8% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    12% {
+      transform: translate3d(0, 2px, 0) scale(0.98);
+    }
+  }
+
+  @keyframes kult-tap-ring {
+    0%, 5%, 18%, 100% {
+      opacity: 0;
+      transform: scale(0.55);
+    }
+    8% {
+      opacity: 0.95;
+      transform: scale(0.7);
+    }
+    15% {
+      opacity: 0;
+      transform: scale(1.65);
+    }
+  }
+
+  .animate-kult-tap {
+    animation: kult-tap 2.4s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+
+  .animate-kult-tap-ring {
+    animation: kult-tap-ring 2.4s ease-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-kult-tap,
+    .animate-kult-tap-ring {
+      animation: none;
+      display: none;
+    }
+  }
 }
 
 /*

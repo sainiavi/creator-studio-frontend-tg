@@ -16,6 +16,10 @@ import { useCreateChatFlow } from "@/hooks/useCreateChatFlow";
 import { vibeIdeas } from "@/lib/createChatFlow";
 import cyberpunkSuggestion from "@/assets/create-suggestion-cyberpunk.webp";
 import farmSuggestion from "@/assets/create-suggestion-farm.webp";
+import consoleControllerImg from "@/assets/center1.png";
+import girlCharacter from "@/assets/right1.png";
+import chatAvatarLeft from "@/assets/chatAvatarLeft.png";
+import chatAvatarRight from "@/assets/chatAvatarRight.png";
 
 export const Route = createFileRoute("/_app/create")({
   pendingComponent: CreatePageSkeleton,
@@ -349,12 +353,12 @@ function Create() {
           <div
             ref={noticeRef}
             role="alert"
-            className={`mb-4 rounded-2xl border-2 px-4 py-3 text-sm font-black shadow-[0_8px_24px_rgba(124,58,237,0.25)] ${
+            className={`mb-4 rounded-2xl border px-4 py-3 text-sm font-black shadow-[0_8px_24px_rgba(8,4,20,0.45)] ${
               generationNoticeKind === "payment"
-                ? "border-amber-300 bg-amber-50 text-amber-950"
+                ? "border-amber-400/40 bg-amber-500/15 text-amber-100"
                 : generationNoticeKind === "error"
-                  ? "border-rose-300 bg-rose-50 text-rose-950"
-                  : "border-fuchsia-200 bg-white/90 text-violet-950"
+                  ? "border-rose-400/40 bg-rose-500/15 text-rose-100"
+                  : "border-fuchsia-400/30 bg-[#160b2e] text-white"
             }`}
           >
             <p className="text-[10px] font-black uppercase tracking-[0.14em] opacity-70">
@@ -374,8 +378,8 @@ function Create() {
         )}
 
         {templateSeed && (
-          <div className="mb-4 flex gap-2.5 rounded-[1.25rem] border-2 border-fuchsia-200 bg-white/85 p-2.5 text-violet-950 shadow-[0_0_16px_rgba(168,85,247,0.28)] backdrop-blur sm:gap-3 sm:rounded-[1.5rem] sm:p-3">
-            <div className="relative size-12 shrink-0 overflow-hidden rounded-xl border border-violet-200 bg-violet-100 sm:size-16 sm:rounded-2xl">
+          <div className="mb-4 flex gap-2.5 rounded-[1.25rem] border border-fuchsia-400/30 bg-[#160b2e] p-2.5 text-white shadow-[0_10px_28px_rgba(8,4,20,0.45)] sm:gap-3 sm:rounded-[1.5rem] sm:p-3">
+            <div className="relative size-12 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-white/10 sm:size-16 sm:rounded-2xl">
               {getThumbnailUrl(templateSeed.id) ? (
                 <img
                   src={getThumbnailUrl(templateSeed.id)}
@@ -389,18 +393,20 @@ function Create() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-fuchsia-600 sm:text-[10px]">
+              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-fuchsia-300 sm:text-[10px]">
                 Template selected
               </p>
-              <h2 className="truncate font-display text-base font-black sm:text-lg">{templateSeed.name}</h2>
-              <p className="line-clamp-1 text-[11px] font-semibold text-violet-700 sm:line-clamp-2 sm:text-xs">
+              <h2 className="truncate font-display text-base font-black text-white sm:text-lg">
+                {templateSeed.name}
+              </h2>
+              <p className="line-clamp-1 text-[11px] font-semibold text-violet-300/80 sm:line-clamp-2 sm:text-xs">
                 {templateSeed.mechanic}
               </p>
             </div>
             <button
               type="button"
               onClick={() => navigate({ to: "/templates" })}
-              className="self-center rounded-lg border border-violet-300 bg-white/80 px-2.5 py-1.5 text-[11px] font-black text-violet-700 sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs"
+              className="self-center rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-[11px] font-black text-white transition hover:bg-white/15 sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs"
             >
               Change
             </button>
@@ -408,12 +414,27 @@ function Create() {
         )}
 
         <section className="mb-4 overflow-hidden rounded-[1.5rem] border-[3px] border-white/80 bg-[radial-gradient(circle_at_50%_5%,rgba(168,85,247,0.28),transparent_24%),linear-gradient(180deg,#160543,#070018)] p-3.5 shadow-[0_0_0_2px_rgba(168,85,247,0.5),0_0_36px_rgba(168,85,247,0.75),inset_0_1px_22px_rgba(255,255,255,0.12)] sm:rounded-[2rem] sm:border-[5px] sm:p-5">
-          <div className="hidden flex-col items-center text-center sm:flex">
-            <span className="relative grid size-20 place-items-center rounded-full border-2 border-fuchsia-200 bg-[radial-gradient(circle_at_35%_25%,#ffb7ff,#a855f7_48%,#3b0764_100%)] shadow-[0_0_26px_rgba(217,70,239,0.9)]">
-              <Bot className="size-11 text-cyan-200 drop-shadow-[0_0_10px_rgba(103,232,249,0.95)]" />
-            </span>
-            <h1 className="mt-4 font-display text-4xl font-black">Hey there! 👋</h1>
-            <p className="mt-1 text-base font-bold text-violet-200">
+          <div className="flex flex-col items-center text-center">
+            <div className="relative w-full max-w-[190px] sm:max-w-[230px]">
+              <img
+                src={girlCharacter}
+                alt=""
+                aria-hidden="true"
+                draggable={false}
+                className="pointer-events-none absolute -top-2 right-[4%] z-[1] h-[62%] w-auto object-contain object-right-bottom drop-shadow-[0_8px_14px_rgba(76,29,149,0.35)]"
+              />
+              <img
+                src={consoleControllerImg}
+                alt=""
+                aria-hidden="true"
+                draggable={false}
+                className="relative z-0 w-full object-contain drop-shadow-[0_16px_32px_rgba(109,40,217,0.4)]"
+              />
+            </div>
+            <h1 className="mt-2 font-display text-2xl font-black sm:mt-3 sm:text-4xl">
+              Hey there! 👋
+            </h1>
+            <p className="mt-1 text-sm font-bold text-violet-200 sm:text-base">
               What kind of game do you want to create?
             </p>
           </div>
@@ -454,8 +475,16 @@ function Create() {
                 {messages.map((message, index) => (
                   <div
                     key={`${message.role}-${index}`}
-                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                    className={`flex items-end ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
+                    {message.role === "assistant" && (
+                      <img
+                        src={chatAvatarLeft}
+                        alt=""
+                        draggable={false}
+                        className="mr-1.5 size-7 shrink-0 rounded-full object-cover ring-1 ring-fuchsia-400/40 sm:size-8"
+                      />
+                    )}
                     <div
                       className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-[13px] font-semibold leading-relaxed sm:px-4 sm:py-3 sm:text-sm ${
                         message.role === "user"
@@ -465,6 +494,14 @@ function Create() {
                     >
                       {message.text}
                     </div>
+                    {message.role === "user" && (
+                      <img
+                        src={chatAvatarRight}
+                        alt=""
+                        draggable={false}
+                        className="ml-1.5 size-7 shrink-0 rounded-full object-cover ring-1 ring-fuchsia-400/40 sm:size-8"
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -496,7 +533,7 @@ function Create() {
           className={`mb-4 grid gap-2 sm:grid-cols-2 ${freshChat ? "hidden sm:grid" : ""}`}
         >
           {chatStage === "ready" && phase === "idle" && (
-            <p className="sm:col-span-2 rounded-xl border border-fuchsia-200/70 bg-white/85 px-3 py-2 text-center text-xs font-black text-violet-900 shadow-[0_0_20px_rgba(168,85,247,0.35)]">
+            <p className="sm:col-span-2 rounded-xl border border-fuchsia-400/30 bg-[#160b2e] px-3 py-2 text-center text-xs font-black text-white shadow-[0_10px_28px_rgba(8,4,20,0.45)]">
               Prompt locked. Tap Hybrid Mode or Pure Agent to start building.
             </p>
           )}
@@ -580,13 +617,13 @@ function Create() {
         </div>
 
         {phase !== "idle" && (
-          <div className="animate-float-up mt-6 rounded-[1.75rem] border-2 border-fuchsia-200/80 bg-white/95 p-5 text-violet-950 shadow-[0_12px_32px_rgba(124,58,237,0.22)] sm:p-6">
+          <div className="animate-float-up mt-6 rounded-[1.75rem] border border-fuchsia-400/30 bg-[#160b2e] p-5 text-white shadow-[0_12px_32px_rgba(8,4,20,0.45),0_0_0_1px_rgba(168,85,247,0.1)] sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="truncate font-display text-xl font-black sm:text-2xl">
+                <h3 className="truncate font-display text-xl font-black text-white sm:text-2xl">
                   {builtGame?.title ?? "Build Console"}
                 </h3>
-                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-violet-500">
+                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-violet-300/80">
                   {phase === "done"
                     ? "AI Build Ready"
                     : phase === "failed"
@@ -600,14 +637,14 @@ function Create() {
               {phase === "building" ? (
                 <button
                   onClick={cancelBuild}
-                  className="shrink-0 rounded-full border border-rose-300/70 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-rose-600 transition hover:bg-rose-50"
+                  className="shrink-0 rounded-full border border-rose-400/40 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-rose-300 transition hover:bg-rose-500/15"
                 >
                   Cancel
                 </button>
               ) : (
                 <button
                   onClick={cancelBuild}
-                  className="shrink-0 rounded-full border border-violet-200 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-violet-600 transition hover:bg-violet-50"
+                  className="shrink-0 rounded-full border border-white/20 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-violet-200 transition hover:bg-white/10"
                 >
                   Dismiss
                 </button>
@@ -619,16 +656,16 @@ function Create() {
                 const complete = phase === "done" || phase === "failed" || i < step;
                 return (
                   <li key={s} className="flex items-center gap-3 text-sm font-semibold">
-                    <span className="flex size-6 items-center justify-center rounded-full border border-violet-200 bg-violet-50">
+                    <span className="flex size-6 items-center justify-center rounded-full border border-white/15 bg-white/5">
                       {complete ? (
-                        <Check className="size-3.5 text-emerald-500" />
+                        <Check className="size-3.5 text-emerald-400" />
                       ) : active ? (
-                        <Loader2 className="size-3.5 animate-spin text-fuchsia-500" />
+                        <Loader2 className="size-3.5 animate-spin text-fuchsia-400" />
                       ) : (
-                        <span className="size-1.5 rounded-full bg-violet-300" />
+                        <span className="size-1.5 rounded-full bg-violet-400/60" />
                       )}
                     </span>
-                    <span className={complete || active ? "text-violet-950" : "text-violet-400"}>
+                    <span className={complete || active ? "text-white" : "text-violet-300/50"}>
                       {s}
                     </span>
                   </li>

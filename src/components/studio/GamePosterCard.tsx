@@ -1,6 +1,7 @@
 import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
-import { Pencil, Play, X } from "lucide-react";
+import { Heart, Pencil, Play, X } from "lucide-react";
 import { type Game, gradientClass } from "@/lib/games-data";
+import defaultCreatorAvatar from "@/assets/navProfile.png";
 
 const FALLBACK_COVER =
   "data:image/svg+xml;base64," +
@@ -17,8 +18,10 @@ const FALLBACK_COVER =
 
 export type GamePosterSize = "featured" | "standard" | "compact";
 
-function creatorInitial(creator: string) {
-  return creator.replace(/^@/, "").trim().slice(0, 1).toUpperCase() || "?";
+function formatCompactCount(value: number) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return String(value);
 }
 
 function PosterArtwork({ game, size }: { game: Game; size: GamePosterSize }) {
@@ -48,7 +51,7 @@ function PosterArtwork({ game, size }: { game: Game; size: GamePosterSize }) {
         img.dataset.fallback = "1";
         img.src = FALLBACK_COVER;
       }}
-      className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+      className="absolute inset-0 h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.03]"
     />
   );
 }
@@ -60,7 +63,7 @@ export function GamePosterCard({
   onDelete,
   size = "standard",
   index = 0,
-  metaTheme = "light",
+  metaTheme: _metaTheme = "light",
   animated = false,
   className = "",
 }: {
@@ -70,56 +73,44 @@ export function GamePosterCard({
   onDelete?: () => void;
   size?: GamePosterSize;
   index?: number;
-  /** Text color for the creator row below the card */
+  /** @deprecated the footer panel now carries its own fixed dark background */
   metaTheme?: "light" | "dark";
   animated?: boolean;
   className?: string;
 }) {
   const titleClass =
-    size === "featured"
-      ? "text-[15px] leading-tight sm:text-base"
-      : size === "standard"
-        ? "text-[13px] leading-tight sm:text-sm"
-        : "text-[11px] leading-tight";
+    size === "featured" ? "text-[15px]" : size === "standard" ? "text-[13px]" : "text-[12px]";
 
-  const playClass =
-    size === "featured" ? "text-xs" : size === "standard" ? "text-[11px]" : "text-[10px]";
+  const pillClass = size === "compact" ? "text-[9px] px-1.5 py-0.5" : "text-[10px] px-2 py-0.5";
 
-  const avatarSize = size === "featured" ? "size-8" : size === "standard" ? "size-7" : "size-6";
+  const avatarSize = size === "featured" ? "size-7" : size === "standard" ? "size-6" : "size-5";
 
-  const aspectClass = size === "compact" ? "aspect-[3/4]" : "aspect-[4/5]";
-  const radiusClass = size === "compact" ? "rounded-xl" : "rounded-[0.9rem] sm:rounded-2xl";
+  const footerPadClass =
+    size === "featured" ? "px-3.5 py-3 gap-2" : size === "standard" ? "px-3 py-2.5 gap-1.5" : "px-2.5 py-2 gap-1";
+
+  const creatorTextClass = size === "compact" ? "text-[10px]" : "text-[11px]";
 
   const stopPress = (event: MouseEvent | ReactPointerEvent) => {
     event.stopPropagation();
   };
 
+  const shortCreator =
+    game.creator.length > 16 ? `${game.creator.slice(0, 6)}…${game.creator.slice(-4)}` : game.creator;
+
   return (
-    <div
-      className={`flex w-full min-w-0 flex-col ${size === "compact" ? "gap-1.5" : "gap-2.5"} ${className}`}
+    <article
+      onClick={onClick}
+      className={`group relative flex w-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-[17px] border border-white bg-[#160b2e] shadow-[0_10px_28px_rgba(8,4,20,0.45),0_0_0_1px_rgba(168,85,247,0.1)] transition duration-300 active:scale-[0.985] sm:rounded-[21px] ${
+        animated ? "animate-float-up" : ""
+      } ${className}`}
+      style={animated ? { animationDelay: `${index * 50}ms`, opacity: 0 } : undefined}
     >
-      <article
-        onClick={onClick}
-        className={`group relative ${aspectClass} w-full cursor-pointer overflow-hidden ${radiusClass} border border-white/35 bg-[#12032b] shadow-[0_10px_28px_rgba(49,16,110,0.28),0_0_0_1px_rgba(168,85,247,0.12)] transition duration-300 active:scale-[0.985] ${
-          animated ? "animate-float-up" : ""
-        }`}
-        style={animated ? { animationDelay: `${index * 50}ms`, opacity: 0 } : undefined}
-      >
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden">
         <PosterArtwork game={game} size={size} />
-
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,0,24,0.72)_0%,transparent_34%,transparent_58%,rgba(8,0,24,0.55)_100%)]" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-
-        <h3
-          className={`absolute inset-x-0 top-0 line-clamp-2 px-3 pb-1 pt-3 font-display font-black text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] ${titleClass}`}
-        >
-          {game.title}
-        </h3>
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,0,24,0)_0%,transparent_55%,rgba(8,0,24,0.45)_100%)]" />
 
         {game.plays && (
-          <div
-            className={`absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-2.5 py-1 font-bold text-white shadow-[0_4px_12px_rgba(0,0,0,0.35)] backdrop-blur-md ${playClass}`}
-          >
+          <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/65 px-2.5 py-1 text-[11px] font-bold text-white shadow-[0_4px_12px_rgba(0,0,0,0.35)] backdrop-blur-md">
             <Play className="size-3 shrink-0 fill-white" />
             <span>{game.plays}</span>
           </div>
@@ -158,28 +149,39 @@ export function GamePosterCard({
             <X className="size-3.5" />
           </button>
         )}
-      </article>
-
-      <div className="flex min-w-0 items-center gap-2 px-0.5">
-        <span
-          className={`grid ${avatarSize} shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br ${gradientClass[game.gradient]} font-black text-white shadow-[0_2px_8px_rgba(124,58,237,0.3)] ring-2 ring-violet-200/80`}
-        >
-          {game.thumbnailUrl ? (
-            <img src={game.thumbnailUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-          ) : (
-            <span className="text-[11px]">{creatorInitial(game.creator)}</span>
-          )}
-        </span>
-        <span
-          className={`truncate text-[12px] font-bold ${
-            metaTheme === "dark" ? "text-white/92" : "text-violet-950"
-          }`}
-        >
-          {game.creator.length > 16
-            ? `${game.creator.slice(0, 6)}…${game.creator.slice(-4)}`
-            : game.creator}
-        </span>
       </div>
-    </div>
+
+      <div className={`flex min-w-0 flex-col ${footerPadClass}`}>
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <h3 className={`min-w-0 truncate font-display font-black text-white ${titleClass}`}>
+            {game.title}
+          </h3>
+          {typeof game.likes === "number" && game.likes > 0 && (
+            <span className="flex shrink-0 items-center gap-1 text-[11px] font-bold text-violet-200/85">
+              <Heart className="size-3 shrink-0" />
+              {formatCompactCount(game.likes)}
+            </span>
+          )}
+        </div>
+
+        <span
+          className={`w-fit rounded-full border border-violet-400/40 font-bold uppercase tracking-wide text-violet-200/90 ${pillClass}`}
+        >
+          {game.category}
+        </span>
+
+        <div className="flex min-w-0 items-center gap-1.5 pt-0.5">
+          <img
+            src={defaultCreatorAvatar}
+            alt=""
+            draggable={false}
+            className={`${avatarSize} shrink-0 rounded-full object-cover ring-1 ring-white/20`}
+          />
+          <span className={`truncate font-semibold text-violet-200/75 ${creatorTextClass}`}>
+            {shortCreator}
+          </span>
+        </div>
+      </div>
+    </article>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { resolveGameThumbnail } from "@/lib/studio-meta";
+import { mapApiGameToGame } from "@/lib/api/games";
 import type { Game } from "@/lib/games-data";
 
 export function useGameSearch(query: string) {
@@ -18,25 +18,19 @@ export function useGameSearch(query: string) {
     setIsSearching(true);
     const handler = setTimeout(() => {
       api
-        .get(`/games/list?q=${encodeURIComponent(trimmed)}&limit=20`)
+        .get("/games/list", { params: { limit: 100, offset: 0 } })
         .then((res) => {
-          const games: any[] = res.data?.games ?? [];
-          const mapped: Game[] = games.map((g: any, index: number) => ({
-            title: g.title,
-            category: g.category ?? "Game",
-            plays: g.views
-              ? g.views >= 1000
-                ? `${(g.views / 1000).toFixed(1)}K`
-                : String(g.views)
-              : "New",
-            emoji: "🎮",
-            gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
-            creator: g.creator ?? "you",
-            creatorId: g.creatorId,
-            thumbnailUrl: resolveGameThumbnail(g),
-            templateId: g.id ?? g.templateId,
-            prompt: g.customization?.prompt || "",
-          }));
+          const normalizedQuery = trimmed.toLowerCase();
+          const games = (res.data?.games ?? []) as Record<string, unknown>[];
+          const mapped = games
+            .filter((game) => game?.title)
+            .map(mapApiGameToGame)
+            .filter((game) =>
+              [game.title, game.category, game.creator, game.prompt ?? ""].some((value) =>
+                value.toLowerCase().includes(normalizedQuery),
+              ),
+            )
+            .slice(0, 20);
           setResults(mapped);
         })
         .catch(() => {

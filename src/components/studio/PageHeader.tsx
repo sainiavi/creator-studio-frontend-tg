@@ -11,7 +11,7 @@ export function PageHeader({
 
   return (
     <>
-      <header className="sticky top-0 z-30 -mx-0 border-b border-violet-400/25 bg-[#160b2e] px-5 py-3.5 text-center text-white shadow-[0_8px_28px_rgba(88,28,135,0.35)] sm:hidden">
+      <header className="sticky top-0 z-40 border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-5 py-3.5 text-center text-white shadow-[0_10px_30px_rgba(8,4,20,0.5)] backdrop-blur-xl sm:hidden">
         <h1 className="font-display text-[1.75rem] font-black leading-none tracking-tight text-white drop-shadow-[0_2px_0_rgba(0,0,0,0.45)]">
           {title}
         </h1>
@@ -31,8 +31,8 @@ export function PageHeader({
         ) : null}
       </header>
 
-      <header className="animate-float-up hidden border-b border-border/60 px-6 py-8 sm:block lg:px-10">
-        <h1 className="font-display text-4xl font-black tracking-tight lg:text-5xl">{title}</h1>
+      <header className="sticky top-0 z-40 mx-3 mt-3 hidden rounded-[1.5rem] border border-fuchsia-200/45 bg-[#100528]/88 px-6 py-5 text-white shadow-[0_10px_34px_rgba(65,24,138,0.4),0_0_24px_rgba(217,70,239,0.22),inset_0_1px_12px_rgba(255,255,255,0.1)] backdrop-blur-xl sm:block lg:px-8">
+        <h1 className="font-display text-3xl font-black tracking-tight lg:text-4xl">{title}</h1>
         {links ? (
           <nav className="label-mono mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] text-muted-foreground">
             {links.map((link, index) => (
@@ -45,7 +45,7 @@ export function PageHeader({
             ))}
           </nav>
         ) : subtitleText ? (
-          <p className="label-mono mt-2 text-[11px] text-muted-foreground">{subtitleText}</p>
+          <p className="label-mono mt-1.5 text-[11px] text-violet-200/80">{subtitleText}</p>
         ) : null}
       </header>
     </>

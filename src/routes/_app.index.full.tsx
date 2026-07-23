@@ -36,10 +36,9 @@ import {
   WandSparkles,
   X,
   Zap,
-  LayoutGrid,
 } from "lucide-react";
 import { resolveGameThumbnail } from "@/lib/studio-meta";
-import { fetchGamesPage } from "@/lib/api/games";
+import { fetchGamesPage, mapApiGameToGame } from "@/lib/api/games";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { VIEWS_TOP_LIMIT } from "@/lib/pagination";
 import type { Game } from "@/lib/games-data";
@@ -47,6 +46,12 @@ import { fetchCreatorScoreLeaderboard, type CreatorScoreEntry } from "@/lib/api/
 import rankOneAvatar from "@/assets/leaderboard-rank-1.webp";
 import rankTwoAvatar from "@/assets/leaderboard-rank-2.webp";
 import rankThreeAvatar from "@/assets/leaderboard-rank-3.webp";
+import categoryArcadeIcon from "@/assets/categoryArcade.png";
+import categoryPuzzleIcon from "@/assets/categoryPuzzle.png";
+import categorySportsIcon from "@/assets/categorySports.png";
+import categoryActionIcon from "@/assets/categoryAction.png";
+import categoryStrategyIcon from "@/assets/categoryStrategy.png";
+import categoryMoreIcon from "@/assets/categoryMore.png";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
 import {
@@ -113,6 +118,7 @@ const categoryPriority = ["Action", "Arcade", "Racing", "Puzzle", "Strategy"];
 const browseCategories: {
   name: string;
   icon: ComponentType<{ className?: string }>;
+  image?: string;
   iconColor: string;
   glow: string;
   gradient: string;
@@ -120,6 +126,7 @@ const browseCategories: {
   {
     name: "Arcade",
     icon: Gamepad2,
+    image: categoryArcadeIcon,
     iconColor: "text-violet-400",
     glow: "shadow-[0_0_18px_rgba(167,139,250,0.35)]",
     gradient: "from-violet-300 via-violet-500 to-purple-700",
@@ -127,6 +134,7 @@ const browseCategories: {
   {
     name: "Puzzle",
     icon: Puzzle,
+    image: categoryPuzzleIcon,
     iconColor: "text-lime-400",
     glow: "shadow-[0_0_18px_rgba(163,230,53,0.35)]",
     gradient: "from-lime-200 via-lime-400 to-green-600",
@@ -134,6 +142,7 @@ const browseCategories: {
   {
     name: "Sports",
     icon: Volleyball,
+    image: categorySportsIcon,
     iconColor: "text-orange-400",
     glow: "shadow-[0_0_18px_rgba(251,146,60,0.35)]",
     gradient: "from-orange-200 via-orange-400 to-red-600",
@@ -141,6 +150,7 @@ const browseCategories: {
   {
     name: "Action",
     icon: Swords,
+    image: categoryActionIcon,
     iconColor: "text-amber-300",
     glow: "shadow-[0_0_18px_rgba(252,211,77,0.35)]",
     gradient: "from-amber-200 via-amber-400 to-orange-600",
@@ -148,6 +158,7 @@ const browseCategories: {
   {
     name: "Strategy",
     icon: Trophy,
+    image: categoryStrategyIcon,
     iconColor: "text-sky-400",
     glow: "shadow-[0_0_18px_rgba(56,189,248,0.35)]",
     gradient: "from-sky-200 via-sky-400 to-blue-600",
@@ -242,6 +253,7 @@ export function Home() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileFeedTab, setMobileFeedTab] = useState("For You");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [browseCategoriesExpanded, setBrowseCategoriesExpanded] = useState(false);
   const [recentEventsOpen, setRecentEventsOpen] = useState(false);
 
@@ -302,29 +314,23 @@ export function Home() {
     setIsSearching(true);
     const handler = setTimeout(() => {
       api
-        .get(`/games/list?q=${encodeURIComponent(query)}&limit=20`)
+        .get("/games/list", { params: { limit: 100, offset: 0 } })
         .then((res) => {
-          const games: any[] = res.data?.games ?? [];
-          const mapped = games.map((g: any, index: number) => ({
-            title: g.title,
-            category: g.category ?? "Game",
-            plays: g.views
-              ? g.views >= 1000
-                ? `${(g.views / 1000).toFixed(1)}K`
-                : String(g.views)
-              : "New",
-            emoji: "🎮",
-            gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
-            creator: g.creator ?? "you",
-            creatorId: g.creatorId,
-            thumbnailUrl: resolveGameThumbnail(g),
-            templateId: g.id ?? g.templateId,
-            prompt: g.customization?.prompt || "",
-          }));
+          const normalizedQuery = query.toLowerCase();
+          const games = (res.data?.games ?? []) as Record<string, unknown>[];
+          const mapped = games
+            .filter((game) => game?.title)
+            .map(mapApiGameToGame)
+            .filter((game) =>
+              [game.title, game.category, game.creator, game.prompt ?? ""].some((value) =>
+                value.toLowerCase().includes(normalizedQuery),
+              ),
+            )
+            .slice(0, 20);
           setSearchResults(mapped);
         })
         .catch(() => {
-          // fail silently
+          setSearchResults([]);
         })
         .finally(() => {
           setIsSearching(false);
@@ -560,64 +566,92 @@ export function Home() {
 
   return (
     <div className="relative min-h-screen text-violet-950">
-      <header className="sticky top-0 z-30 flex min-h-[56px] items-center justify-between gap-3 border-b border-white/[0.06] bg-[linear-gradient(180deg,#07050f_0%,#12081f_55%,#160b2e_100%)] px-3 py-2.5 text-white shadow-[0_10px_28px_rgba(8,4,20,0.55)] md:relative md:top-auto md:z-20 md:m-3 md:min-h-16 md:rounded-[1.65rem] md:border-2 md:border-fuchsia-200 md:border-b-2 md:bg-[#100528] md:bg-none md:px-6 md:py-3 md:shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] md:backdrop-blur">
-        <div className="relative z-20 flex min-w-0 shrink-0 items-center sm:flex-1 sm:gap-4">
-          <KultLogo className="h-8 w-auto max-w-[118px] object-contain object-left sm:h-10 sm:max-w-[148px]" />
-          <p className="hidden shrink-0 text-sm font-semibold text-violet-100 sm:block">
-            <span className="font-black text-white"></span>
-          </p>
-          <label className="hidden h-10 w-full max-w-md items-center gap-2 rounded-xl border border-fuchsia-200/30 bg-white/10 px-3 shadow-[inset_0_1px_8px_rgba(255,255,255,0.12)] transition focus-within:border-fuchsia-200 sm:flex">
-            <Search className="size-4 shrink-0 text-violet-100" />
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search games, categories, creators..."
-              className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-violet-200/70"
-            />
-          </label>
-        </div>
-        <div className="relative z-10 flex shrink-0 items-center justify-end gap-2 sm:gap-2.5">
-          <TonWalletSignInButton responsive compact />
-          <label className="grid size-9 shrink-0 place-items-center rounded-full border border-white/18 bg-[#1b1d27] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition active:scale-95 focus-within:border-sky-300/50 sm:hidden">
-            <Search className="size-4 shrink-0 stroke-[1.75]" />
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              aria-label="Search games"
-              className="sr-only"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => void openNotifications()}
-            title="Open notifications"
-            aria-label="Open notifications"
-            className="relative grid size-9 shrink-0 place-items-center rounded-full border border-white/18 bg-[#1b1d27] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition active:scale-95 hover:border-white/30 sm:size-9"
-          >
-            <Bell className="size-4 stroke-[1.75]" />
-            {notifications.some((notification) => !notification.read) && (
-              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
-            )}
-          </button>
-          <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/18 bg-[#1b1d27] px-2.5 text-[11px] font-black tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:gap-2 sm:rounded-full sm:px-3 sm:text-xs">
-            <Zap className="size-3.5 shrink-0 fill-white text-white sm:size-4" strokeWidth={1.75} />
-            <span className="sm:hidden">{formatCount(kultPoints)}</span>
-            <span className="hidden sm:inline">
-              Level {kpLevel} · {formatCount(kultPoints)} KP
-            </span>
+      <header className="sticky top-0 z-40 flex min-h-[56px] items-center justify-between gap-3 border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5),0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl md:mx-3 md:mt-3 md:min-h-16 md:rounded-[1.5rem] md:border md:border-fuchsia-200/45 md:bg-[#100528]/88 md:px-6 md:py-3 md:shadow-[0_10px_34px_rgba(65,24,138,0.45),0_0_24px_rgba(217,70,239,0.25),inset_0_1px_12px_rgba(255,255,255,0.1)]">
+        {mobileSearchOpen ? (
+          <div className="flex w-full items-center gap-2 sm:hidden">
+            <label className="flex h-10 flex-1 items-center gap-2 rounded-xl border border-fuchsia-300/50 bg-white/10 px-3 shadow-[inset_0_1px_8px_rgba(255,255,255,0.12)]">
+              <Search className="size-4 shrink-0 text-violet-100" />
+              <input
+                autoFocus
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search games, categories, creators..."
+                aria-label="Search games"
+                className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-violet-200/70"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileSearchOpen(false);
+                setSearchQuery("");
+              }}
+              aria-label="Close search"
+              className="grid size-9 shrink-0 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition active:scale-95"
+            >
+              <X className="size-4 stroke-[1.75]" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/profile" })}
-            title="Open profile"
-            aria-label="Open profile"
-            className="hidden size-9 place-items-center rounded-full border border-white/18 bg-[#1b1d27] font-display text-sm font-black text-white transition hover:bg-white/10 sm:grid"
-          >
-            K
-          </button>
-        </div>
+        ) : (
+          <>
+            <div className="relative z-20 flex min-w-0 shrink-0 items-center sm:flex-1 sm:gap-4">
+              <KultLogo className="h-8 w-auto max-w-[118px] object-contain object-left sm:h-10 sm:max-w-[148px]" />
+              <p className="hidden shrink-0 text-sm font-semibold text-violet-100 sm:block">
+                <span className="font-black text-white"></span>
+              </p>
+              <label className="hidden h-10 w-full max-w-md items-center gap-2 rounded-xl border border-fuchsia-200/30 bg-white/10 px-3 shadow-[inset_0_1px_8px_rgba(255,255,255,0.12)] transition focus-within:border-fuchsia-200 sm:flex">
+                <Search className="size-4 shrink-0 text-violet-100" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search games, categories, creators..."
+                  className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-violet-200/70"
+                />
+              </label>
+            </div>
+            <div className="relative z-10 flex shrink-0 items-center justify-end gap-2 sm:gap-2.5">
+              <TonWalletSignInButton responsive compact />
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen(true)}
+                aria-label="Search games"
+                className="grid size-9 shrink-0 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition active:scale-95 focus-within:border-fuchsia-300/60 sm:hidden"
+              >
+                <Search className="size-4 shrink-0 stroke-[1.75]" />
+              </button>
+              <button
+                type="button"
+                onClick={() => void openNotifications()}
+                title="Open notifications"
+                aria-label="Open notifications"
+                className="relative grid size-9 shrink-0 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition active:scale-95 hover:border-fuchsia-300/50 sm:size-9"
+              >
+                <Bell className="size-4 stroke-[1.75]" />
+                {notifications.some((notification) => !notification.read) && (
+                  <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
+                )}
+              </button>
+              <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/25 bg-[linear-gradient(135deg,#7c3aed,#d946ef)] px-2.5 text-[11px] font-black tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_2px_14px_rgba(217,70,239,0.45)] sm:gap-2 sm:rounded-full sm:px-3 sm:text-xs">
+                <Zap className="size-3.5 shrink-0 fill-white text-white sm:size-4" strokeWidth={1.75} />
+                <span className="sm:hidden">{formatCount(kultPoints)}</span>
+                <span className="hidden sm:inline">
+                  Level {kpLevel} · {formatCount(kultPoints)} KP
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate({ to: "/profile" })}
+                title="Open profile"
+                aria-label="Open profile"
+                className="hidden size-9 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] font-display text-sm font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition hover:border-fuchsia-300/50 sm:grid"
+              >
+                K
+              </button>
+            </div>
+          </>
+        )}
       </header>
 
       <MobileHomeHero
@@ -697,7 +731,7 @@ export function Home() {
               ) : (
                 <>
                   <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <div className="flex min-w-max items-center gap-7 border-b border-violet-700/25">
+                    <div className="flex min-w-max items-center gap-6 border-b border-violet-950/15">
                       {homeFeedTabs.map((tab) => {
                         const selected = mobileFeedTab === tab;
                         return (
@@ -705,13 +739,15 @@ export function Home() {
                             key={tab}
                             type="button"
                             onClick={() => setMobileFeedTab(tab)}
-                            className={`relative pb-3 pt-2 text-base font-bold transition ${
-                              selected ? "text-black" : "text-violet-800/80"
+                            className={`relative shrink-0 pb-3 pt-2 text-base transition ${
+                              selected
+                                ? "font-black text-violet-950"
+                                : "font-bold text-violet-950/55 hover:text-violet-950/75"
                             }`}
                           >
                             {tab}
                             {selected && (
-                              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-black" />
+                              <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600" />
                             )}
                           </button>
                         );
@@ -765,18 +801,31 @@ export function Home() {
                               key={category.name}
                               type="button"
                               onClick={() => setMobileFeedTab(category.name)}
-                              className="group relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0b0d14] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:border-white/20 hover:bg-[#12151f]"
+                              className="group relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-[17px] border border-white bg-[#160b2e] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:bg-[#1d0f42]"
                             >
-                              <span
-                                className={`relative grid size-12 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br ${category.gradient} shadow-[0_6px_14px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.5)] transition duration-300 group-hover:scale-105 group-active:scale-95 ${category.glow}`}
-                              >
-                                <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/0 to-black/15" />
-                                <span className="pointer-events-none absolute -left-2 -top-3 size-7 rounded-full bg-white/50 blur-md" />
-                                <Icon
-                                  className="relative size-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
-                                  strokeWidth={2}
-                                />
-                              </span>
+                              {category.image ? (
+                                <span
+                                  className="relative grid size-12 place-items-center transition duration-300 group-hover:scale-105 group-active:scale-95"
+                                >
+                                  <img
+                                    src={category.image}
+                                    alt=""
+                                    className="h-full w-full object-contain"
+                                    draggable={false}
+                                  />
+                                </span>
+                              ) : (
+                                <span
+                                  className={`relative grid size-12 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br ${category.gradient} shadow-[0_6px_14px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.5)] transition duration-300 group-hover:scale-105 group-active:scale-95 ${category.glow}`}
+                                >
+                                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/0 to-black/15" />
+                                  <span className="pointer-events-none absolute -left-2 -top-3 size-7 rounded-full bg-white/50 blur-md" />
+                                  <Icon
+                                    className="relative size-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                                    strokeWidth={2}
+                                  />
+                                </span>
+                              )}
                               <span className={`text-[12px] font-bold leading-none ${category.iconColor}`}>
                                 {category.name}
                               </span>
@@ -787,12 +836,15 @@ export function Home() {
                           <button
                             type="button"
                             onClick={() => setBrowseCategoriesExpanded(true)}
-                            className="group relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0b0d14] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:border-white/20 hover:bg-[#12151f]"
+                            className="group relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-[17px] border border-white bg-[#160b2e] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:bg-[#1d0f42]"
                           >
-                            <span className="relative grid size-12 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-slate-300 via-slate-400 to-slate-600 shadow-[0_6px_14px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.5)] transition duration-300 group-hover:scale-105 group-active:scale-95">
-                              <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/0 to-black/15" />
-                              <span className="pointer-events-none absolute -left-2 -top-3 size-7 rounded-full bg-white/50 blur-md" />
-                              <LayoutGrid className="relative size-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" strokeWidth={2} />
+                            <span className="relative grid size-12 place-items-center transition duration-300 group-hover:scale-105 group-active:scale-95">
+                              <img
+                                src={categoryMoreIcon}
+                                alt=""
+                                className="h-full w-full object-contain"
+                                draggable={false}
+                              />
                             </span>
                             <span className="text-[12px] font-bold leading-none text-slate-200">More</span>
                           </button>
@@ -1359,7 +1411,7 @@ function TopCreatorsRow({
           View all <ChevronRight className="size-4" />
         </button>
       </div>
-      <div className="overflow-hidden rounded-2xl border-2 border-violet-200/80 bg-white/90 shadow-[0_6px_16px_rgba(124,58,237,0.12)] backdrop-blur">
+      <div className="overflow-hidden rounded-[17px] border border-white bg-[#160b2e] shadow-[0_10px_28px_rgba(8,4,20,0.45),0_0_0_1px_rgba(168,85,247,0.1)]">
         {visible.map((entry, index) => {
           const avatar = rankAvatars[entry.rank];
           const label = shortAddress(entry.creatorId) || shortAddress(entry.name) || entry.name;
@@ -1368,12 +1420,12 @@ function TopCreatorsRow({
               key={entry.id ?? entry.creatorId}
               type="button"
               onClick={onViewAll}
-              className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-violet-950 transition active:bg-violet-50 hover:bg-violet-50/80 ${
-                index > 0 ? "border-t border-violet-100" : ""
+              className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-white transition active:bg-white/10 hover:bg-white/5 ${
+                index > 0 ? "border-t border-white/10" : ""
               }`}
             >
               <div className="relative shrink-0">
-                <span className="block size-10 overflow-hidden rounded-full border-2 border-white bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-[0_4px_12px_rgba(124,58,237,0.35)]">
+                <span className="block size-10 overflow-hidden rounded-full border-2 border-white/20 bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-[0_4px_12px_rgba(124,58,237,0.35)]">
                   {avatar ? (
                     <img src={avatar} alt="" className="size-full object-cover" />
                   ) : (
@@ -1383,18 +1435,18 @@ function TopCreatorsRow({
                   )}
                 </span>
                 <span
-                  className={`absolute -bottom-0.5 -left-0.5 grid size-5 place-items-center rounded-full border-2 border-white text-[10px] font-black shadow-sm ${rankBadgeClass(entry.rank)}`}
+                  className={`absolute -bottom-0.5 -left-0.5 grid size-5 place-items-center rounded-full border-2 border-[#160b2e] text-[10px] font-black shadow-sm ${rankBadgeClass(entry.rank)}`}
                 >
                   {entry.rank}
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-black leading-tight">{label}</p>
-                <p className="mt-0.5 text-[11px] font-bold text-fuchsia-600">
+                <p className="truncate text-sm font-black leading-tight text-white">{label}</p>
+                <p className="mt-0.5 text-[11px] font-bold text-fuchsia-300">
                   {formatCount(entry.creatorScore)} CS
                 </p>
               </div>
-              <ChevronRight className="size-4 shrink-0 text-violet-400" />
+              <ChevronRight className="size-4 shrink-0 text-violet-300/50" />
             </button>
           );
         })}

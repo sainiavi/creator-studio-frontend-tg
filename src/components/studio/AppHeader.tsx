@@ -66,7 +66,7 @@ export function AppHeader({ className = "" }: { className?: string }) {
   return (
     <>
       <header
-        className={`sticky top-0 z-30 flex min-h-[56px] items-center justify-between gap-3 border-b border-white/[0.06] bg-[linear-gradient(180deg,#07050f_0%,#12081f_55%,#160b2e_100%)] px-3 py-2.5 text-white shadow-[0_10px_28px_rgba(8,4,20,0.55)] md:relative md:top-auto md:z-20 md:rounded-[1.65rem] md:border-2 md:border-fuchsia-200 md:border-b-2 md:bg-[#100528] md:bg-none md:px-6 md:py-3 md:shadow-[0_6px_0_rgba(65,24,138,0.75),0_0_34px_rgba(217,70,239,0.9),inset_0_1px_18px_rgba(255,255,255,0.16)] md:backdrop-blur ${className}`}
+        className={`sticky top-0 z-40 flex min-h-[56px] items-center justify-between gap-3 border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5),0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl md:mx-3 md:mt-3 md:min-h-16 md:rounded-[1.5rem] md:border md:border-fuchsia-200/45 md:bg-[#100528]/88 md:px-6 md:py-3 md:shadow-[0_10px_34px_rgba(65,24,138,0.45),0_0_24px_rgba(217,70,239,0.25),inset_0_1px_12px_rgba(255,255,255,0.1)] ${className}`}
       >
         <div className="relative z-20 flex min-w-0 shrink-0 items-center">
           <KultLogo className="h-8 w-auto max-w-[118px] object-contain object-left sm:h-10 sm:max-w-[148px]" />

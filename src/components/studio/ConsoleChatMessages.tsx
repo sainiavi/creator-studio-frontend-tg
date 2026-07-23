@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
-import { Bot, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { ChatMessage } from "@/lib/createChatFlow";
 import { quickRepliesForStage } from "@/lib/createChatFlow";
 import type { ChatStage } from "@/lib/createChatFlow";
+import assistantAvatar from "@/assets/chatAvatarLeft.png";
+import userAvatar from "@/assets/chatAvatarRight.png";
 
 type ConsoleChatMessagesProps = {
   messages: ChatMessage[];
@@ -40,12 +42,15 @@ export function ConsoleChatMessages({
         {messages.map((message, index) => (
           <div
             key={`${message.role}-${index}`}
-            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex items-end ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
             {message.role === "assistant" && (
-              <span className="mr-1.5 mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-fuchsia-500/30">
-                <Bot className="size-4 text-fuchsia-200" />
-              </span>
+              <img
+                src={assistantAvatar}
+                alt=""
+                draggable={false}
+                className="mr-1.5 size-7 shrink-0 rounded-full object-cover ring-1 ring-fuchsia-400/40"
+              />
             )}
             <div
               className={`max-w-[86%] rounded-2xl px-3 py-2 text-xs font-semibold leading-snug sm:text-sm ${
@@ -56,14 +61,25 @@ export function ConsoleChatMessages({
             >
               {message.text}
             </div>
+            {message.role === "user" && (
+              <img
+                src={userAvatar}
+                alt=""
+                draggable={false}
+                className="ml-1.5 size-7 shrink-0 rounded-full object-cover ring-1 ring-fuchsia-400/40"
+              />
+            )}
           </div>
         ))}
 
         {isThinking && (
-          <div className="flex justify-start">
-            <span className="mr-1.5 mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-fuchsia-500/30">
-              <Bot className="size-4 text-fuchsia-200" />
-            </span>
+          <div className="flex items-end justify-start">
+            <img
+              src={assistantAvatar}
+              alt=""
+              draggable={false}
+              className="mr-1.5 size-7 shrink-0 rounded-full object-cover ring-1 ring-fuchsia-400/40"
+            />
             <div className="flex max-w-[86%] items-center gap-1.5 rounded-2xl bg-white/10 px-3 py-2 text-xs font-semibold text-violet-100">
               <Loader2 className="size-3.5 animate-spin" />
               <span>Thinking…</span>
