@@ -796,7 +796,7 @@ export function Home() {
 
                     <section>
                       <div className="mb-3 flex items-center justify-between gap-3">
-                        <h2 className="font-display text-xl font-black tracking-tight text-violet-950">
+                        <h2 className="font-display text-2xl font-black tracking-tight text-violet-950">
                           Browse by Category
                         </h2>
                       </div>
@@ -817,8 +817,8 @@ export function Home() {
                                 <span
                                   className={`relative grid place-items-center transition duration-300 group-hover:scale-105 group-active:scale-95 ${
                                     ["Adventure", "RPG", "Multiplayer"].includes(category.name)
-                                      ? "size-[76px] -my-2"
-                                      : "size-12"
+                                      ? "size-[88px] -my-3"
+                                      : "size-16 -my-1"
                                   }`}
                                 >
                                   <img
