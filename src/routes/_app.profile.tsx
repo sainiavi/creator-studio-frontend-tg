@@ -79,16 +79,17 @@ import {
 import { fetchReferralSummary, type ReferralSummary } from "@/lib/api/referral";
 import bottomCard from "@/assets/bottomCard.png";
 import calendarClock from "@/assets/calanderClock.png";
-import statGames from "@/assets/icon1.png";
-import statFollowers from "@/assets/icon2.png";
+import statGames from "@/assets/icon2.png";
+import statFollowers from "@/assets/icon1.png";
 import statFollowing from "@/assets/icon3.png";
 import statLikes from "@/assets/icon4.png";
 import statShares from "@/assets/icon5.png";
+import remixesIcon from "@/assets/icon6.png";
 import giftArt from "@/assets/Gift.png";
 import kultPointArt from "@/assets/KultPoint.png";
 import rewardArt from "@/assets/reward.png";
 import profileAvatar from "@/assets/leaderboard-rank-1.webp";
-import profileCharacter from "@/assets/right1.webp";
+import profileCharacter from "@/assets/topProfileCard.png";
 
 export const Route = createFileRoute("/_app/profile")({
   pendingComponent: ProfileSkeleton,
@@ -626,6 +627,19 @@ function Profile() {
     return true;
   });
 
+  const completedChallenges = dailyChallenges.filter((challenge) => challenge.completed).length;
+  const challengeProgress = dailyChallenges.length
+    ? (completedChallenges / dailyChallenges.length) * 100
+    : 0;
+  const nextChallenge =
+    dailyChallenges.find((challenge) => !challenge.completed) ?? dailyChallenges[0];
+  const unlockedAchievements = achievementSummary?.inventory.badges.length ?? 0;
+  const totalAchievements = achievementSummary?.achievements.length ?? 0;
+  const achievementProgress = totalAchievements
+    ? (unlockedAchievements / totalAchievements) * 100
+    : 0;
+  const featuredAchievements = (achievementSummary?.achievements ?? []).slice(0, 2);
+
   return (
     <div className="relative min-h-screen sm:min-h-0">
       <div className="sticky top-0 z-50 hidden min-[1190px]:block">
@@ -648,16 +662,17 @@ function Profile() {
         </div>
 
         <div className="mx-auto max-w-3xl space-y-3">
-          <section className="relative overflow-hidden rounded-[1.75rem] border border-white/80 bg-[radial-gradient(circle_at_72%_30%,#35116f_0%,#16043d_48%,#100126_100%)] px-4 text-white shadow-[0_10px_24px_rgba(35,4,82,0.35)]">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_68%_72%,rgba(126,34,206,0.48),transparent_28%)]" />
-            <div className="relative z-10 grid min-h-40 grid-cols-[80px_minmax(0,1fr)_105px] items-center gap-3 max-[380px]:grid-cols-[68px_minmax(0,1fr)_82px] max-[380px]:gap-2">
+          <section className="relative mt-4 w-full overflow-hidden rounded-[1.35rem] bg-[#170436] text-white flex flex-row justify-between items-center">
+             <div className="absolute" style={{ zIndex: 1000, display:'flex', justifyContent:'center', alignItems:'center', flexDirection:'row', }}>
               <img
-                src={profileAvatar}
-                alt=""
-                className="size-20 rounded-full border-[3px] border-fuchsia-400 object-cover shadow-[0_0_18px_rgba(217,70,239,0.75)] max-[380px]:size-[68px]"
+                  src={profileAvatar}
+                  alt=""
+                  className="size-18 rounded-full border-[3px] border-fuchsia-400 object-cover shadow-[0_0_18px_rgba(217,70,239,0.75)] max-[380px]:size-[68px] "
+                  style={{ marginRight: '10px', marginLeft:'10px' }}
               />
+                
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5">
                   {editingDisplayName ? (
                     <>
                       <input
@@ -682,9 +697,9 @@ function Profile() {
                     </>
                   ) : (
                     <>
-                      <h2 className="min-w-0 truncate text-xl font-extrabold max-[380px]:text-base">
+                      <h3 className="min-w-0 truncate text-xl font-extrabold max-[220px]:text-base" style={{fontSize:"18px"}}>
                         @{displayName}
-                      </h2>
+                      </h3>
                       <button
                         type="button"
                         onClick={() => {
@@ -712,13 +727,15 @@ function Profile() {
                   Joined {joined ?? "11 June 2026"}
                 </p>
               </div>
+             </div>
               <img
                 src={profileCharacter}
                 alt=""
-                className="pointer-events-none h-36 w-full self-end object-contain object-bottom max-[380px]:h-32"
+                className="relative z-0 block h-auto w-full object-contain"
               />
-            </div>
           </section>
+
+
 
           <div className="grid grid-cols-2 gap-3">
             <section className="relative min-h-44 overflow-hidden rounded-[1.75rem] bg-[#170436] p-4 text-white shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
@@ -745,7 +762,7 @@ function Profile() {
               <p className="relative z-10 mt-2 text-5xl font-semibold">
                 {formatKultPoints(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
               </p>
-              <div className="absolute bottom-3 left-4 z-10 w-[48%] text-xs">
+              <div className="absolute bottom-3 left-4 z-10 w-[30%] text-xs">
                 <p>Level {pointSummary?.level?.level ?? 1}</p>
                 <span className="mt-1 block h-2 overflow-hidden rounded-full bg-violet-950">
                   <span className="block h-full w-[28%] rounded-full bg-fuchsia-500" />
@@ -767,6 +784,7 @@ function Profile() {
               [statFollowing, formatStat(followingCount), "Following"],
               [statLikes, formatStat(creatorStats?.likes), "Likes"],
               [statShares, formatStat(creatorStats?.shares), "Shares"],
+              [remixesIcon, formatStat(creatorStats?.remixes), "Remixes"],
             ].map(([icon, value, label]) => (
               <div
                 key={label}
@@ -779,52 +797,123 @@ function Profile() {
                 </span>
               </div>
             ))}
-            <div className="flex min-h-16 items-center gap-2 rounded-xl border border-fuchsia-500/55 bg-[linear-gradient(135deg,#2d0960,#540c91)] px-2">
-              <Repeat2 className="size-7 shrink-0 text-sky-300" />
-              <span className="min-w-0 text-center">
-                <b className="block text-xl leading-none">{formatStat(creatorStats?.remixes)}</b>
-                <small className="text-[10px]">Remixes</small>
-              </span>
-            </div>
           </section>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 items-stretch gap-3">
             <button
               type="button"
               onClick={() => setOpenPanel("challenges")}
-              className="relative min-h-36 overflow-hidden rounded-[1.75rem] bg-[#170436] p-4 text-left text-white"
+              className="group relative flex h-full min-h-[9.75rem] flex-col overflow-hidden rounded-[1.75rem] border border-fuchsia-400/45 bg-[linear-gradient(155deg,#2a0d58_0%,#170436_52%,#0d0224_100%)] p-3.5 text-left text-white shadow-[0_8px_20px_rgba(28,4,64,0.3),inset_0_1px_0_rgba(255,255,255,0.08)] transition active:scale-[0.98]"
             >
-              <span className="block max-w-[62%] whitespace-nowrap text-[clamp(0.68rem,2vw,0.95rem)] font-bold uppercase text-fuchsia-400">
-                Daily Challenges
+              <span className="pointer-events-none absolute -right-6 -top-8 size-24 rounded-full bg-fuchsia-500/20 blur-2xl" />
+              <div className="relative z-10 flex min-h-[4.25rem] items-start justify-between gap-1.5">
+                <div className="min-w-0 flex-1">
+                  <span className="block whitespace-nowrap text-[9px] font-black uppercase tracking-[0.08em] text-fuchsia-300">
+                    Daily Challenges
+                  </span>
+                  <span className="mt-1.5 block font-display text-[1.65rem] font-black leading-none tabular-nums">
+                    {completedChallenges}/{dailyChallenges.length || 3}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-violet-100/80">
+                    Complete today
+                  </span>
+                </div>
+                <span className="mt-2 flex size-14 shrink-0 items-center justify-center">
+                  <img
+                    src={giftArt}
+                    alt=""
+                    className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(217,70,239,0.45)] transition group-hover:scale-105"
+                  />
+                </span>
+              </div>
+
+              <span className="relative z-10 mt-3 block h-2 overflow-hidden rounded-full bg-violet-950/90 ring-1 ring-fuchsia-400/35">
+                <span
+                  className="block h-full rounded-full bg-[linear-gradient(90deg,#f472b6,#d946ef)]"
+                  style={{ width: `${challengeProgress}%` }}
+                />
               </span>
-              <span className="mt-2 block text-sm">
-                {dailyChallenges.filter((c) => c.completed).length}/{dailyChallenges.length}{" "}
-                Complete
-              </span>
-              <span className="absolute inset-x-4 bottom-3 rounded-md border border-fuchsia-400 px-2 py-1 text-center text-[11px]">
+
+              <div className="relative z-10 mt-2.5 min-h-[2.4rem] space-y-1">
+                {nextChallenge ? (
+                  <>
+                    <p className="truncate text-[11px] font-bold text-white/95">
+                      {nextChallenge.completed ? "All done for today" : nextChallenge.title}
+                    </p>
+                    <p className="truncate text-[10px] font-semibold text-fuchsia-200/75">
+                      {nextChallenge.completed
+                        ? "Come back tomorrow"
+                        : `${nextChallenge.progress}/${nextChallenge.target} · ${nextChallenge.reward}`}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-[11px] font-semibold text-violet-100/70">
+                    3 quests refresh daily
+                  </p>
+                )}
+              </div>
+
+              <span className="relative z-10 mt-auto rounded-full border border-fuchsia-300/70 bg-fuchsia-500/10 px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-wide text-fuchsia-100">
                 View Challenges ›
               </span>
-              <img src={giftArt} alt="" className="absolute right-3 top-3 size-16 object-contain" />
             </button>
+
             <button
               type="button"
               onClick={() => setOpenPanel("achievements")}
-              className="relative min-h-36 overflow-hidden rounded-[1.75rem] bg-[#170436] p-4 text-left text-white"
+              className="group relative flex h-full min-h-[9.75rem] flex-col overflow-hidden rounded-[1.75rem] border border-amber-300/45 bg-[linear-gradient(155deg,#2a1a05_0%,#170436_52%,#0d0224_100%)] p-3.5 text-left text-white shadow-[0_8px_20px_rgba(28,4,64,0.3),inset_0_1px_0_rgba(255,255,255,0.08)] transition active:scale-[0.98]"
             >
-              <span className="block max-w-[62%] whitespace-nowrap text-[clamp(0.68rem,2vw,0.95rem)] font-bold uppercase text-amber-400">
-                Achievements
+              <span className="pointer-events-none absolute -right-4 -top-6 size-24 rounded-full bg-amber-400/15 blur-2xl" />
+              <div className="relative z-10 flex min-h-[4.25rem] items-start justify-between gap-1.5">
+                <div className="min-w-0 flex-1">
+                  <span className="block whitespace-nowrap text-[9px] font-black uppercase tracking-[0.08em] text-amber-300">
+                    Achievements
+                  </span>
+                  <span className="mt-1.5 block font-display text-[1.65rem] font-black leading-none tabular-nums">
+                    {unlockedAchievements}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-violet-100/80">
+                    of {totalAchievements || "—"} unlocked
+                  </span>
+                </div>
+                <span className="mt-2 flex size-14 shrink-0 items-center justify-center">
+                  <img
+                    src={rewardArt}
+                    alt=""
+                    className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(250,204,21,0.45)] transition group-hover:scale-105"
+                  />
+                </span>
+              </div>
+
+              <span className="relative z-10 mt-3 block h-2 overflow-hidden rounded-full bg-violet-950/90 ring-1 ring-amber-300/35">
+                <span
+                  className="block h-full rounded-full bg-[linear-gradient(90deg,#fde047,#f59e0b)]"
+                  style={{ width: `${achievementProgress}%` }}
+                />
               </span>
-              <span className="mt-2 block text-sm">
-                {achievementSummary?.inventory.badges.length ?? 0} Unlocked
-              </span>
-              <span className="absolute inset-x-4 bottom-3 rounded-md border border-fuchsia-400 px-2 py-1 text-center text-[11px]">
+
+              <div className="relative z-10 mt-2.5 min-h-[2.4rem] space-y-1">
+                {featuredAchievements.length > 0 ? (
+                  featuredAchievements.map((achievement) => (
+                    <p
+                      key={achievement.id}
+                      className={`truncate text-[10px] font-semibold ${
+                        achievement.unlocked ? "text-amber-100/90" : "text-violet-100/55"
+                      }`}
+                    >
+                      {achievement.unlocked ? "★" : "○"} {achievement.title}
+                    </p>
+                  ))
+                ) : (
+                  <p className="text-[11px] font-semibold text-violet-100/70">
+                    Earn badges by playing & creating
+                  </p>
+                )}
+              </div>
+
+              <span className="relative z-10 mt-auto rounded-full border border-fuchsia-300/70 bg-fuchsia-500/10 px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-wide text-fuchsia-100">
                 View Achievements ›
               </span>
-              <img
-                src={rewardArt}
-                alt=""
-                className="absolute -right-2 top-1 h-20 w-20 object-contain"
-              />
             </button>
           </div>
         </div>

@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
-import { Crown, Trophy, UserRound } from "lucide-react";
+import { Trophy, UserRound } from "lucide-react";
 import rankOneAvatar from "@/assets/leaderboard-rank-1.webp";
 import rankTwoAvatar from "@/assets/leaderboard-rank-2.webp";
 import rankThreeAvatar from "@/assets/leaderboard-rank-3.webp";
+import bronzeRing from "@/assets/brownseRing.png";
+import goldRing from "@/assets/goldRing.png";
+import silverRing from "@/assets/silverRing.png";
 import { LeaderboardSkeleton } from "@/components/studio/PageSkeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
@@ -81,39 +84,33 @@ const rankAvatars: Record<1 | 2 | 3, string> = {
   3: rankThreeAvatar,
 };
 
+const rankRings: Record<1 | 2 | 3, string> = {
+  1: goldRing,
+  2: silverRing,
+  3: bronzeRing,
+};
+
 const podiumStyle = {
   1: {
     order: "order-2",
-    size: "size-20 sm:size-28",
-    badge: "size-8 text-sm sm:size-9 sm:text-base",
-    ring: "border-amber-300",
-    glow: "shadow-[0_0_42px_-8px_oklch(0.86_0.19_85_/_0.9),0_18px_60px_-26px_rgba(250,204,21,0.95)]",
-    crown: "text-amber-600",
-    halo: "bg-amber-300/20",
-    rankBg:
-      "bg-gradient-to-br from-amber-100 via-amber-300 to-yellow-500 text-background shadow-[0_0_22px_-6px_rgba(251,191,36,0.9)]",
+    frame: "h-[5.75rem] w-auto sm:h-[7.75rem]",
+    avatarInset: "inset-[21%]",
+    ringGlow:
+      "drop-shadow-[0_0_16px_rgba(250,204,21,0.85)] drop-shadow-[0_10px_28px_rgba(250,204,21,0.55)]",
   },
   2: {
     order: "order-1",
-    size: "size-16 sm:size-24",
-    badge: "size-7 text-xs sm:size-8 sm:text-sm",
-    ring: "border-slate-200",
-    glow: "shadow-[0_0_36px_-10px_oklch(0.86_0.02_270_/_0.75),0_18px_54px_-30px_rgba(226,232,240,0.9)]",
-    crown: "text-slate-500",
-    halo: "bg-slate-200/16",
-    rankBg:
-      "bg-gradient-to-br from-white via-slate-200 to-slate-400 text-background shadow-[0_0_18px_-7px_rgba(226,232,240,0.9)]",
+    frame: "h-[4.75rem] w-auto sm:h-[6.5rem]",
+    avatarInset: "inset-[21%]",
+    ringGlow:
+      "drop-shadow-[0_0_14px_rgba(226,232,240,0.75)] drop-shadow-[0_10px_24px_rgba(226,232,240,0.45)]",
   },
   3: {
     order: "order-3",
-    size: "size-16 sm:size-24",
-    badge: "size-7 text-xs sm:size-8 sm:text-sm",
-    ring: "border-orange-300",
-    glow: "shadow-[0_0_36px_-10px_oklch(0.74_0.14_55_/_0.75),0_18px_54px_-30px_rgba(251,146,60,0.9)]",
-    crown: "text-orange-600",
-    halo: "bg-orange-300/16",
-    rankBg:
-      "bg-gradient-to-br from-orange-100 via-orange-300 to-orange-500 text-background shadow-[0_0_18px_-7px_rgba(251,146,60,0.9)]",
+    frame: "h-[4.75rem] w-auto sm:h-[6.5rem]",
+    avatarInset: "inset-[21%]",
+    ringGlow:
+      "drop-shadow-[0_0_14px_rgba(251,146,60,0.75)] drop-shadow-[0_10px_24px_rgba(251,146,60,0.45)]",
   },
 } as const;
 
@@ -174,24 +171,23 @@ function Podium({
               } ${placementClass}`}
               style={{ animationDelay: `${(index + 1) * 70}ms`, opacity: 0 }}
             >
-              <Crown
-                className={`mb-1 size-5 drop-shadow-[0_0_10px_currentColor] ${style.crown} sm:size-7`}
-              />
               <div className="relative shrink-0">
-                <div className={`absolute inset-0 rounded-full blur-xl ${style.halo}`} />
-                <div
-                  className={`relative overflow-hidden rounded-full border-4 bg-background ring-1 ring-white/20 ${style.size} ${style.ring} ${style.glow}`}
-                >
-                  <img src={avatar} alt="" className="size-full object-cover" />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/18 via-transparent to-black/18" />
-                </div>
-                <div
-                  className={`absolute -bottom-2.5 left-1/2 grid -translate-x-1/2 place-items-center rounded-full border-2 border-background font-display font-black ring-1 ring-white/25 ${style.badge} ${style.rankBg}`}
-                >
-                  {row.rank}
+                <div className={`relative aspect-[170/234] ${style.frame}`}>
+                  <div
+                    className={`absolute ${style.avatarInset} overflow-hidden rounded-full`}
+                  >
+                    <img src={avatar} alt="" className="size-full object-cover" />
+                  </div>
+                  <img
+                    src={rankRings[row.rank as 1 | 2 | 3]}
+                    alt=""
+                    aria-hidden="true"
+                    draggable={false}
+                    className={`pointer-events-none absolute inset-0 size-full object-contain ${style.ringGlow}`}
+                  />
                 </div>
               </div>
-              <div className="mt-5 w-full min-w-0 max-w-full space-y-0.5 text-center">
+              <div className="mt-4 w-full min-w-0 max-w-full space-y-0.5 text-center">
                 <div className="flex min-w-0 items-center justify-center gap-1">
                   <p
                     className="min-w-0 truncate text-[11px] font-extrabold leading-tight text-white sm:text-sm"

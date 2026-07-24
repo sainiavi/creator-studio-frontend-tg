@@ -154,7 +154,7 @@ function templateForPrompt(prompt: string, gameTemplates: any[]) {
     match(["mini-racer"], ["racing", "racer", "race", "car", "cars", "driving", "traffic"]) ||
     match(["bubble-shooter"], ["bubble", "shooter", "aim"]) ||
     match(["blocks-match3"], ["match 3", "match-3", "match three", "blocks", "jewel", "candy"]) ||
-    gameTemplates.find((template) => text.includes(template.category.toLowerCase())) ||
+    gameTemplates.find((template) => template.category?.toLowerCase() && text.includes(template.category.toLowerCase())) ||
     gameTemplates.find((template) => text.includes(template.name.toLowerCase())) ||
     null
   );
@@ -191,6 +191,9 @@ function recentCreationContext() {
 }
 
 export function localPackage(template: any, options: any, themePresets: any) {
+  if (!template?.id) {
+    throw new Error("Template is unavailable");
+  }
   const theme = themePresets[options.theme as keyof typeof themePresets] ?? themePresets.neon;
   const tuning = template.difficulty[options.difficulty] ?? template.difficulty.normal;
   const slug = `${template.id}-${options.theme}-${Date.now().toString(36)}`;
@@ -531,6 +534,17 @@ export function useCreatorStudio() {
       // A confident keyword match (e.g. "chess", "racing") — null for vague prompts.
       const localMatch = templateForPrompt(effectivePrompt, gameTemplates);
       const promptTemplate = localMatch ?? selectedTemplate;
+      if (!promptTemplate?.id) {
+        const message = "Game templates are still loading. Refresh the page and try again.";
+        setStatus("Build failed");
+        setAgentStatus(message);
+        updateActiveBuild({
+          phase: "failed",
+          statusText: message,
+          game: null,
+        });
+        throw new Error(message);
+      }
       // Lock the matched template for hybrid so the routing agent can't drift to a different
       // game. Pure-agent always goes to the backend (it designs from scratch, no template).
       const lockTemplate = strategy !== "pure-agent" && Boolean(localMatch);

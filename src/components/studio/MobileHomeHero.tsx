@@ -81,7 +81,8 @@ export function MobileHomeHero({
               </span>
             </p>
             <h1
-              className="mt-2 flex flex-col items-center font-display font-black uppercase leading-[0.78]"
+              className="mt-2 flex flex-col items-center font-black uppercase leading-[0.78]"
+              style={{ fontFamily: '"Syncopate", sans-serif' }}
               aria-label="Create Playable Worlds"
             >
               <span className="text-[2.4rem] tracking-[-0.04em] text-[#12051f] [-webkit-text-stroke:1.5px_white] [text-shadow:0_4px_0_#4c1d95,0_7px_12px_rgba(46,16,101,0.32)]">

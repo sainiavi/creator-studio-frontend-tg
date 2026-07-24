@@ -238,15 +238,27 @@ export function ConsoleHero({
 
         {/* Bottom sheet — tall, fixed-height panel so it always feels spacious */}
         <div
-          className={`fixed inset-x-0 bottom-0 z-[55] mx-auto flex w-full max-w-[480px] flex-col overflow-hidden rounded-t-[1.75rem] border-x border-t border-fuchsia-400/40 bg-[linear-gradient(180deg,#1a0a35_0%,#0a0118_55%)] shadow-[0_-20px_60px_rgba(109,40,217,0.5),inset_0_1px_14px_rgba(255,255,255,0.08)] backdrop-blur-md transition-transform duration-300 ease-out ${
-            active ? "translate-y-0" : "translate-y-full"
-          }`}
+          className="fixed inset-x-0 bottom-0 z-[55] mx-auto flex w-full max-w-[480px] flex-col items-end px-4"
           style={{
             height: "96dvh",
             maxHeight: "900px",
-            fontFamily: "Inter, sans-serif",
           }}
         >
+          <button
+            type="button"
+            aria-label="Close chat"
+            onClick={closePopup}
+            className="mb-3 mt-3 grid size-9 shrink-0 place-items-center rounded-full border border-white/45 bg-[#15062f]/90 text-white shadow-[0_0_18px_rgba(168,85,247,0.4)] backdrop-blur transition active:scale-95"
+          >
+            <X className="size-4" strokeWidth={2.5} />
+          </button>
+
+          <div
+            className={`relative flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-t-[1.75rem] border-x border-t border-fuchsia-400/40 bg-[linear-gradient(180deg,#1a0a35_0%,#0a0118_55%)] shadow-[0_-20px_60px_rgba(109,40,217,0.5),inset_0_1px_14px_rgba(255,255,255,0.08)] backdrop-blur-md transition-transform duration-300 ease-out ${
+              active ? "translate-y-0" : "translate-y-full"
+            }`}
+            style={{ fontFamily: "Inter, sans-serif" }}
+          >
           <div className="pointer-events-none absolute inset-x-0 top-0 h-56 rounded-t-[1.75rem] bg-[radial-gradient(circle_at_82%_18%,rgba(89,208,255,0.22),transparent_34%),radial-gradient(circle_at_28%_20%,rgba(217,70,239,0.2),transparent_48%)]" />
 
           <div
@@ -263,34 +275,26 @@ export function ConsoleHero({
                 alt=""
                 aria-hidden="true"
                 draggable={false}
-                className="pointer-events-none absolute object-cover object-center opacity-95 [mask-image:linear-gradient(90deg,transparent_0%,black_22%,black_90%,transparent_100%)]"
-                style={{ right: -12, top: 0, width: 220, height: 210 }}
+                className="pointer-events-none absolute top-0 right-0 z-[1] h-[122%] w-auto max-w-[38%] object-contain object-right-top opacity-95 drop-shadow-[0_12px_28px_rgba(168,85,247,0.45)]"
               />
-              <button
-                type="button"
-                aria-label="Close chat"
-                onClick={closePopup}
-                className="absolute right-3 top-3 z-20 grid size-10 place-items-center rounded-full border border-white/40 bg-[#15062f]/80 text-white shadow-[0_0_16px_rgba(168,85,247,0.35)] backdrop-blur transition active:scale-95"
-              >
-                <X className="size-4" strokeWidth={2.5} />
-              </button>
 
-              <div className="relative z-10 max-w-[58%]">
+              <div className="relative z-10 max-w-[48%] pr-1">
                 <img
                   src={creatorStudioLogo}
                   alt="KULT Create"
                   draggable={false}
-                  className="mb-5 h-auto object-contain object-left"
-                  style={{ width: 94, maxWidth: 94 }}
+                  className="mb-3 h-auto object-contain object-left"
+                  style={{ width: 80, maxWidth: 80 }}
                 />
-                <h2 className="text-[1.65rem] font-black uppercase leading-[0.98] tracking-[-0.03em] text-white">
+                <h2 className="text-[1.15rem] font-black uppercase leading-[1.02] tracking-[-0.02em] text-white">
                   Create Your
                   <span className="block bg-[linear-gradient(90deg,#ffffff,#d946ef,#7c3aed)] bg-clip-text text-transparent">
                     Next Game
                   </span>
                 </h2>
-                <p className="mt-3 max-w-[190px] text-xs font-medium leading-snug text-violet-100/90">
-                  Describe your idea and generate a playable game instantly.
+                <p className="mt-2 max-w-[132px] text-[11px] font-medium leading-[1.35] text-violet-100/90">
+                  Describe your idea and generate
+                  <span className="block">a playable game instantly.</span>
                 </p>
               </div>
             </div>
@@ -331,6 +335,7 @@ export function ConsoleHero({
               persistExpanded
               modalTheme
             />
+          </div>
           </div>
         </div>
       </>,

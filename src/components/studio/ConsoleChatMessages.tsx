@@ -3,6 +3,7 @@ import type { ChatMessage } from "@/lib/createChatFlow";
 import { quickRepliesForStage } from "@/lib/createChatFlow";
 import type { ChatStage } from "@/lib/createChatFlow";
 import assistantAvatar from "@/assets/robot.png";
+import assistantAvatar2 from "@/assets/robo.png";
 import userAvatar from "@/assets/chatAvatarRight.webp";
 
 type ConsoleChatMessagesProps = {
@@ -40,7 +41,7 @@ export function ConsoleChatMessages({
             >
               <div className="relative size-16 shrink-0 rounded-full border-[3px] border-violet-500 bg-[#16052f] p-1 shadow-[0_0_18px_rgba(139,92,246,0.6)]">
                 <img
-                  src={assistantAvatar}
+                  src={assistantAvatar2}
                   alt=""
                   draggable={false}
                   className="size-full rounded-full object-cover"

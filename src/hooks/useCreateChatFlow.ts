@@ -33,7 +33,7 @@ export function useCreateChatFlow(options: UseCreateChatFlowOptions = {}) {
   const sendChat = useCallback(
     (text = chatInput) => {
       const value = text.trim();
-      if (!value) return;
+      if (!value || isThinking) return;
       setChatInput("");
 
       if (chatStage === "game") {
@@ -63,19 +63,31 @@ export function useCreateChatFlow(options: UseCreateChatFlowOptions = {}) {
         ]);
         setIsThinking(true);
         void (async () => {
-          const concept =
-            (await fetchConceptFromAgent(gameRequest || value, value)) ??
-            conceptFor(game, value);
-          setSelectedConcept(concept);
-          setIsThinking(false);
-          setMessages((current) => [
-            ...current,
-            { role: "assistant", text: concept },
-            {
-              role: "assistant",
-              text: 'Say "Ok, create it!" to lock this concept in and start building.',
-            },
-          ]);
+          try {
+            const concept =
+              (await fetchConceptFromAgent(gameRequest || value, value)) ??
+              conceptFor(game, value);
+            setSelectedConcept(concept);
+            setMessages((current) => [
+              ...current,
+              { role: "assistant", text: concept },
+              {
+                role: "assistant",
+                text: 'Say "Ok, create it!" to lock this concept in and start building.',
+              },
+            ]);
+          } catch {
+            setChatStage("vibe");
+            setMessages((current) => [
+              ...current,
+              {
+                role: "assistant",
+                text: "Something went wrong while creating your concept. Please try another vibe.",
+              },
+            ]);
+          } finally {
+            setIsThinking(false);
+          }
         })();
         return;
       }
@@ -103,6 +115,7 @@ export function useCreateChatFlow(options: UseCreateChatFlowOptions = {}) {
       chatInput,
       chatStage,
       gameRequest,
+      isThinking,
       onPromptChange,
       onReady,
       selectedConcept,
@@ -112,7 +125,7 @@ export function useCreateChatFlow(options: UseCreateChatFlowOptions = {}) {
 
   const submitComposerPrompt = useCallback(() => {
     const value = chatInput.trim();
-    if (!value) return;
+    if (!value || isThinking) return;
 
     if (chatStage === "game" || chatStage === "vibe" || chatStage === "concept") {
       sendChat(value);
@@ -129,7 +142,7 @@ export function useCreateChatFlow(options: UseCreateChatFlowOptions = {}) {
       { role: "assistant", text: "Got it — ready when you are!" },
     ]);
     onReady?.(prompt);
-  }, [chatInput, chatPrompt, chatStage, finalPrompt, onPromptChange, onReady, sendChat]);
+  }, [chatInput, chatPrompt, chatStage, finalPrompt, isThinking, onPromptChange, onReady, sendChat]);
 
   const resetChat = useCallback(() => {
     setChatStage("game");
