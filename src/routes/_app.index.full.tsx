@@ -34,7 +34,6 @@ import {
   Users,
   Volleyball,
   WandSparkles,
-  MoreHorizontal,
   X,
   Zap,
 } from "lucide-react";
@@ -55,6 +54,7 @@ import categoryActionIcon from "@/assets/categoryAction.webp";
 import categoryMultiplayerIcon from "@/assets/categoryMultiplayer.png";
 import categoryRPGIcon from "@/assets/categoryRPG.png";
 import categoryStrategyIcon from "@/assets/categoryStrategy.webp";
+import categoryMoreIcon from "@/assets/categoryMore.png";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
 import {
@@ -194,6 +194,27 @@ const browseCategories: {
 
 const browseCategoryPreviewCount = 5;
 
+type BrowseCategoryTile = (typeof browseCategories)[number] & { isMore?: false };
+type BrowseMoreTile = {
+  name: "More";
+  icon: ComponentType<{ className?: string }>;
+  image: string;
+  iconColor: string;
+  glow: string;
+  gradient: string;
+  isMore: true;
+};
+
+const browseMoreTile: BrowseMoreTile = {
+  name: "More",
+  icon: Gamepad2,
+  image: categoryMoreIcon,
+  iconColor: "text-cyan-300",
+  glow: "",
+  gradient: "",
+  isMore: true,
+};
+
 const homeFeedTabs = ["For You", "Trending", "New", ...browseCategories.map((c) => c.name)];
 
 function shortAddress(value: string | undefined) {
@@ -260,6 +281,18 @@ export function Home() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileFeedTab, setMobileFeedTab] = useState("For You");
   const [showAllBrowseCategories, setShowAllBrowseCategories] = useState(false);
+  const browseTiles = useMemo((): Array<BrowseCategoryTile | BrowseMoreTile> => {
+    if (showAllBrowseCategories) {
+      return browseCategories.map((category) => ({ ...category, isMore: false as const }));
+    }
+    const tiles: Array<BrowseCategoryTile | BrowseMoreTile> = browseCategories
+      .slice(0, browseCategoryPreviewCount)
+      .map((category) => ({ ...category, isMore: false as const }));
+    if (browseCategories.length > browseCategoryPreviewCount) {
+      tiles.push(browseMoreTile);
+    }
+    return tiles;
+  }, [showAllBrowseCategories]);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [recentEventsOpen, setRecentEventsOpen] = useState(false);
 
@@ -804,16 +837,18 @@ export function Home() {
                         </h2>
                       </div>
                       <div className="grid grid-cols-3 gap-2.5 pb-2 min-[1024px]:grid-cols-8 min-[1024px]:gap-2">
-                        {(showAllBrowseCategories
-                          ? browseCategories
-                          : browseCategories.slice(0, browseCategoryPreviewCount)
-                        ).map((category) => {
+                        {browseTiles.map((category) => {
                           const Icon = category.icon;
                           return (
                             <button
                               key={category.name}
                               type="button"
-                              onClick={() => setMobileFeedTab(category.name)}
+                              onClick={() =>
+                                category.isMore
+                                  ? setShowAllBrowseCategories(true)
+                                  : setMobileFeedTab(category.name)
+                              }
+                              aria-expanded={category.isMore ? false : undefined}
                               className="group relative flex aspect-[1.05] min-w-0 w-full flex-col items-center justify-center gap-2 rounded-[17px] border border-white bg-[#160b2e] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:bg-[#1d0f42]"
                             >
                               {category.image ? (
@@ -837,10 +872,7 @@ export function Home() {
                                 >
                                   <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/0 to-black/15" />
                                   <span className="pointer-events-none absolute -left-2 -top-3 size-7 rounded-full bg-white/50 blur-md" />
-                                  <Icon
-                                    className="relative size-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
-                                    strokeWidth={2}
-                                  />
+                                  <Icon className="relative size-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
                                 </span>
                               )}
                               <span
@@ -851,27 +883,6 @@ export function Home() {
                             </button>
                           );
                         })}
-                        {!showAllBrowseCategories &&
-                          browseCategories.length > browseCategoryPreviewCount && (
-                            <button
-                              type="button"
-                              onClick={() => setShowAllBrowseCategories(true)}
-                              aria-expanded={false}
-                              className="group relative flex aspect-[1.05] min-w-0 w-full flex-col items-center justify-center gap-2 rounded-[17px] border border-white bg-[#160b2e] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:bg-[#1d0f42]"
-                            >
-                              <span className="relative grid size-12 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-violet-300 via-fuchsia-500 to-purple-700 shadow-[0_6px_14px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.5),0_0_18px_rgba(217,70,239,0.35)] transition duration-300 group-hover:scale-105 group-active:scale-95">
-                                <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/0 to-black/15" />
-                                <span className="pointer-events-none absolute -left-2 -top-3 size-7 rounded-full bg-white/50 blur-md" />
-                                <MoreHorizontal
-                                  className="relative size-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
-                                  strokeWidth={2.5}
-                                />
-                              </span>
-                              <span className="text-[12px] font-bold leading-none text-fuchsia-300 min-[1024px]:text-[10px]">
-                                More
-                              </span>
-                            </button>
-                          )}
                       </div>
                     </section>
 
