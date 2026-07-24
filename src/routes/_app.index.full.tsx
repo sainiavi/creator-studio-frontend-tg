@@ -599,12 +599,16 @@ export function Home() {
               <p className="hidden shrink-0 text-sm font-semibold text-violet-100 min-[1190px]:block">
                 <span className="font-black text-white"></span>
               </p>
-              <label className="hidden h-10 w-full max-w-md items-center gap-2 rounded-xl border border-fuchsia-200/30 bg-white/10 px-3 shadow-[inset_0_1px_8px_rgba(255,255,255,0.12)] transition focus-within:border-fuchsia-200 min-[1190px]:flex">
+              <label
+                onClick={() => navigate({ to: "/search" })}
+                className="hidden h-10 w-full max-w-md cursor-pointer items-center gap-2 rounded-xl border border-fuchsia-200/30 bg-white/10 px-3 shadow-[inset_0_1px_8px_rgba(255,255,255,0.12)] transition focus-within:border-fuchsia-200 min-[1190px]:flex"
+              >
                 <Search className="size-4 shrink-0 text-violet-100" />
                 <input
                   type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
+                  value=""
+                  readOnly
+                  onFocus={() => navigate({ to: "/search" })}
                   placeholder="Search games, categories, creators..."
                   className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-violet-200/70"
                 />
@@ -614,7 +618,7 @@ export function Home() {
               <TonWalletSignInButton responsive compact />
               <button
                 type="button"
-                onClick={() => setMobileSearchOpen(true)}
+                onClick={() => navigate({ to: "/search" })}
                 aria-label="Search games"
                 className="grid size-9 shrink-0 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition active:scale-95 focus-within:border-fuchsia-300/60 min-[1190px]:hidden"
               >

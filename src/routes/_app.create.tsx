@@ -42,7 +42,6 @@ import { getTonWallet } from "@/lib/tonWallet";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
 import { CreatePageSkeleton } from "@/components/studio/PageSkeletons";
-import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
 import { AppHeader } from "@/components/studio/AppHeader";
 import { useCreateChatFlow } from "@/hooks/useCreateChatFlow";
 import { vibeIdeas } from "@/lib/createChatFlow";
@@ -52,6 +51,8 @@ import consoleControllerImg from "@/assets/center1.webp";
 import girlCharacter from "@/assets/right1.webp";
 import chatAvatarLeft from "@/assets/chatAvatarLeft.webp";
 import chatAvatarRight from "@/assets/chatAvatarRight.webp";
+import buildIcon from "@/assets/buildIcon.png";
+import consoleIcon from "@/assets/consoleIcon.png";
 
 export const Route = createFileRoute("/_app/create")({
   pendingComponent: CreatePageSkeleton,
@@ -112,6 +113,7 @@ function Create() {
     finalPrompt,
     setFinalPrompt,
     sendChat,
+    submitComposerPrompt: submitChatPrompt,
     chatPrompt,
     isThinking,
     freshChat,
@@ -121,6 +123,7 @@ function Create() {
     "info",
   );
   const [isPaying, setIsPaying] = useState(false);
+  const [showTierSelection, setShowTierSelection] = useState(false);
   // When a 2nd+ game needs payment, we hold the pending build here and let the
   // user pick TON or Telegram Stars instead of auto-charging.
   const [paymentChoice, setPaymentChoice] = useState<{
@@ -202,12 +205,12 @@ function Create() {
   }, [studio, setChatStage, setFinalPrompt, setGameRequest, setMessages]);
 
   useEffect(() => {
-    if (chatStage !== "ready" || phase !== "idle") return;
+    if (!showTierSelection || phase !== "idle") return;
     const timer = window.setTimeout(() => {
       strategySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
     return () => window.clearTimeout(timer);
-  }, [chatStage, phase]);
+  }, [showTierSelection, phase]);
 
   useEffect(() => {
     if (phase !== "building") return;
@@ -221,10 +224,7 @@ function Create() {
   const step =
     phase === "building" ? (stageToStep[activeBuild?.progressStage ?? ""] ?? 0) : steps.length - 1;
 
-  const showNotice = (
-    message: string,
-    kind: "info" | "payment" | "error" = "info",
-  ) => {
+  const showNotice = (message: string, kind: "info" | "payment" | "error" = "info") => {
     setGenerationNotice(message);
     setGenerationNoticeKind(kind);
     requestAnimationFrame(() => {
@@ -289,7 +289,9 @@ function Create() {
           tonAmount: payment?.methods?.chain?.amount ?? payment?.amount ?? 1,
           tonCurrency: payment?.methods?.chain?.currency ?? payment?.currency ?? "TON",
           starsAmount: payment?.methods?.stars?.amount ?? 0,
-          starsAvailable: Boolean(payment?.methods?.stars?.available) && (payment?.methods?.stars?.amount ?? 0) > 0,
+          starsAvailable:
+            Boolean(payment?.methods?.stars?.available) &&
+            (payment?.methods?.stars?.amount ?? 0) > 0,
         });
         showNotice("Your first game was free. Choose how to pay for another one.", "payment");
       } else {
@@ -297,10 +299,7 @@ function Create() {
         if (error?.response?.status === 401 || /authorization token/i.test(serverError)) {
           clearAuthToken();
           void prefetchAuthToken();
-          showNotice(
-            "Sign in with TON Wallet in the header, then try building again.",
-            "error",
-          );
+          showNotice("Sign in with TON Wallet in the header, then try building again.", "error");
           return;
         }
         showNotice(formatPaidGenerationNotice(error), "error");
@@ -322,15 +321,25 @@ function Create() {
       setIsPaying(true);
       let paymentTxHash = sessionStorage.getItem(PENDING_TON_GENERATION_PAYMENT_KEY) ?? "";
       if (!paymentTxHash) {
-        showNotice(`Confirm ${tonAmount} ${tonCurrency} in your wallet to unlock another game.`, "payment");
-        paymentTxHash = await sendTonGenerationPayment({ wallet: tonWallet, amountTon: tonAmount, signRawHash });
+        showNotice(
+          `Confirm ${tonAmount} ${tonCurrency} in your wallet to unlock another game.`,
+          "payment",
+        );
+        paymentTxHash = await sendTonGenerationPayment({
+          wallet: tonWallet,
+          amountTon: tonAmount,
+          signRawHash,
+        });
         sessionStorage.setItem(PENDING_TON_GENERATION_PAYMENT_KEY, paymentTxHash);
       }
       showNotice("Payment sent. Verifying on TON mainnet…", "info");
       let game = null;
       for (let attempt = 1; attempt <= 2; attempt += 1) {
         try {
-          game = await studio.generateFromPrompt(tier, buildPrompt, { method: "ton", paymentTxHash });
+          game = await studio.generateFromPrompt(tier, buildPrompt, {
+            method: "ton",
+            paymentTxHash,
+          });
           break;
         } catch (verifyError: any) {
           const waitingForTon =
@@ -347,7 +356,9 @@ function Create() {
       setGenerationNoticeKind("info");
     } catch (paymentError: any) {
       showNotice(
-        paymentError?.response?.data?.error ?? paymentError?.message ?? "Could not complete TON payment. Please try again.",
+        paymentError?.response?.data?.error ??
+          paymentError?.message ??
+          "Could not complete TON payment. Please try again.",
         "error",
       );
     } finally {
@@ -383,14 +394,20 @@ function Create() {
         }
         await new Promise((resolve) => setTimeout(resolve, 3000));
       }
-      if (!paid) throw new Error("Stars payment not confirmed yet. Tap a tier to try again in a moment.");
-      const game = await studio.generateFromPrompt(tier, buildPrompt, { method: "stars", starsOrderId: order.id });
+      if (!paid)
+        throw new Error("Stars payment not confirmed yet. Tap a tier to try again in a moment.");
+      const game = await studio.generateFromPrompt(tier, buildPrompt, {
+        method: "stars",
+        starsOrderId: order.id,
+      });
       if (game) addCreatedGame(game);
       setGenerationNotice("");
       setGenerationNoticeKind("info");
     } catch (paymentError: any) {
       showNotice(
-        paymentError?.response?.data?.error ?? paymentError?.message ?? "Could not complete Stars payment. Please try again.",
+        paymentError?.response?.data?.error ??
+          paymentError?.message ??
+          "Could not complete Stars payment. Please try again.",
         "error",
       );
     } finally {
@@ -414,29 +431,33 @@ function Create() {
   const submitComposerPrompt = () => {
     const value = chatInput.trim();
     if (phase === "building") return;
-
-    if (chatStage === "game" || chatStage === "vibe" || chatStage === "concept") {
-      if (!value) return;
-      sendChatMessage(value);
+    if (!value) return;
+    setShowTierSelection(false);
+    if (chatStage === "ready") {
+      submitChatPrompt();
       return;
     }
+    sendChatMessage(value);
+  };
 
-    const prompt = [finalPrompt || chatPrompt || studio.prompt, value].filter(Boolean).join(". ");
+  const openTierSelection = () => {
+    if (phase === "building" || isThinking) return;
+    setShowTierSelection(true);
+  };
+
+  const startTierBuild = (tier: 1 | 2 | 3) => {
+    const prompt = [finalPrompt || chatPrompt || studio.prompt, chatInput.trim()]
+      .filter(Boolean)
+      .join(". ");
     if (!prompt.trim()) return;
-    studio.setPrompt(prompt);
-    setChatInput("");
-    setMessages((current) => [
-      ...current,
-      ...(value ? [{ role: "user" as const, text: value }] : []),
-      { role: "assistant", text: "Starting Hybrid build…" },
-    ]);
-    void build(1, prompt);
+    setShowTierSelection(false);
+    void build(tier, prompt);
   };
 
   return (
     <div className="relative min-h-screen text-white">
       <AppHeader />
-      <div className="relative z-10 mx-auto max-w-3xl px-4 pb-28 pt-2 sm:px-6 sm:pb-6 sm:pt-4">
+      <div className="relative z-10 mx-auto flex max-w-md flex-col px-4 pb-28 pt-2 sm:px-5 sm:pb-6 sm:pt-4">
         {generationNotice && (
           <div
             ref={noticeRef}
@@ -466,7 +487,9 @@ function Create() {
                     disabled={isPaying}
                     className="flex flex-col items-center gap-0.5 rounded-xl border border-amber-300/50 bg-amber-400/20 px-3 py-2.5 text-amber-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60"
                   >
-                    <span className="font-display text-sm font-black">⭐ {paymentChoice.starsAmount} Stars</span>
+                    <span className="font-display text-sm font-black">
+                      ⭐ {paymentChoice.starsAmount} Stars
+                    </span>
                     <span className="text-[10px] font-bold opacity-75">Pay in Telegram</span>
                   </button>
                 )}
@@ -476,7 +499,9 @@ function Create() {
                   disabled={isPaying}
                   className={`flex flex-col items-center gap-0.5 rounded-xl border border-cyan-300/50 bg-cyan-400/15 px-3 py-2.5 text-cyan-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60 ${paymentChoice.starsAvailable ? "" : "col-span-2"}`}
                 >
-                  <span className="font-display text-sm font-black">💎 {paymentChoice.tonAmount} {paymentChoice.tonCurrency}</span>
+                  <span className="font-display text-sm font-black">
+                    💎 {paymentChoice.tonAmount} {paymentChoice.tonCurrency}
+                  </span>
                   <span className="text-[10px] font-bold opacity-75">Pay with wallet</span>
                 </button>
               </div>
@@ -490,7 +515,7 @@ function Create() {
         )}
 
         {templateSeed && (
-          <div className="mb-4 flex gap-2.5 rounded-[1.25rem] border border-fuchsia-400/30 bg-[#160b2e] p-2.5 text-white shadow-[0_10px_28px_rgba(8,4,20,0.45)] sm:gap-3 sm:rounded-[1.5rem] sm:p-3">
+          <div className="hidden">
             <div className="relative size-12 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-white/10 sm:size-16 sm:rounded-2xl">
               {getThumbnailUrl(templateSeed.id) ? (
                 <img
@@ -525,7 +550,7 @@ function Create() {
           </div>
         )}
 
-        <section className="mb-4 overflow-hidden rounded-[1.5rem] border-[3px] border-white/80 bg-[radial-gradient(circle_at_50%_5%,rgba(168,85,247,0.28),transparent_24%),linear-gradient(180deg,#160543,#070018)] p-3.5 shadow-[0_0_0_2px_rgba(168,85,247,0.5),0_0_36px_rgba(168,85,247,0.75),inset_0_1px_22px_rgba(255,255,255,0.12)] sm:rounded-[2rem] sm:border-[5px] sm:p-5">
+        <section className="hidden">
           <div className="flex flex-col items-center text-center">
             <div className="relative w-full max-w-[190px] sm:max-w-[230px]">
               <img
@@ -640,83 +665,125 @@ function Create() {
           )}
         </section>
 
-        <div
-          ref={strategySectionRef}
-          className={`mb-4 grid gap-2 ${freshChat ? "hidden sm:grid" : ""}`}
-        >
-          {chatStage === "ready" && phase === "idle" && (
-            <p className="rounded-xl border border-fuchsia-400/30 bg-[#160b2e] px-3 py-2 text-center text-xs font-black text-white shadow-[0_10px_28px_rgba(8,4,20,0.45)]">
-              Prompt locked. Tap a tier to start building.
-            </p>
+        <div ref={strategySectionRef} className="order-2 mb-4 grid gap-2.5">
+          {showTierSelection && phase === "idle" && (
+            <div className="flex items-center justify-between rounded-xl bg-[#170436] px-3 py-2">
+              <p className="text-xs font-bold uppercase text-fuchsia-300">Choose build mode</p>
+              <button
+                type="button"
+                onClick={() => setShowTierSelection(false)}
+                className="text-[10px] font-medium text-violet-300"
+              >
+                Cancel
+              </button>
+            </div>
           )}
-          {tierButtons.map((t) => (
-            <button
-              key={t.tier}
-              onClick={() => build(t.tier)}
-              disabled={phase === "building" || isPaying || (!finalPrompt && !chatPrompt && !studio.prompt)}
-              className={`group relative flex items-center gap-2.5 overflow-hidden rounded-2xl border-2 border-fuchsia-200/80 ${t.gradient} p-2.5 text-left shadow-[0_0_24px_rgba(168,85,247,0.55),inset_0_1px_16px_rgba(255,255,255,0.18)] disabled:opacity-60`}
-            >
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20">
-                <t.icon className={`size-5 ${t.iconColor}`} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-display text-sm font-black text-white">{t.label}</span>
-                <span className="block truncate text-[11px] font-bold text-violet-100">
-                  {isPaying && buildingTier === t.tier
-                    ? "Waiting for payment..."
-                    : buildingTier === t.tier
-                      ? "Building your game..."
-                      : t.subtitle}
+          {showTierSelection &&
+            phase === "idle" &&
+            tierButtons.map((t) => (
+              <button
+                key={t.tier}
+                onClick={() => startTierBuild(t.tier)}
+                disabled={
+                  phase === "building" ||
+                  isPaying ||
+                  (!chatInput.trim() && !finalPrompt && !chatPrompt && !studio.prompt)
+                }
+                className={`group relative flex min-h-14 items-center gap-2.5 overflow-hidden rounded-2xl border border-white/65 ${t.gradient} px-3 py-2 text-left shadow-[0_6px_18px_rgba(76,29,149,0.28),inset_0_1px_10px_rgba(255,255,255,0.2)] transition active:scale-[0.99] disabled:opacity-60`}
+              >
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20">
+                  <t.icon className={`size-5 ${t.iconColor}`} />
                 </span>
-              </span>
-              <span className="grid size-7 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
-                {buildingTier === t.tier ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <ArrowRight className="size-4" />
-                )}
-              </span>
-            </button>
-          ))}
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-bold text-white">{t.label}</span>
+                  <span className="block truncate text-[9px] font-medium text-white/90 sm:text-[10px]">
+                    {isPaying && buildingTier === t.tier
+                      ? "Waiting for payment..."
+                      : buildingTier === t.tier
+                        ? "Building your game..."
+                        : t.subtitle}
+                  </span>
+                </span>
+                <span className="grid size-7 shrink-0 place-items-center rounded-full border border-white/35 bg-white/12 text-white">
+                  {buildingTier === t.tier ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <ArrowRight className="size-4" />
+                  )}
+                </span>
+              </button>
+            ))}
         </div>
 
-        <div className="mb-4 w-full">
-          <div className="relative overflow-hidden rounded-[1.35rem] border-2 border-fuchsia-300/70 bg-[linear-gradient(160deg,#16082f_0%,#0a0118_55%,#1a0a3e_100%)] p-3 shadow-[0_0_0_1px_rgba(244,114,182,0.35),0_0_32px_rgba(168,85,247,0.45),inset_0_1px_16px_rgba(255,255,255,0.08)] sm:rounded-[1.5rem] sm:p-4">
-            <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-fuchsia-500/20 blur-3xl" />
-            <p className="relative mb-2 text-center font-display text-[10px] font-black uppercase tracking-[0.14em] text-fuchsia-300">
-              {templateSeed ? "Describe your remix" : "Type your game idea"}
+        <div className="order-1 mb-4 w-full">
+          <div className="relative overflow-hidden rounded-[1.25rem] border border-white/80 bg-[#170436] p-3 shadow-[0_8px_22px_rgba(28,4,64,0.34)]">
+            <p className="mb-3 flex items-center gap-2 text-xs font-medium uppercase text-fuchsia-400">
+              <span className="text-2xl leading-none text-fuchsia-500">✦</span>
+              {templateSeed ? "Describe your remix" : "What do you want to create?"}
             </p>
-            <CreateConsolePanel
-              value={chatInput}
-              onChange={setChatInput}
-              onSubmit={submitComposerPrompt}
-              onCategoryPick={(seed) => {
-                if (chatStage === "game" || chatStage === "vibe" || chatStage === "concept") {
-                  sendChatMessage(seed);
-                }
-              }}
-              disabled={phase === "building" || isThinking}
-              placeholder={
-                chatStage === "game" ? "Type your game idea here…" : "Type a prompt…"
-              }
-              className="relative !rounded-[1.1rem] !border-2 !border-fuchsia-400/80 !bg-[#12082a]/95 !p-2.5 !shadow-[0_0_22px_rgba(217,70,239,0.45),inset_0_1px_10px_rgba(255,255,255,0.08)] sm:!p-3"
-            />
+            <div className="mb-2 max-h-40 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(217,70,239,0.65)_transparent]">
+              {messages.slice(-5).map((message, index) => (
+                <div
+                  key={`${message.role}-${index}`}
+                  className={`w-fit max-w-[88%] rounded-xl px-3 py-2 text-[10px] leading-relaxed ${
+                    message.role === "user"
+                      ? "ml-auto bg-fuchsia-500/25 text-white"
+                      : "bg-white/8 text-violet-100"
+                  }`}
+                >
+                  {message.text}
+                </div>
+              ))}
+              {isThinking && (
+                <div className="flex w-fit items-center gap-2 rounded-xl bg-white/8 px-3 py-2 text-[10px] text-violet-200">
+                  <Loader2 className="size-3 animate-spin" /> AI is refining your idea...
+                </div>
+              )}
+            </div>
+            <div className="flex h-12 items-center gap-2 rounded-lg border border-fuchsia-500/65 bg-[#12032c] px-3 shadow-[inset_0_1px_8px_rgba(217,70,239,0.1)]">
+              <input
+                value={chatInput}
+                onChange={(event) => setChatInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") submitComposerPrompt();
+                }}
+                disabled={phase === "building" || isThinking}
+                placeholder="Type your game idea here..."
+                className="min-w-0 flex-1 bg-transparent text-xs font-medium text-white outline-none placeholder:text-violet-300/65"
+              />
+              <button
+                type="button"
+                onClick={submitComposerPrompt}
+                disabled={!chatInput.trim() || isThinking || phase === "building"}
+                aria-label="Send instruction to AI"
+                className="grid size-8 shrink-0 place-items-center rounded-full border border-white/65 bg-[linear-gradient(145deg,#e84ad7,#8b2be2)] text-white shadow-[0_0_12px_rgba(217,70,239,0.5)] disabled:opacity-50"
+              >
+                <Wand2 className="size-4" />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={openTierSelection}
+              disabled={phase === "building" || isPaying || isThinking}
+              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[linear-gradient(90deg,#dc36bd,#5122ee)] text-sm font-bold text-white shadow-[inset_0_1px_8px_rgba(255,255,255,0.2)] transition active:scale-[0.99] disabled:opacity-55"
+            >
+              <span className="text-xl">✦</span>
+              Generate Game
+            </button>
           </div>
         </div>
 
         {phase !== "idle" && (
-          <div className="animate-float-up mt-6 rounded-[1.75rem] border border-fuchsia-400/30 bg-[#160b2e] p-5 text-white shadow-[0_12px_32px_rgba(8,4,20,0.45),0_0_0_1px_rgba(168,85,247,0.1)] sm:p-6">
+          <div className="order-3 animate-float-up mb-4 rounded-[1.6rem] border border-white/75 bg-[#120329] p-4 text-white shadow-[0_10px_28px_rgba(28,4,64,0.4)]">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="truncate font-display text-xl font-black text-white sm:text-2xl">
-                  {builtGame?.title ?? "Build Console"}
-                </h3>
-                <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-violet-300/80">
+                <h3 className="truncate text-base font-bold uppercase text-white">Build Console</h3>
+                <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.12em] text-violet-400">
                   {phase === "done"
                     ? "AI Build Ready"
                     : phase === "failed"
                       ? "Build Failed"
-                      : activeBuild?.statusText ?? studio.agentStatus}
+                      : (activeBuild?.statusText ?? studio.agentStatus)}
                   {phase === "building"
                     ? ` · ${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s`
                     : ""}
@@ -725,41 +792,55 @@ function Create() {
               {phase === "building" ? (
                 <button
                   onClick={cancelBuild}
-                  className="shrink-0 rounded-full border border-rose-400/40 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-rose-300 transition hover:bg-rose-500/15"
+                  className="shrink-0 rounded-md border border-rose-400/35 px-3 py-1.5 text-[9px] font-medium text-rose-300 transition hover:bg-rose-500/15"
                 >
                   Cancel
                 </button>
               ) : (
                 <button
                   onClick={cancelBuild}
-                  className="shrink-0 rounded-full border border-white/20 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-violet-200 transition hover:bg-white/10"
+                  className="shrink-0 rounded-md border border-white/25 px-3 py-1.5 text-[9px] font-medium text-violet-200 transition hover:bg-white/10"
                 >
                   Dismiss
                 </button>
               )}
             </div>
-            <ul className="mt-4 space-y-3">
-              {steps.map((s, i) => {
-                const active = phase === "building" && i === step;
-                const complete = phase === "done" || phase === "failed" || i < step;
-                return (
-                  <li key={s} className="flex items-center gap-3 text-sm font-semibold">
-                    <span className="flex size-6 items-center justify-center rounded-full border border-white/15 bg-white/5">
-                      {complete ? (
-                        <Check className="size-3.5 text-emerald-400" />
-                      ) : active ? (
-                        <Loader2 className="size-3.5 animate-spin text-fuchsia-400" />
-                      ) : (
-                        <span className="size-1.5 rounded-full bg-violet-400/60" />
+            <div className="relative mt-4 min-h-40">
+              <ul className="w-[60%] space-y-3">
+                {steps.map((s, i) => {
+                  const active = phase === "building" && i === step;
+                  const complete = phase === "done" || phase === "failed" || i < step;
+                  return (
+                    <li key={s} className="relative flex items-center gap-2.5 text-sm font-medium">
+                      {i < steps.length - 1 && (
+                        <span className="absolute left-[10px] top-5 h-5 border-l border-dashed border-violet-500/45" />
                       )}
-                    </span>
-                    <span className={complete || active ? "text-white" : "text-violet-300/50"}>
-                      {s}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+                      <span className="flex size-[21px] shrink-0 items-center justify-center rounded-full border border-violet-500/65 bg-[#170436]">
+                        {complete ? (
+                          <Check className="size-3.5 text-emerald-400" />
+                        ) : active ? (
+                          <Loader2 className="size-3.5 animate-spin text-fuchsia-400" />
+                        ) : (
+                          <span className="size-1.5 rounded-full bg-violet-400/60" />
+                        )}
+                      </span>
+                      <span
+                        className={
+                          complete || active ? "text-white" : "whitespace-nowrap text-violet-300/65"
+                        }
+                      >
+                        {s}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <img
+                src={phase === "done" ? buildIcon : consoleIcon}
+                alt=""
+                className="pointer-events-none absolute -right-2 top-0 h-full w-[43%] object-contain object-center"
+              />
+            </div>
 
             {phase === "failed" && (
               <div className="mt-6 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
@@ -778,14 +859,12 @@ function Create() {
             )}
 
             {phase === "done" && (
-              <div className="mt-6 rounded-xl border border-primary/40 bg-gradient-to-br from-[oklch(0.72_0.27_340)] to-[oklch(0.65_0.25_295)] p-5">
-                <p className="label-mono text-[10px] text-white/80">
-                  {activeBuild?.statusText ?? studio.status}
-                </p>
-                <h4 className="mt-1 font-display text-xl font-black text-white">
+              <div className="mt-4 rounded-[1.25rem] bg-[linear-gradient(135deg,#de42d6,#9749f8)] p-4">
+                <p className="text-[10px] font-medium uppercase text-white/85">AI Build Ready</p>
+                <h4 className="mt-1 text-2xl font-bold text-white">
                   {builtGame?.title ?? studio.generatedPackage.title} 🎮
                 </h4>
-                <div className="mt-4 flex flex-wrap gap-3">
+                <div className="mt-3 grid grid-cols-2 gap-2">
                   <button
                     onClick={() =>
                       navigate({
@@ -793,7 +872,7 @@ function Create() {
                         params: { gameId: builtGame?.id ?? studio.generatedPackage.id ?? "latest" },
                       })
                     }
-                    className="flex items-center gap-2 rounded-lg bg-black/40 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white"
+                    className="flex items-center justify-center gap-2 rounded-full bg-violet-800 px-3 py-2 text-xs font-bold uppercase text-white"
                   >
                     <Wand2 className="size-4" /> Edit Game
                   </button>
@@ -804,7 +883,7 @@ function Create() {
                         params: { gameId: builtGame?.id ?? studio.generatedPackage.id ?? "latest" },
                       })
                     }
-                    className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-black"
+                    className="flex items-center justify-center gap-2 rounded-full bg-fuchsia-100 px-3 py-2 text-xs font-bold uppercase text-black"
                   >
                     <Rocket className="size-4" /> Publish
                   </button>
@@ -821,7 +900,7 @@ function Create() {
                         },
                       })
                     }
-                    className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-black"
+                    className="col-span-2 flex items-center justify-center gap-2 rounded-full bg-fuchsia-100 px-4 py-2 text-xs font-bold uppercase text-black"
                   >
                     <Play className="size-4" /> Play
                   </button>

@@ -4,7 +4,6 @@ import { Bell, Search, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { KultLogo } from "@/components/studio/KultLogo";
 import { TonWalletSignInButton } from "@/components/studio/TonWalletSignInButton";
-import { SearchModal } from "@/components/studio/SearchModal";
 import { getCurrentUserId } from "@/lib/identity";
 import {
   fetchNotifications,
@@ -21,7 +20,6 @@ function formatCount(value: number) {
 
 export function AppHeader({ className = "" }: { className?: string }) {
   const navigate = useNavigate();
-  const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [kultPoints, setKultPoints] = useState(0);
@@ -75,7 +73,7 @@ export function AppHeader({ className = "" }: { className?: string }) {
           <TonWalletSignInButton responsive compact />
           <button
             type="button"
-            onClick={() => setSearchOpen(true)}
+            onClick={() => navigate({ to: "/search" })}
             aria-label="Search games"
             className="grid size-9 shrink-0 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition active:scale-95 hover:border-fuchsia-300/50"
           >
@@ -105,8 +103,6 @@ export function AppHeader({ className = "" }: { className?: string }) {
           </div>
         </div>
       </header>
-
-      <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />
 
       <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
         <DialogContent className="max-h-[82vh] overflow-y-auto rounded-[1.5rem] border-2 border-fuchsia-200 bg-white/92 text-violet-950 shadow-[0_0_30px_rgba(168,85,247,0.35)] backdrop-blur sm:max-w-xl">
