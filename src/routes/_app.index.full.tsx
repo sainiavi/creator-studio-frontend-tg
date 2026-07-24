@@ -737,10 +737,7 @@ export function Home() {
               ) : (
                 <>
                   <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <div
-                      className="flex min-w-max items-center border-b border-violet-950/15"
-                      style={{ columnGap: 16, paddingBottom: 10 }}
-                    >
+                    <div className="flex min-w-max items-center gap-6 border-b border-violet-700/25">
                       {homeFeedTabs.map((tab) => {
                         const selected = mobileFeedTab === tab;
                         return (
@@ -749,25 +746,14 @@ export function Home() {
                             type="button"
                             onClick={() => setMobileFeedTab(tab)}
                             aria-pressed={selected}
-                            className="relative shrink-0 text-xs transition active:scale-95"
-                            style={{
-                              marginInline: 2,
-                              padding: "6px 14px",
-                              borderRadius: 999,
-                              border: selected
-                                ? "1px solid rgba(255, 255, 255, 0.9)"
-                                : "1px solid rgba(109, 40, 217, 0.28)",
-                              background: selected
-                                ? "linear-gradient(135deg, #6d28d9 0%, #a855f7 55%, #d946ef 100%)"
-                                : "rgba(255, 255, 255, 0.34)",
-                              color: selected ? "#ffffff" : "#3b0764",
-                              fontWeight: selected ? 900 : 700,
-                              boxShadow: selected
-                                ? "0 0 0 2px rgba(168, 85, 247, 0.24), 0 6px 16px rgba(109, 40, 217, 0.42)"
-                                : "none",
-                            }}
+                            className={`relative shrink-0 rounded-none border-0 bg-transparent px-0 pb-3 pt-1 text-sm font-bold shadow-none transition active:scale-95 ${
+                              selected ? "text-violet-950" : "text-violet-800/70"
+                            }`}
                           >
                             {tab}
+                            {selected && (
+                              <span className="absolute inset-x-0 -bottom-px h-[3px] bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.65)]" />
+                            )}
                           </button>
                         );
                       })}

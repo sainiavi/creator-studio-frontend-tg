@@ -36,8 +36,6 @@ const jobs = [
   ["Frame3.webp", 360],
   ["Frame4.webp", 360],
   ["Frame5.webp", 360],
-  ["heading1.webp", 360],
-  ["heading2.webp", 480],
   ["left1.webp", 480],
   ["right1.webp", 480],
   ["center1.webp", 480],
@@ -48,7 +46,6 @@ const jobs = [
   // Navigation and category icons
   ["categoryAction.webp", 128],
   ["categoryArcade.webp", 128],
-  ["categoryMore.webp", 128],
   ["categoryPuzzle.webp", 128],
   ["categorySports.webp", 128],
   ["categoryStrategy.webp", 128],

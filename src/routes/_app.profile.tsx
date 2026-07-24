@@ -79,6 +79,18 @@ import {
   type UserActivity,
 } from "@/lib/api/social";
 import { fetchReferralSummary, type ReferralSummary } from "@/lib/api/referral";
+import bottomCard from "@/assets/bottomCard.png";
+import calendarClock from "@/assets/calanderClock.png";
+import statGames from "@/assets/icon1.png";
+import statFollowers from "@/assets/icon2.png";
+import statFollowing from "@/assets/icon3.png";
+import statLikes from "@/assets/icon4.png";
+import statShares from "@/assets/icon5.png";
+import giftArt from "@/assets/Gift.png";
+import kultPointArt from "@/assets/KultPoint.png";
+import rewardArt from "@/assets/reward.png";
+import profileAvatar from "@/assets/leaderboard-rank-1.webp";
+import profileCharacter from "@/assets/right1.webp";
 
 export const Route = createFileRoute("/_app/profile")({
   pendingComponent: ProfileSkeleton,
@@ -234,10 +246,7 @@ function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
 
   return (
     <div className="mt-10">
-      <div className="relative flex items-center justify-between overflow-hidden rounded-[1.35rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1c0846,#0b0224)] px-4 py-3 shadow-[0_0_30px_rgba(217,70,239,0.65),inset_0_1px_16px_rgba(255,255,255,0.14)] backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:backdrop-blur-none">
-        <h2 className="font-display text-2xl font-black text-white drop-shadow-[0_2px_8px_rgba(76,29,149,0.45)] sm:text-foreground sm:drop-shadow-none">
-          {title}
-        </h2>
+      <div className="relative flex items-center justify-between overflow-hidden rounded-[1.35rem] px-4 py-3  backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:backdrop-blur-none">
         {games.length > 0 && (
           <div className="flex items-center gap-2">
             {!showAll && (
@@ -297,8 +306,22 @@ function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
           </div>
         )
       ) : (
-        <div className="mt-5 rounded-2xl border border-dashed border-border/60 bg-card/40 p-8 text-center text-sm text-muted-foreground">
-          {emptyMessage}
+        <div className="relative mt-4 min-h-44 overflow-hidden rounded-2xl bg-[#170436] text-white">
+          <img
+            src={bottomCard}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-left"
+          />
+          <div className="relative z-10 ml-[52%] flex min-h-44 flex-col justify-center p-4 text-left">
+            <h3 className="text-lg font-bold">No games yet.</h3>
+            <p className="mt-2 text-xs leading-5 text-violet-200">{emptyMessage}</p>
+            <a
+              href="/create"
+              className="mt-3 w-fit rounded-md bg-[linear-gradient(90deg,#a855f7,#6d28d9)] px-4 py-2 text-xs font-semibold text-white"
+            >
+              ⊕ Create Game
+            </a>
+          </div>
         </div>
       )}
     </div>
@@ -658,7 +681,7 @@ function Profile() {
 
   return (
     <div className="relative min-h-screen sm:min-h-0">
-      <div className="hidden sm:block">
+      <div className="hidden min-[1190px]:block">
         <PageHeader title="Profile" subtitle="Your creator identity · Published games" />
       </div>
       <div className="relative z-10 px-4 pb-8 pt-0 sm:px-6 sm:py-8 lg:px-10">
@@ -677,7 +700,161 @@ function Profile() {
           </button>
         </div>
 
-        <div className="space-y-3 sm:hidden">
+        <div className="space-y-3 min-[1190px]:hidden">
+          <section className="relative min-h-40 overflow-hidden rounded-[1.75rem] flex justify-center align-center border border-white/80 bg-[radial-gradient(circle_at_72%_30%,#35116f_0%,#16043d_48%,#100126_100%)] px-5 py-5 text-white shadow-[0_10px_24px_rgba(35,4,82,0.35)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_68%_72%,rgba(126,34,206,0.48),transparent_28%)]" />
+            <img
+              src={profileCharacter}
+              alt=""
+              className="pointer-events-none absolute -bottom-1 right-1 h-[130px] object-contain"
+            />
+            <div className="relative z-10 flex h-full items-center gap-4 pr-[32%] flex justify-cente align-centerr">
+              <img
+                src={profileAvatar}
+                alt=""
+                className="w-[80px] shrink-0 rounded-full border-[3px] border-fuchsia-400 object-cover shadow-[0_0_18px_rgba(217,70,239,0.75)]"
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h2 className="truncate text-[clamp(1.21rem,4vw,2rem)] font-extrabold">
+                    @{displayName}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftDisplayName(displayName);
+                      setEditingDisplayName(true);
+                    }}
+                    className="grid size-7 shrink-0 place-items-center rounded-lg bg-white/10 text-fuchsia-200"
+                    aria-label="Edit name"
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyIdentity}
+                  className="mt-1 flex max-w-full items-center gap-1.5 text-left text-xs font-medium text-fuchsia-300"
+                >
+                  <span className="truncate">{compactIdentity}</span>
+                  {identityCopied ? <Check className="size-3" /> : <Copy className="size-3" />}
+                </button>
+                <p className="mt-5 flex items-center gap-1.5 text-[11px] font-medium text-violet-100">
+                  <CalendarDays className="size-3.5 text-fuchsia-400" />
+                  Joined {joined ?? "11 June 2026"}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <div className="grid grid-cols-2 gap-3">
+            <section className="relative min-h-44 overflow-hidden rounded-2xl bg-[#170436] p-4 text-white shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
+              <p className="relative z-10 text-sm font-bold uppercase leading-tight text-amber-400">
+                Creator
+                <br />
+                Score
+              </p>
+              <p className="relative z-10 mt-2 text-5xl font-semibold text-amber-400">
+                {formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore)}
+              </p>
+              <img
+                src={rewardArt}
+                alt=""
+                className="pointer-events-none absolute -bottom-8 right-0 h-[40px] w-auto object-contain"
+              />
+            </section>
+            <section className="relative min-h-44 overflow-hidden rounded-2xl bg-[#170436] p-4 text-white shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
+              <p className="relative z-10 text-sm font-bold uppercase leading-tight text-fuchsia-400">
+                Kult
+                <br />
+                Points (KP)
+              </p>
+              <p className="relative z-10 mt-2 text-5xl font-semibold">
+                {formatKultPoints(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
+              </p>
+              <div className="absolute bottom-3 left-4 z-10 w-[48%] text-[10px]">
+                <p>Level {pointSummary?.level?.level ?? 1}</p>
+                <span className="mt-1 block h-2 overflow-hidden rounded-full bg-violet-950">
+                  <span className="block h-full w-[28%] rounded-full bg-fuchsia-500" />
+                </span>
+                <p className="mt-1">0 / 100 XP</p>
+              </div>
+              <img
+                src={kultPointArt}
+                alt=""
+                className="pointer-events-none absolute -bottom-3 right-0 h-[86%] w-auto object-contain"
+              />
+            </section>
+          </div>
+
+          <section className="grid grid-cols-3 gap-2 rounded-2xl bg-[#170436] p-3 text-white">
+            {[
+              [statGames, formatStat(createdGames.length), "Games"],
+              [statFollowers, formatStat(creatorStats?.followers), "Followers"],
+              [statFollowing, formatStat(followingCount), "Following"],
+              [statLikes, formatStat(creatorStats?.likes), "Likes"],
+              [statShares, formatStat(creatorStats?.shares), "Shares"],
+            ].map(([icon, value, label]) => (
+              <div
+                key={label}
+                className="flex min-h-16 items-center gap-2 rounded-xl border border-fuchsia-500/55 bg-[linear-gradient(135deg,#2d0960,#540c91)] px-2"
+              >
+                <img src={icon} alt="" className="size-7 object-contain" />
+                <span className="min-w-0 text-center">
+                  <b className="block text-xl leading-none">{value}</b>
+                  <small className="text-[10px]">{label}</small>
+                </span>
+              </div>
+            ))}
+            <div className="flex min-h-16 items-center gap-2 rounded-xl border border-fuchsia-500/55 bg-[linear-gradient(135deg,#2d0960,#540c91)] px-2">
+              <Repeat2 className="size-7 shrink-0 text-sky-300" />
+              <span className="min-w-0 text-center">
+                <b className="block text-xl leading-none">{formatStat(creatorStats?.remixes)}</b>
+                <small className="text-[10px]">Remixes</small>
+              </span>
+            </div>
+          </section>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setOpenPanel("challenges")}
+              className="relative min-h-36 overflow-hidden rounded-2xl bg-[#170436] p-4 text-left text-white"
+            >
+              <span className="block text-sm font-bold uppercase text-fuchsia-400">
+                Daily Challenges
+              </span>
+              <span className="mt-2 block text-sm">
+                {dailyChallenges.filter((c) => c.completed).length}/{dailyChallenges.length}{" "}
+                Complete
+              </span>
+              <span className="absolute inset-x-4 bottom-3 rounded-md border border-fuchsia-400 px-2 py-1 text-center text-[11px]">
+                View Challenges ›
+              </span>
+              <img src={giftArt} alt="" className="absolute right-2 top-4 size-16 object-contain" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenPanel("achievements")}
+              className="relative min-h-36 overflow-hidden rounded-2xl bg-[#170436] p-4 text-left text-white"
+            >
+              <span className="block text-sm font-bold uppercase text-amber-400">Achievements</span>
+              <span className="mt-2 block text-sm">
+                {achievementSummary?.inventory.badges.length ?? 0} Unlocked
+              </span>
+              <span className="absolute inset-x-4 bottom-3 rounded-md border border-fuchsia-400 px-2 py-1 text-center text-[11px]">
+                View Achievements ›
+              </span>
+              <img
+                src={rewardArt}
+                alt=""
+                className="absolute -right-2 top-1 h-20 w-20 object-contain"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="hidden">
           <section className="relative overflow-hidden rounded-[1.75rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1b0744,#09011c)] p-4 text-white shadow-[0_0_0_3px_rgba(217,70,239,0.28),0_0_28px_rgba(217,70,239,0.55),inset_0_1px_16px_rgba(255,255,255,0.12)]">
             <div className="relative flex items-center gap-4">
               <div className="grid size-20 shrink-0 place-items-center rounded-full border-4 border-fuchsia-300 bg-[radial-gradient(circle,#3e196f,#16072f_70%)] text-4xl shadow-[0_0_18px_rgba(245,132,255,0.75)]">
@@ -893,7 +1070,7 @@ function Profile() {
           </button>
         </div>
 
-        <div className="animate-float-up relative hidden overflow-hidden rounded-3xl border border-border/60 bg-[radial-gradient(circle_at_18%_10%,oklch(0.72_0.25_315/0.22),transparent_32%),radial-gradient(circle_at_88%_12%,oklch(0.82_0.16_195/0.16),transparent_30%),linear-gradient(145deg,oklch(0.08_0.02_282),oklch(0.045_0.014_282))] p-5 shadow-[0_24px_80px_oklch(0_0_0/0.45)] sm:block sm:p-6">
+        <div className="animate-float-up relative hidden overflow-hidden rounded-3xl border border-border/60 bg-[radial-gradient(circle_at_18%_10%,oklch(0.72_0.25_315/0.22),transparent_32%),radial-gradient(circle_at_88%_12%,oklch(0.82_0.16_195/0.16),transparent_30%),linear-gradient(145deg,oklch(0.08_0.02_282),oklch(0.045_0.014_282))] p-5 shadow-[0_24px_80px_oklch(0_0_0/0.45)] min-[1190px]:block sm:p-6">
           <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/80 to-transparent" />
           <div className="pointer-events-none absolute -right-20 -top-24 size-56 rounded-full border border-primary/15 bg-primary/5 blur-2xl" />
           <div className="pointer-events-none absolute -bottom-20 -left-20 size-52 rounded-full border border-cyan-300/10 bg-cyan-300/5 blur-2xl" />
@@ -1334,7 +1511,7 @@ function Profile() {
           </DialogContent>
         </Dialog>
 
-        <div className="mt-8 hidden overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card to-card p-6 shadow-card sm:block">
+        <div className="mt-8 hidden overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card to-card p-6 shadow-card min-[1190px]:block">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <span className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
@@ -1391,7 +1568,7 @@ function Profile() {
           </div>
         </div>
 
-        <div className="mt-8 sm:hidden">
+        <div className="mt-5 min-[1190px]:hidden">
           <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex min-w-max items-center gap-7 border-b border-violet-700/25">
               {profileGameSections.map((section) => {
@@ -1424,7 +1601,7 @@ function Profile() {
           />
         </div>
 
-        <div className="hidden sm:block">
+        <div className="hidden min-[1190px]:block">
           {profileGameSections.map((section) => (
             <GameRow
               key={section.title}
@@ -1534,8 +1711,9 @@ function Profile() {
                 )}
               </>
             ) : (
-              <div className="text-center text-sm text-muted-foreground py-6">
-                No recent activity found for the selected time range.
+              <div className="flex min-h-32 items-center gap-4 py-3 text-sm text-violet-200">
+                <img src={calendarClock} alt="" className="h-24 w-24 shrink-0 object-contain" />
+                <span>No recent activity found for the selected time range.</span>
               </div>
             )}
           </div>
