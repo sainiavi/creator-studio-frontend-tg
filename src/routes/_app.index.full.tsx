@@ -737,7 +737,10 @@ export function Home() {
               ) : (
                 <>
                   <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <div className="flex min-w-max items-center gap-2 border-b border-violet-950/15 pb-2">
+                    <div
+                      className="flex min-w-max items-center border-b border-violet-950/15"
+                      style={{ columnGap: 16, paddingBottom: 10 }}
+                    >
                       {homeFeedTabs.map((tab) => {
                         const selected = mobileFeedTab === tab;
                         return (
@@ -745,11 +748,21 @@ export function Home() {
                             key={tab}
                             type="button"
                             onClick={() => setMobileFeedTab(tab)}
-                            className={`relative shrink-0 rounded-full border px-3 py-1.5 text-xs transition ${
-                              selected
-                                ? "border-violet-600 bg-violet-700 font-black text-white shadow-[0_3px_10px_rgba(91,33,182,0.28)]"
-                                : "border-violet-400/35 bg-white/30 font-bold text-violet-800 hover:bg-white/55"
-                            }`}
+                            className="relative shrink-0 text-xs transition active:scale-95"
+                            style={{
+                              marginInline: 2,
+                              padding: "6px 14px",
+                              borderRadius: 999,
+                              border: selected
+                                ? "1px solid rgb(109 40 217)"
+                                : "1px solid rgba(109, 40, 217, 0.28)",
+                              background: selected
+                                ? "linear-gradient(135deg, #7c3aed, #a855f7)"
+                                : "rgba(255, 255, 255, 0.34)",
+                              color: selected ? "#ffffff" : "#3b0764",
+                              fontWeight: selected ? 900 : 700,
+                              boxShadow: selected ? "0 4px 12px rgba(91, 33, 182, 0.28)" : "none",
+                            }}
                           >
                             {tab}
                           </button>
