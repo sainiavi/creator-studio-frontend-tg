@@ -306,18 +306,21 @@ function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
           </div>
         )
       ) : (
-        <div className="relative mt-4 min-h-44 overflow-hidden rounded-2xl bg-[#170436] text-white">
+        <div className="relative mt-4 min-h-44 overflow-hidden rounded-[1.75rem] bg-[#170436] text-white">
           <img
             src={bottomCard}
             alt=""
             className="absolute inset-0 h-full w-full object-cover object-left"
           />
-          <div className="relative z-10 ml-[52%] flex min-h-44 flex-col justify-center p-4 text-left">
-            <h3 className="text-lg font-bold">No games yet.</h3>
-            <p className="mt-2 text-xs leading-5 text-violet-200">{emptyMessage}</p>
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,transparent_48%,rgba(23,4,54,0.88)_63%,#170436_100%)]" />
+          <div className="relative z-10 ml-[58%] flex min-h-44 flex-col justify-center py-4 pr-4 text-left max-[420px]:ml-[55%]">
+            <h3 className="text-xl font-bold leading-tight max-[420px]:text-base">No games yet.</h3>
+            <p className="mt-2 line-clamp-3 text-xs leading-5 text-violet-100 max-[420px]:text-[10px] max-[420px]:leading-4">
+              {emptyMessage}
+            </p>
             <a
               href="/create"
-              className="mt-3 w-fit rounded-md bg-[linear-gradient(90deg,#a855f7,#6d28d9)] px-4 py-2 text-xs font-semibold text-white"
+              className="mt-3 w-fit whitespace-nowrap rounded-lg bg-[linear-gradient(90deg,#a855f7,#6d28d9)] px-4 py-2 text-xs font-semibold text-white max-[420px]:px-2.5 max-[420px]:py-1.5 max-[420px]:text-[10px]"
             >
               ⊕ Create Game
             </a>
@@ -701,35 +704,56 @@ function Profile() {
         </div>
 
         <div className="space-y-3 min-[1190px]:hidden">
-          <section className="relative min-h-40 overflow-hidden rounded-[1.75rem] flex justify-center align-center border border-white/80 bg-[radial-gradient(circle_at_72%_30%,#35116f_0%,#16043d_48%,#100126_100%)] px-5 py-5 text-white shadow-[0_10px_24px_rgba(35,4,82,0.35)]">
+          <section className="relative overflow-hidden rounded-[1.75rem] border border-white/80 bg-[radial-gradient(circle_at_72%_30%,#35116f_0%,#16043d_48%,#100126_100%)] px-4 text-white shadow-[0_10px_24px_rgba(35,4,82,0.35)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_68%_72%,rgba(126,34,206,0.48),transparent_28%)]" />
-            <img
-              src={profileCharacter}
-              alt=""
-              className="pointer-events-none absolute -bottom-1 right-1 h-[130px] object-contain"
-            />
-            <div className="relative z-10 flex h-full items-center gap-4 pr-[32%] flex justify-cente align-centerr">
+            <div className="relative z-10 grid min-h-40 grid-cols-[80px_minmax(0,1fr)_105px] items-center gap-3 max-[380px]:grid-cols-[68px_minmax(0,1fr)_82px] max-[380px]:gap-2">
               <img
                 src={profileAvatar}
                 alt=""
-                className="w-[80px] shrink-0 rounded-full border-[3px] border-fuchsia-400 object-cover shadow-[0_0_18px_rgba(217,70,239,0.75)]"
+                className="size-20 rounded-full border-[3px] border-fuchsia-400 object-cover shadow-[0_0_18px_rgba(217,70,239,0.75)] max-[380px]:size-[68px]"
               />
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h2 className="truncate text-[clamp(1.21rem,4vw,2rem)] font-extrabold">
-                    @{displayName}
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraftDisplayName(displayName);
-                      setEditingDisplayName(true);
-                    }}
-                    className="grid size-7 shrink-0 place-items-center rounded-lg bg-white/10 text-fuchsia-200"
-                    aria-label="Edit name"
-                  >
-                    <Pencil className="size-3.5" />
-                  </button>
+                  {editingDisplayName ? (
+                    <>
+                      <input
+                        value={draftDisplayName}
+                        onChange={(event) => setDraftDisplayName(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") saveDisplayName();
+                          if (event.key === "Escape") cancelDisplayNameEdit();
+                        }}
+                        autoFocus
+                        maxLength={32}
+                        className="min-w-0 flex-1 rounded-lg border border-fuchsia-300 bg-violet-950/70 px-2 py-1 text-sm font-bold outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={saveDisplayName}
+                        className="grid size-7 shrink-0 place-items-center rounded-lg bg-fuchsia-500/30"
+                        aria-label="Save name"
+                      >
+                        <Check className="size-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="min-w-0 truncate text-xl font-extrabold max-[380px]:text-base">
+                        @{displayName}
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDraftDisplayName(displayName);
+                          setEditingDisplayName(true);
+                        }}
+                        className="grid size-7 shrink-0 place-items-center rounded-lg bg-white/10 text-fuchsia-200"
+                        aria-label="Edit name"
+                      >
+                        <Pencil className="size-3.5" />
+                      </button>
+                    </>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -739,17 +763,22 @@ function Profile() {
                   <span className="truncate">{compactIdentity}</span>
                   {identityCopied ? <Check className="size-3" /> : <Copy className="size-3" />}
                 </button>
-                <p className="mt-5 flex items-center gap-1.5 text-[11px] font-medium text-violet-100">
+                <p className="mt-4 flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium text-violet-100 max-[380px]:text-[9px]">
                   <CalendarDays className="size-3.5 text-fuchsia-400" />
                   Joined {joined ?? "11 June 2026"}
                 </p>
               </div>
+              <img
+                src={profileCharacter}
+                alt=""
+                className="pointer-events-none h-36 w-full self-end object-contain object-bottom max-[380px]:h-32"
+              />
             </div>
           </section>
 
           <div className="grid grid-cols-2 gap-3">
-            <section className="relative min-h-44 overflow-hidden rounded-2xl bg-[#170436] p-4 text-white shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
-              <p className="relative z-10 text-sm font-bold uppercase leading-tight text-amber-400">
+            <section className="relative min-h-44 overflow-hidden rounded-[1.75rem] bg-[#170436] p-4 text-white shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
+              <p className="relative z-10 max-w-[42%] text-sm font-bold uppercase leading-tight text-amber-400">
                 Creator
                 <br />
                 Score
@@ -760,10 +789,10 @@ function Profile() {
               <img
                 src={rewardArt}
                 alt=""
-                className="pointer-events-none absolute -bottom-8 right-0 h-[40px] w-auto object-contain"
+                className="pointer-events-none absolute -bottom-8 right-0 h-[96%] w-[76%] object-contain object-right-bottom"
               />
             </section>
-            <section className="relative min-h-44 overflow-hidden rounded-2xl bg-[#170436] p-4 text-white shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
+            <section className="relative min-h-44 overflow-hidden rounded-[1.75rem] bg-[#170436] p-4 text-white shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
               <p className="relative z-10 text-sm font-bold uppercase leading-tight text-fuchsia-400">
                 Kult
                 <br />
@@ -772,7 +801,7 @@ function Profile() {
               <p className="relative z-10 mt-2 text-5xl font-semibold">
                 {formatKultPoints(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
               </p>
-              <div className="absolute bottom-3 left-4 z-10 w-[48%] text-[10px]">
+              <div className="absolute bottom-3 left-4 z-10 w-[48%] text-xs">
                 <p>Level {pointSummary?.level?.level ?? 1}</p>
                 <span className="mt-1 block h-2 overflow-hidden rounded-full bg-violet-950">
                   <span className="block h-full w-[28%] rounded-full bg-fuchsia-500" />
@@ -782,7 +811,7 @@ function Profile() {
               <img
                 src={kultPointArt}
                 alt=""
-                className="pointer-events-none absolute -bottom-3 right-0 h-[86%] w-auto object-contain"
+                className="pointer-events-none absolute -bottom-3 right-0 h-[86%] w-[60%] object-contain object-right-bottom"
               />
             </section>
           </div>
@@ -819,9 +848,9 @@ function Profile() {
             <button
               type="button"
               onClick={() => setOpenPanel("challenges")}
-              className="relative min-h-36 overflow-hidden rounded-2xl bg-[#170436] p-4 text-left text-white"
+              className="relative min-h-36 overflow-hidden rounded-[1.75rem] bg-[#170436] p-4 text-left text-white"
             >
-              <span className="block text-sm font-bold uppercase text-fuchsia-400">
+              <span className="block max-w-[62%] whitespace-nowrap text-[clamp(0.68rem,2vw,0.95rem)] font-bold uppercase text-fuchsia-400">
                 Daily Challenges
               </span>
               <span className="mt-2 block text-sm">
@@ -831,14 +860,16 @@ function Profile() {
               <span className="absolute inset-x-4 bottom-3 rounded-md border border-fuchsia-400 px-2 py-1 text-center text-[11px]">
                 View Challenges ›
               </span>
-              <img src={giftArt} alt="" className="absolute right-2 top-4 size-16 object-contain" />
+              <img src={giftArt} alt="" className="absolute right-3 top-3 size-16 object-contain" />
             </button>
             <button
               type="button"
               onClick={() => setOpenPanel("achievements")}
-              className="relative min-h-36 overflow-hidden rounded-2xl bg-[#170436] p-4 text-left text-white"
+              className="relative min-h-36 overflow-hidden rounded-[1.75rem] bg-[#170436] p-4 text-left text-white"
             >
-              <span className="block text-sm font-bold uppercase text-amber-400">Achievements</span>
+              <span className="block max-w-[62%] whitespace-nowrap text-[clamp(0.68rem,2vw,0.95rem)] font-bold uppercase text-amber-400">
+                Achievements
+              </span>
               <span className="mt-2 block text-sm">
                 {achievementSummary?.inventory.badges.length ?? 0} Unlocked
               </span>
