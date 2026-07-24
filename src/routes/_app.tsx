@@ -32,7 +32,11 @@ function AppLayout() {
       <div className="relative flex min-h-screen w-full">
         {!isPlayPage && <StudioPageBackground />}
         <Sidebar />
-        <main className={`relative z-10 flex-1 min-w-0 ${isPlayPage ? "pb-0" : "pb-24 md:pb-0"}`}>
+        <main
+          className={`relative z-10 min-w-0 flex-1 ${
+            isPlayPage ? "pb-0" : "pb-24 min-[1190px]:pb-0"
+          }`}
+        >
           <Outlet />
         </main>
         {!isPlayPage && <MobileNav />}

@@ -54,7 +54,6 @@ import categoryActionIcon from "@/assets/categoryAction.webp";
 import categoryMultiplayerIcon from "@/assets/categoryMultiplayer.png";
 import categoryRPGIcon from "@/assets/categoryRPG.png";
 import categoryStrategyIcon from "@/assets/categoryStrategy.webp";
-import categoryMoreIcon from "@/assets/categoryMore.webp";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
 import {
@@ -192,8 +191,6 @@ const browseCategories: {
   },
 ];
 
-const BROWSE_CATEGORY_PREVIEW = 5;
-
 const homeFeedTabs = ["For You", "Trending", "New", ...browseCategories.map((c) => c.name)];
 
 function shortAddress(value: string | undefined) {
@@ -260,7 +257,6 @@ export function Home() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileFeedTab, setMobileFeedTab] = useState("For You");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [browseCategoriesExpanded, setBrowseCategoriesExpanded] = useState(false);
   const [recentEventsOpen, setRecentEventsOpen] = useState(false);
 
   const formatStat = useCallback((value: number | undefined) => {
@@ -569,9 +565,9 @@ export function Home() {
 
   return (
     <div className="relative min-h-screen text-violet-950">
-      <header className="sticky top-0 z-40 box-border flex min-h-[56px] w-[100dvw] max-w-[100dvw] items-center justify-between gap-3 overflow-hidden border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5),0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl md:mx-3 md:mt-3 md:min-h-16 md:w-auto md:max-w-none md:rounded-[1.5rem] md:border md:border-fuchsia-200/45 md:bg-[#100528]/88 md:px-6 md:py-3 md:shadow-[0_10px_34px_rgba(65,24,138,0.45),0_0_24px_rgba(217,70,239,0.25),inset_0_1px_12px_rgba(255,255,255,0.1)]">
+      <header className="sticky top-0 z-40 box-border flex min-h-[56px] w-[100dvw] max-w-[100dvw] items-center justify-between gap-3 overflow-hidden border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5),0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl min-[1190px]:mx-3 min-[1190px]:mt-3 min-[1190px]:min-h-16 min-[1190px]:w-auto min-[1190px]:max-w-none min-[1190px]:rounded-[1.5rem] min-[1190px]:border min-[1190px]:border-fuchsia-200/45 min-[1190px]:bg-[#100528]/88 min-[1190px]:px-6 min-[1190px]:py-3 min-[1190px]:shadow-[0_10px_34px_rgba(65,24,138,0.45),0_0_24px_rgba(217,70,239,0.25),inset_0_1px_12px_rgba(255,255,255,0.1)]">
         {mobileSearchOpen ? (
-          <div className="flex w-full items-center gap-2 sm:hidden">
+          <div className="flex w-full items-center gap-2 min-[1190px]:hidden">
             <label className="flex h-10 flex-1 items-center gap-2 rounded-xl border border-fuchsia-300/50 bg-white/10 px-3 shadow-[inset_0_1px_8px_rgba(255,255,255,0.12)]">
               <Search className="size-4 shrink-0 text-violet-100" />
               <input
@@ -598,12 +594,12 @@ export function Home() {
           </div>
         ) : (
           <>
-            <div className="relative z-20 flex min-w-0 shrink-0 items-center sm:flex-1 sm:gap-4">
-              <KultLogo className="h-8 w-auto max-w-[118px] object-contain object-left sm:h-10 sm:max-w-[148px]" />
-              <p className="hidden shrink-0 text-sm font-semibold text-violet-100 sm:block">
+            <div className="relative z-20 flex min-w-0 shrink-0 items-center min-[1190px]:flex-1 min-[1190px]:gap-4">
+              <KultLogo className="h-8 w-auto max-w-[118px] object-contain object-left min-[1190px]:h-10 min-[1190px]:max-w-[148px]" />
+              <p className="hidden shrink-0 text-sm font-semibold text-violet-100 min-[1190px]:block">
                 <span className="font-black text-white"></span>
               </p>
-              <label className="hidden h-10 w-full max-w-md items-center gap-2 rounded-xl border border-fuchsia-200/30 bg-white/10 px-3 shadow-[inset_0_1px_8px_rgba(255,255,255,0.12)] transition focus-within:border-fuchsia-200 sm:flex">
+              <label className="hidden h-10 w-full max-w-md items-center gap-2 rounded-xl border border-fuchsia-200/30 bg-white/10 px-3 shadow-[inset_0_1px_8px_rgba(255,255,255,0.12)] transition focus-within:border-fuchsia-200 min-[1190px]:flex">
                 <Search className="size-4 shrink-0 text-violet-100" />
                 <input
                   type="search"
@@ -614,13 +610,13 @@ export function Home() {
                 />
               </label>
             </div>
-            <div className="relative z-10 flex shrink-0 items-center justify-end gap-2 sm:gap-2.5">
+            <div className="relative z-10 flex shrink-0 items-center justify-end gap-2 min-[1190px]:gap-2.5">
               <TonWalletSignInButton responsive compact />
               <button
                 type="button"
                 onClick={() => setMobileSearchOpen(true)}
                 aria-label="Search games"
-                className="grid size-9 shrink-0 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition active:scale-95 focus-within:border-fuchsia-300/60 sm:hidden"
+                className="grid size-9 shrink-0 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition active:scale-95 focus-within:border-fuchsia-300/60 min-[1190px]:hidden"
               >
                 <Search className="size-4 shrink-0 stroke-[1.75]" />
               </button>
@@ -636,13 +632,13 @@ export function Home() {
                   <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
                 )}
               </button>
-              <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/25 bg-[linear-gradient(135deg,#7c3aed,#d946ef)] px-2.5 text-[11px] font-black tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_2px_14px_rgba(217,70,239,0.45)] sm:gap-2 sm:rounded-full sm:px-3 sm:text-xs">
+              <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/25 bg-[linear-gradient(135deg,#7c3aed,#d946ef)] px-2.5 text-[11px] font-black tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_2px_14px_rgba(217,70,239,0.45)] min-[1190px]:gap-2 min-[1190px]:px-3 min-[1190px]:text-xs">
                 <Zap
-                  className="size-3.5 shrink-0 fill-white text-white sm:size-4"
+                  className="size-3.5 shrink-0 fill-white text-white min-[1190px]:size-4"
                   strokeWidth={1.75}
                 />
-                <span className="sm:hidden">{formatCount(kultPoints)}</span>
-                <span className="hidden sm:inline">
+                <span className="min-[1190px]:hidden">{formatCount(kultPoints)}</span>
+                <span className="hidden min-[1190px]:inline">
                   Level {kpLevel} · {formatCount(kultPoints)} KP
                 </span>
               </div>
@@ -651,7 +647,7 @@ export function Home() {
                 onClick={() => navigate({ to: "/profile" })}
                 title="Open profile"
                 aria-label="Open profile"
-                className="hidden size-9 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] font-display text-sm font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition hover:border-fuchsia-300/50 sm:grid"
+                className="hidden size-9 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] font-display text-sm font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition hover:border-fuchsia-300/50 min-[1190px]:grid"
               >
                 K
               </button>
@@ -724,10 +720,10 @@ export function Home() {
         </DialogContent>
       </Dialog>
 
-      <div className="relative z-10 grid gap-3 px-3 pb-[calc(7.5rem+env(safe-area-inset-bottom))] pt-3 sm:pb-6 sm:pt-0 xl:grid-cols-[minmax(0,1fr)_310px]">
+      <div className="relative z-10 grid gap-3 px-3 pb-[calc(7.5rem+env(safe-area-inset-bottom))] pt-3 min-[1190px]:pb-6 min-[1190px]:pt-0 xl:grid-cols-[minmax(0,1fr)_310px]">
         <main className="min-w-0 space-y-3">
           <section className="min-[1190px]:hidden">
-            <div className="mx-auto w-full max-w-2xl space-y-7 px-1">
+            <div className="mx-auto w-full max-w-2xl space-y-7 px-1 min-[480px]:max-w-[920px] min-[480px]:px-3">
               {searchQuery.trim() ? (
                 isSearching && (visibleShelves[0]?.games.length ?? 0) === 0 ? (
                   <GamesFeedSkeleton />
@@ -741,7 +737,7 @@ export function Home() {
               ) : (
                 <>
                   <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <div className="flex min-w-max items-center gap-6 border-b border-violet-950/15">
+                    <div className="flex min-w-max items-center gap-2 border-b border-violet-950/15 pb-2">
                       {homeFeedTabs.map((tab) => {
                         const selected = mobileFeedTab === tab;
                         return (
@@ -749,16 +745,13 @@ export function Home() {
                             key={tab}
                             type="button"
                             onClick={() => setMobileFeedTab(tab)}
-                            className={`relative shrink-0 pb-3 pt-2 text-base transition ${
+                            className={`relative shrink-0 rounded-full border px-3 py-1.5 text-xs transition ${
                               selected
-                                ? "font-black text-violet-950"
-                                : "font-bold text-violet-950/55 hover:text-violet-950/75"
+                                ? "border-violet-600 bg-violet-700 font-black text-white shadow-[0_3px_10px_rgba(91,33,182,0.28)]"
+                                : "border-violet-400/35 bg-white/30 font-bold text-violet-800 hover:bg-white/55"
                             }`}
                           >
                             {tab}
-                            {selected && (
-                              <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-full bg-gradient-to-r from-fuchsia-500 to-violet-600" />
-                            )}
                           </button>
                         );
                       })}
@@ -800,25 +793,22 @@ export function Home() {
                           Browse by Category
                         </h2>
                       </div>
-                      <div className="grid grid-cols-3 gap-2.5">
-                        {(browseCategoriesExpanded
-                          ? browseCategories
-                          : browseCategories.slice(0, BROWSE_CATEGORY_PREVIEW)
-                        ).map((category) => {
+                      <div className="-mx-3 flex gap-2.5 overflow-x-auto px-3 pb-2 [scrollbar-width:none] min-[480px]:mx-0 min-[480px]:gap-2 min-[480px]:px-0 [&::-webkit-scrollbar]:hidden">
+                        {browseCategories.map((category) => {
                           const Icon = category.icon;
                           return (
                             <button
                               key={category.name}
                               type="button"
                               onClick={() => setMobileFeedTab(category.name)}
-                              className="group relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-[17px] border border-white bg-[#160b2e] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:bg-[#1d0f42]"
+                              className="group relative flex aspect-[1.05] w-[120px] shrink-0 flex-col items-center justify-center gap-2 rounded-[17px] border border-white bg-[#160b2e] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:bg-[#1d0f42] min-[480px]:min-w-0 min-[480px]:flex-1"
                             >
                               {category.image ? (
                                 <span
                                   className={`relative grid place-items-center transition duration-300 group-hover:scale-105 group-active:scale-95 ${
                                     ["Adventure", "RPG", "Multiplayer"].includes(category.name)
-                                      ? "size-[88px] -my-3"
-                                      : "size-16 -my-1"
+                                      ? "size-[88px] -my-3 min-[480px]:size-[58px] min-[480px]:my-0"
+                                      : "size-16 -my-1 min-[480px]:size-12 min-[480px]:my-0"
                                   }`}
                                 >
                                   <img
@@ -841,32 +831,13 @@ export function Home() {
                                 </span>
                               )}
                               <span
-                                className={`text-[12px] font-bold leading-none ${category.iconColor}`}
+                                className={`text-[12px] font-bold leading-none min-[480px]:text-[10px] ${category.iconColor}`}
                               >
                                 {category.name}
                               </span>
                             </button>
                           );
                         })}
-                        {!browseCategoriesExpanded && (
-                          <button
-                            type="button"
-                            onClick={() => setBrowseCategoriesExpanded(true)}
-                            className="group relative flex aspect-[1.05] flex-col items-center justify-center gap-2 rounded-[17px] border border-white bg-[#160b2e] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:bg-[#1d0f42]"
-                          >
-                            <span className="relative grid size-12 place-items-center transition duration-300 group-hover:scale-105 group-active:scale-95">
-                              <img
-                                src={categoryMoreIcon}
-                                alt=""
-                                className="h-full w-full object-contain"
-                                draggable={false}
-                              />
-                            </span>
-                            <span className="text-[12px] font-bold leading-none text-slate-200">
-                              More
-                            </span>
-                          </button>
-                        )}
                       </div>
                     </section>
 
@@ -1336,7 +1307,7 @@ function MobileShelf({
       {games.length === 0 ? (
         <p className="py-8 text-center text-sm font-semibold text-violet-700">{emptyText}</p>
       ) : (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-4 min-[480px]:grid-cols-4 min-[480px]:gap-3">
           {visible.map((game, index) => (
             <GameTile
               key={`${game.templateId ?? game.title}-${index}`}
@@ -1373,7 +1344,7 @@ function FeedGrid({
     return <p className="py-12 text-center text-sm font-semibold text-violet-700">{emptyText}</p>;
   }
   return (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-5 min-[480px]:grid-cols-4 min-[480px]:gap-3">
       {games.map((game, index) => (
         <GameTile
           key={`${game.templateId ?? game.title}-${index}`}

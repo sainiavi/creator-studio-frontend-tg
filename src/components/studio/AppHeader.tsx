@@ -66,12 +66,12 @@ export function AppHeader({ className = "" }: { className?: string }) {
   return (
     <>
       <header
-        className={`sticky top-0 z-40 box-border flex min-h-[56px] w-[100dvw] max-w-[100dvw] items-center justify-between gap-3 overflow-hidden border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5),0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl md:mx-3 md:mt-3 md:min-h-16 md:w-auto md:max-w-none md:rounded-[1.5rem] md:border md:border-fuchsia-200/45 md:bg-[#100528]/88 md:px-6 md:py-3 md:shadow-[0_10px_34px_rgba(65,24,138,0.45),0_0_24px_rgba(217,70,239,0.25),inset_0_1px_12px_rgba(255,255,255,0.1)] ${className}`}
+        className={`sticky top-0 z-40 box-border flex min-h-[56px] w-[100dvw] max-w-[100dvw] items-center justify-between gap-3 overflow-hidden border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5),0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl min-[1190px]:mx-3 min-[1190px]:mt-3 min-[1190px]:min-h-16 min-[1190px]:w-auto min-[1190px]:max-w-none min-[1190px]:rounded-[1.5rem] min-[1190px]:border min-[1190px]:border-fuchsia-200/45 min-[1190px]:bg-[#100528]/88 min-[1190px]:px-6 min-[1190px]:py-3 min-[1190px]:shadow-[0_10px_34px_rgba(65,24,138,0.45),0_0_24px_rgba(217,70,239,0.25),inset_0_1px_12px_rgba(255,255,255,0.1)] ${className}`}
       >
         <div className="relative z-20 flex min-w-0 shrink-0 items-center">
-          <KultLogo className="h-8 w-auto max-w-[118px] object-contain object-left sm:h-10 sm:max-w-[148px]" />
+          <KultLogo className="h-8 w-auto max-w-[118px] object-contain object-left min-[1190px]:h-10 min-[1190px]:max-w-[148px]" />
         </div>
-        <div className="relative z-10 flex shrink-0 items-center justify-end gap-2 sm:gap-2.5">
+        <div className="relative z-10 flex shrink-0 items-center justify-end gap-2 min-[1190px]:gap-2.5">
           <TonWalletSignInButton responsive compact />
           <button
             type="button"
@@ -93,10 +93,13 @@ export function AppHeader({ className = "" }: { className?: string }) {
               <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]" />
             )}
           </button>
-          <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/25 bg-[linear-gradient(135deg,#7c3aed,#d946ef)] px-2.5 text-[11px] font-black tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_2px_14px_rgba(217,70,239,0.45)] sm:gap-2 sm:px-3 sm:text-xs">
-            <Zap className="size-3.5 shrink-0 fill-white text-white sm:size-4" strokeWidth={1.75} />
-            <span className="sm:hidden">{formatCount(kultPoints)}</span>
-            <span className="hidden sm:inline">
+          <div className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/25 bg-[linear-gradient(135deg,#7c3aed,#d946ef)] px-2.5 text-[11px] font-black tabular-nums text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_2px_14px_rgba(217,70,239,0.45)] min-[1190px]:gap-2 min-[1190px]:px-3 min-[1190px]:text-xs">
+            <Zap
+              className="size-3.5 shrink-0 fill-white text-white min-[1190px]:size-4"
+              strokeWidth={1.75}
+            />
+            <span className="min-[1190px]:hidden">{formatCount(kultPoints)}</span>
+            <span className="hidden min-[1190px]:inline">
               Level {kpLevel} · {formatCount(kultPoints)} KP
             </span>
           </div>

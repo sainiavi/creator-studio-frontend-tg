@@ -2,12 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/studio/PageHeader";
 import { KultLogo } from "@/components/studio/KultLogo";
 import { GameCard } from "@/components/studio/GameCard";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -16,7 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { type Game } from "@/lib/games-data";
-import { templateEmoji, gradientForId, getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
+import {
+  templateEmoji,
+  gradientForId,
+  getThumbnailUrl,
+  resolveGameThumbnail,
+} from "@/lib/studio-meta";
 import {
   fetchAchievements,
   fetchCreatorStats,
@@ -32,7 +32,12 @@ import {
   type NotificationItem,
   type PointSummary,
 } from "@/lib/api/social";
-import { getCurrentUserId, getCurrentUsername, getWalletAddress, setCurrentUsername } from "@/lib/identity";
+import {
+  getCurrentUserId,
+  getCurrentUsername,
+  getWalletAddress,
+  setCurrentUsername,
+} from "@/lib/identity";
 import { api } from "@/lib/api";
 import { useGameTemplates } from "@/hooks/useGameTemplates";
 import { ActivityListSkeleton, ProfileSkeleton } from "@/components/studio/PageSkeletons";
@@ -143,24 +148,28 @@ const achievementIconStyleForTitle = (title: string, unlocked: boolean) => {
   }
   if (normalized.includes("publish")) {
     return {
-      shell: "border-white/80 bg-[radial-gradient(circle_at_35%_25%,#ffffff,#a78bfa_34%,#7c3aed_72%)]",
+      shell:
+        "border-white/80 bg-[radial-gradient(circle_at_35%_25%,#ffffff,#a78bfa_34%,#7c3aed_72%)]",
       icon: "fill-white text-sky-300",
     };
   }
   if (normalized.includes("spark") || normalized.includes("like")) {
     return {
-      shell: "border-white/80 bg-[radial-gradient(circle_at_35%_25%,#ffd6ff,#ec4899_44%,#7e22ce_78%)]",
+      shell:
+        "border-white/80 bg-[radial-gradient(circle_at_35%_25%,#ffd6ff,#ec4899_44%,#7e22ce_78%)]",
       icon: "fill-pink-300 text-pink-200",
     };
   }
   if (normalized.includes("kp")) {
     return {
-      shell: "border-white/80 bg-[radial-gradient(circle_at_35%_25%,#fef3c7,#c084fc_40%,#7e22ce_78%)]",
+      shell:
+        "border-white/80 bg-[radial-gradient(circle_at_35%_25%,#fef3c7,#c084fc_40%,#7e22ce_78%)]",
       icon: "fill-yellow-200 text-yellow-100",
     };
   }
   return {
-    shell: "border-white/80 bg-[radial-gradient(circle_at_35%_25%,#ffffff,#c084fc_38%,#7e22ce_78%)]",
+    shell:
+      "border-white/80 bg-[radial-gradient(circle_at_35%_25%,#ffffff,#c084fc_38%,#7e22ce_78%)]",
     icon: "fill-white/20 text-white",
   };
 };
@@ -226,7 +235,9 @@ function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
   return (
     <div className="mt-10">
       <div className="relative flex items-center justify-between overflow-hidden rounded-[1.35rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1c0846,#0b0224)] px-4 py-3 shadow-[0_0_30px_rgba(217,70,239,0.65),inset_0_1px_16px_rgba(255,255,255,0.14)] backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:backdrop-blur-none">
-        <h2 className="font-display text-2xl font-black text-white drop-shadow-[0_2px_8px_rgba(76,29,149,0.45)] sm:text-foreground sm:drop-shadow-none">{title}</h2>
+        <h2 className="font-display text-2xl font-black text-white drop-shadow-[0_2px_8px_rgba(76,29,149,0.45)] sm:text-foreground sm:drop-shadow-none">
+          {title}
+        </h2>
         {games.length > 0 && (
           <div className="flex items-center gap-2">
             {!showAll && (
@@ -261,11 +272,21 @@ function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
         showAll ? (
           <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4 xl:grid-cols-4 2xl:grid-cols-5">
             {games.map((g, i) => (
-              <GameCard key={g.title + i} game={g} index={i} onEdit={onEditGame} compact metaTheme="dark" />
+              <GameCard
+                key={g.title + i}
+                game={g}
+                index={i}
+                onEdit={onEditGame}
+                compact
+                metaTheme="dark"
+              />
             ))}
           </div>
         ) : (
-          <div ref={emblaRef} className="mt-5 cursor-grab overflow-hidden select-none active:cursor-grabbing">
+          <div
+            ref={emblaRef}
+            className="mt-5 cursor-grab overflow-hidden select-none active:cursor-grabbing"
+          >
             <div className="flex touch-pan-y gap-2.5 sm:gap-4">
               {games.map((g, i) => (
                 <div key={g.title + i} className="min-w-0 flex-[0_0_44%] sm:flex-[0_0_240px]">
@@ -306,7 +327,9 @@ function Profile() {
   const [dailyChallenges, setDailyChallenges] = useState<DailyChallenge[]>([]);
   const [achievementSummary, setAchievementSummary] = useState<AchievementSummary | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [openPanel, setOpenPanel] = useState<"challenges" | "achievements" | "notifications" | null>(null);
+  const [openPanel, setOpenPanel] = useState<
+    "challenges" | "achievements" | "notifications" | null
+  >(null);
   const [followingCount, setFollowingCount] = useState(0);
   const [pointSummary, setPointSummary] = useState<PointSummary | null>(null);
   const [displayName, setDisplayName] = useState(() => getCurrentUsername());
@@ -324,67 +347,72 @@ function Profile() {
     return views >= 1000 ? `${(views / 1000).toFixed(1)}K` : String(views);
   };
 
-  const mapActivityToGame = useCallback((gameId: string, gameTitle: string): Game => {
-    // 1) the user's own creations
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const customGame = createdGames.find((cg: any) => cg.id === gameId || cg.templateId === gameId);
-    if (customGame) {
-      return {
-        title: customGame.title,
-        category: customGame.category ?? "Game",
-        plays: formatViews(customGame.views),
-        emoji: templateEmoji[customGame.templateId] ?? "🎮",
-        gradient: gradientForId(customGame.templateId ?? customGame.id),
-        creator: "you",
-        thumbnailUrl: resolveGameThumbnail(customGame),
-        templateId: customGame.id ?? customGame.templateId,
-      };
-    }
+  const mapActivityToGame = useCallback(
+    (gameId: string, gameTitle: string): Game => {
+      // 1) the user's own creations
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const customGame = createdGames.find(
+        (cg: any) => cg.id === gameId || cg.templateId === gameId,
+      );
+      if (customGame) {
+        return {
+          title: customGame.title,
+          category: customGame.category ?? "Game",
+          plays: formatViews(customGame.views),
+          emoji: templateEmoji[customGame.templateId] ?? "🎮",
+          gradient: gradientForId(customGame.templateId ?? customGame.id),
+          creator: "you",
+          thumbnailUrl: resolveGameThumbnail(customGame),
+          templateId: customGame.id ?? customGame.templateId,
+        };
+      }
 
-    // 2) other creators' games — real record fetched from the backend
-    const remote = gameInfo[gameId];
-    if (remote) {
-      return {
-        title: remote.title,
-        category: remote.category ?? "Game",
-        plays: formatViews(remote.views),
-        emoji: templateEmoji[remote.templateId] ?? "🎮",
-        gradient: gradientForId(remote.templateId ?? remote.id),
-        creator: remote.creatorId?.startsWith("0x")
-          ? `${remote.creatorId.slice(0, 6)}…${remote.creatorId.slice(-4)}`
-          : "community",
-        thumbnailUrl: resolveGameThumbnail(remote),
-        templateId: remote.id,
-      };
-    }
+      // 2) other creators' games — real record fetched from the backend
+      const remote = gameInfo[gameId];
+      if (remote) {
+        return {
+          title: remote.title,
+          category: remote.category ?? "Game",
+          plays: formatViews(remote.views),
+          emoji: templateEmoji[remote.templateId] ?? "🎮",
+          gradient: gradientForId(remote.templateId ?? remote.id),
+          creator: remote.creatorId?.startsWith("0x")
+            ? `${remote.creatorId.slice(0, 6)}…${remote.creatorId.slice(-4)}`
+            : "community",
+          thumbnailUrl: resolveGameThumbnail(remote),
+          templateId: remote.id,
+        };
+      }
 
-    // 3) platform templates (gameId IS the template id)
-    const template = gameTemplates.find((t: any) => t.id === gameId);
-    if (template) {
+      // 3) platform templates (gameId IS the template id)
+      const template = gameTemplates.find((t: any) => t.id === gameId);
+      if (template) {
+        return {
+          title: template.name,
+          category: template.category ?? "Game",
+          plays: "—",
+          emoji: templateEmoji[gameId] ?? "🎮",
+          gradient: gradientForId(gameId),
+          creator: "studio",
+          thumbnailUrl: getThumbnail(gameId),
+          templateId: gameId,
+        };
+      }
+
+      // 4) deleted/unknown game — show only what was truthfully recorded
       return {
-        title: template.name,
-        category: template.category ?? "Game",
+        title: gameTitle || "Removed game",
+        category: "Game",
         plays: "—",
-        emoji: templateEmoji[gameId] ?? "🎮",
+        emoji: "🎮",
         gradient: gradientForId(gameId),
-        creator: "studio",
+        creator: "—",
         thumbnailUrl: getThumbnail(gameId),
         templateId: gameId,
       };
-    }
-
-    // 4) deleted/unknown game — show only what was truthfully recorded
-    return {
-      title: gameTitle || "Removed game",
-      category: "Game",
-      plays: "—",
-      emoji: "🎮",
-      gradient: gradientForId(gameId),
-      creator: "—",
-      thumbnailUrl: getThumbnail(gameId),
-      templateId: gameId,
-    };
-  }, [createdGames, gameInfo, gameTemplates, getThumbnail]);
+    },
+    [createdGames, gameInfo, gameTemplates, getThumbnail],
+  );
 
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
@@ -395,7 +423,8 @@ function Profile() {
     Promise.allSettled([
       fetchUserActivities(uid).then((data) => setActivities(data ?? [])),
       fetchUserFavorites(uid).then((data) => {
-        if (data && Array.isArray(data.favorites)) setFavoriteIds(data.favorites.map((f) => f.gameId));
+        if (data && Array.isArray(data.favorites))
+          setFavoriteIds(data.favorites.map((f) => f.gameId));
       }),
       fetchUserLikes(uid).then((data) => {
         if (data && Array.isArray(data.likes)) setLikedIds(data.likes.map((l) => l.gameId));
@@ -433,11 +462,17 @@ function Profile() {
   }, [likedIds, favoriteIds, mapActivityToGame]);
 
   const games: Game[] = createdGames
-    .filter((g: any, i: number, all: any[]) => !g?.id || all.findIndex((x: any) => x?.id === g.id) === i)
+    .filter(
+      (g: any, i: number, all: any[]) => !g?.id || all.findIndex((x: any) => x?.id === g.id) === i,
+    )
     .map((g: any) => ({
       title: g.title,
       category: g.category ?? "Game",
-      plays: g.views ? (g.views >= 1000 ? `${(g.views / 1000).toFixed(1)}K` : String(g.views)) : "New",
+      plays: g.views
+        ? g.views >= 1000
+          ? `${(g.views / 1000).toFixed(1)}K`
+          : String(g.views)
+        : "New",
       emoji: templateEmoji[g.templateId] ?? "🎮",
       gradient: gradientForId(g.templateId ?? g.id),
       creator: "you",
@@ -455,7 +490,7 @@ function Profile() {
     }
   });
   const historyGames: Game[] = Array.from(historyGamesMap.entries()).map(([gameId, title]) =>
-    mapActivityToGame(gameId, title)
+    mapActivityToGame(gameId, title),
   );
   const profileGameSections = [
     {
@@ -463,7 +498,8 @@ function Profile() {
       games,
       emptyMessage: (
         <>
-          No games yet. Head to <span className="text-primary font-bold">Create</span> to generate your first playable build.
+          No games yet. Head to <span className="text-primary font-bold">Create</span> to generate
+          your first playable build.
         </>
       ),
       onEditGame: (g: Game) => {
@@ -487,18 +523,33 @@ function Profile() {
     },
   ];
   const selectedMobileGameSection =
-    profileGameSections.find((section) => section.title === mobileGameTab) ?? profileGameSections[0];
+    profileGameSections.find((section) => section.title === mobileGameTab) ??
+    profileGameSections[0];
 
   const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
   useEffect(() => {
     const userId = getCurrentUserId();
-    fetchCreatorStats(userId).then(setCreatorStats).catch(() => {});
-    fetchFollowing(userId).then((data) => setFollowingCount(data.following?.length ?? 0)).catch(() => {});
-    fetchPointSummary(userId).then(setPointSummary).catch(() => {});
-    fetchDailyChallenges(userId).then((data) => setDailyChallenges(data.challenges)).catch(() => {});
-    fetchAchievements(userId).then(setAchievementSummary).catch(() => {});
-    fetchNotifications(userId).then((data) => setNotifications(data.notifications)).catch(() => {});
-    fetchReferralSummary().then(setReferral).catch(() => {});
+    fetchCreatorStats(userId)
+      .then(setCreatorStats)
+      .catch(() => {});
+    fetchFollowing(userId)
+      .then((data) => setFollowingCount(data.following?.length ?? 0))
+      .catch(() => {});
+    fetchPointSummary(userId)
+      .then(setPointSummary)
+      .catch(() => {});
+    fetchDailyChallenges(userId)
+      .then((data) => setDailyChallenges(data.challenges))
+      .catch(() => {});
+    fetchAchievements(userId)
+      .then(setAchievementSummary)
+      .catch(() => {});
+    fetchNotifications(userId)
+      .then((data) => setNotifications(data.notifications))
+      .catch(() => {});
+    fetchReferralSummary()
+      .then(setReferral)
+      .catch(() => {});
   }, []);
 
   const formatStat = (value: number | undefined) => {
@@ -521,7 +572,9 @@ function Profile() {
   const wallet = getWalletAddress();
   const identityLine = wallet ?? userId;
   const compactIdentity =
-    identityLine.length > 14 ? `${identityLine.slice(0, 6)}...${identityLine.slice(-4)}` : identityLine;
+    identityLine.length > 14
+      ? `${identityLine.slice(0, 6)}...${identityLine.slice(-4)}`
+      : identityLine;
   // Joined date from the earliest real record we have (creation or activity).
   const timestamps: number[] = [
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -538,10 +591,14 @@ function Profile() {
       : null;
 
   const todayPoints = creatorStats?.currentDay
-    ? creatorStats.dailyScore?.[creatorStats.currentDay] ?? creatorStats.dailyPoints?.[creatorStats.currentDay] ?? 0
+    ? (creatorStats.dailyScore?.[creatorStats.currentDay] ??
+      creatorStats.dailyPoints?.[creatorStats.currentDay] ??
+      0)
     : 0;
   const weekPoints = creatorStats?.currentWeek
-    ? creatorStats.weeklyScore?.[creatorStats.currentWeek] ?? creatorStats.weeklyPoints?.[creatorStats.currentWeek] ?? 0
+    ? (creatorStats.weeklyScore?.[creatorStats.currentWeek] ??
+      creatorStats.weeklyPoints?.[creatorStats.currentWeek] ??
+      0)
     : 0;
 
   const saveDisplayName = () => {
@@ -570,22 +627,26 @@ function Profile() {
 
   const openNotificationsPanel = () => {
     setOpenPanel("notifications");
-    void markNotificationsRead(getCurrentUserId()).then(() => {
-      setNotifications((current) => current.map((notification) => ({ ...notification, read: true })));
-    }).catch(() => null);
+    void markNotificationsRead(getCurrentUserId())
+      .then(() => {
+        setNotifications((current) =>
+          current.map((notification) => ({ ...notification, read: true })),
+        );
+      })
+      .catch(() => null);
   };
 
   const filteredActivities = activities.filter((activity) => {
     const actDate = new Date(activity.timestamp);
     const now = new Date();
-    
+
     if (timeFilter === "today") {
       return actDate.toDateString() === now.toDateString();
     }
-    
+
     const diffTime = now.getTime() - actDate.getTime();
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    
+
     if (timeFilter === "week") {
       return diffDays <= 7;
     }
@@ -601,9 +662,11 @@ function Profile() {
         <PageHeader title="Profile" subtitle="Your creator identity · Published games" />
       </div>
       <div className="relative z-10 px-4 pb-8 pt-0 sm:px-6 sm:py-8 lg:px-10">
-        <div className="sticky top-0 z-40 -mx-4 mb-5 grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5)] backdrop-blur-xl md:hidden">
+        <div className="sticky top-0 z-40 -mx-4 mb-5 grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5)] backdrop-blur-xl min-[1190px]:hidden">
           <KultLogo className="h-6 w-auto max-w-[72px] shrink-0 object-contain object-left" />
-          <h1 className="min-w-0 truncate text-center font-display text-2xl font-black text-white">Profile</h1>
+          <h1 className="min-w-0 truncate text-center font-display text-2xl font-black text-white">
+            Profile
+          </h1>
           <button
             type="button"
             onClick={() => navigate({ to: "/" })}
@@ -635,7 +698,9 @@ function Profile() {
                       className="min-w-0 flex-1 rounded-xl border border-fuchsia-300/70 bg-[#24104d]/80 px-3 py-1.5 font-display text-xl font-black text-white outline-none"
                     />
                   ) : (
-                    <h2 className="truncate font-display text-2xl font-black text-white">{displayName}</h2>
+                    <h2 className="truncate font-display text-2xl font-black text-white">
+                      {displayName}
+                    </h2>
                   )}
                   <BadgeCheck className="size-5 shrink-0 fill-fuchsia-400 text-[#14062e]" />
                   {editingDisplayName ? (
@@ -677,14 +742,19 @@ function Profile() {
                   className="mt-2 flex max-w-full items-center gap-2 text-left text-xs font-bold text-violet-200"
                 >
                   <span className="truncate font-mono">{compactIdentity}</span>
-                  {identityCopied ? <Check className="size-3.5 shrink-0" /> : <Copy className="size-3.5 shrink-0" />}
+                  {identityCopied ? (
+                    <Check className="size-3.5 shrink-0" />
+                  ) : (
+                    <Copy className="size-3.5 shrink-0" />
+                  )}
                 </button>
                 <p className="mt-1 text-xs font-bold text-violet-100/80">
                   Joined {joined ?? "11 June 2026"}
                 </p>
                 {achievementSummary?.inventory.genesisFounderBadge && (
                   <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-yellow-300/75 bg-[#21110b] px-3 py-1 font-display text-[10px] font-black text-yellow-300">
-                    <BadgeCheck className="size-3.5 fill-yellow-300 text-[#21110b]" /> Genesis Founder
+                    <BadgeCheck className="size-3.5 fill-yellow-300 text-[#21110b]" /> Genesis
+                    Founder
                   </div>
                 )}
               </div>
@@ -694,7 +764,9 @@ function Profile() {
           <section className="relative overflow-hidden rounded-[1.35rem] border-2 border-yellow-200/90 bg-[linear-gradient(145deg,#2b170c,#140705)] px-4 py-4 shadow-[0_0_24px_rgba(250,204,21,0.4),inset_0_1px_14px_rgba(255,255,255,0.12)]">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-display text-[11px] font-black tracking-[0.18em] text-yellow-200">CREATOR SCORE</p>
+                <p className="font-display text-[11px] font-black tracking-[0.18em] text-yellow-200">
+                  CREATOR SCORE
+                </p>
                 <p className="mt-1 font-display text-4xl font-black leading-none tabular-nums text-yellow-300">
                   {formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore)}
                 </p>
@@ -706,7 +778,9 @@ function Profile() {
           <section className="relative overflow-hidden rounded-[1.35rem] border-2 border-fuchsia-200/90 bg-[linear-gradient(145deg,#1a0646,#0b0224)] px-4 py-4 shadow-[0_0_28px_rgba(217,70,239,0.55),inset_0_1px_14px_rgba(255,255,255,0.12)]">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-display text-[11px] font-black tracking-[0.18em] text-fuchsia-300">KULT POINTS (KP)</p>
+                <p className="font-display text-[11px] font-black tracking-[0.18em] text-fuchsia-300">
+                  KULT POINTS (KP)
+                </p>
                 <p className="mt-1 font-display text-4xl font-black leading-none tabular-nums text-fuchsia-300">
                   {formatKultPoints(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
                 </p>
@@ -722,11 +796,22 @@ function Profile() {
 
           <section className="grid grid-cols-3 overflow-hidden rounded-[1.25rem] border-2 border-violet-200/90 bg-[linear-gradient(145deg,#1c0846,#0b0224)] text-center text-white shadow-[0_0_22px_rgba(124,58,237,0.5),inset_0_1px_12px_rgba(255,255,255,0.1)]">
             {[
-              [<Gamepad2 className="size-5 text-violet-300" />, formatStat(createdGames.length), "Games"],
-              [<Users className="size-5 text-fuchsia-300" />, formatStat(creatorStats?.followers), "Followers"],
+              [
+                <Gamepad2 className="size-5 text-violet-300" />,
+                formatStat(createdGames.length),
+                "Games",
+              ],
+              [
+                <Users className="size-5 text-fuchsia-300" />,
+                formatStat(creatorStats?.followers),
+                "Followers",
+              ],
               [<Users className="size-5 text-blue-300" />, formatStat(followingCount), "Following"],
             ].map(([icon, value, label], index) => (
-              <div key={String(label)} className={`flex flex-col items-center justify-center gap-1 px-2 py-3.5 ${index > 0 ? "border-l border-violet-300/30" : ""}`}>
+              <div
+                key={String(label)}
+                className={`flex flex-col items-center justify-center gap-1 px-2 py-3.5 ${index > 0 ? "border-l border-violet-300/30" : ""}`}
+              >
                 {icon}
                 <p className="font-display text-xl font-black leading-none tabular-nums">{value}</p>
                 <p className="text-[10px] font-bold text-violet-100/90">{label}</p>
@@ -736,14 +821,31 @@ function Profile() {
 
           <section className="grid grid-cols-3 gap-2 text-center text-white">
             {[
-              [<Heart className="size-5 fill-pink-400 text-pink-300" />, formatStat(creatorStats?.likes), "Likes"],
-              [<Send className="size-5 fill-teal-300 text-teal-200" />, formatStat(creatorStats?.shares), "Shares"],
-              [<Repeat2 className="size-5 text-blue-300" />, formatStat(creatorStats?.remixes), "Remixes"],
+              [
+                <Heart className="size-5 fill-pink-400 text-pink-300" />,
+                formatStat(creatorStats?.likes),
+                "Likes",
+              ],
+              [
+                <Send className="size-5 fill-teal-300 text-teal-200" />,
+                formatStat(creatorStats?.shares),
+                "Shares",
+              ],
+              [
+                <Repeat2 className="size-5 text-blue-300" />,
+                formatStat(creatorStats?.remixes),
+                "Remixes",
+              ],
             ].map(([icon, value, label]) => (
-              <div key={String(label)} className="rounded-[1.15rem] border-2 border-violet-200/80 bg-[linear-gradient(145deg,#1c0846,#0b0224)] px-2 py-3 shadow-[0_0_18px_rgba(124,58,237,0.45),inset_0_1px_10px_rgba(255,255,255,0.1)]">
+              <div
+                key={String(label)}
+                className="rounded-[1.15rem] border-2 border-violet-200/80 bg-[linear-gradient(145deg,#1c0846,#0b0224)] px-2 py-3 shadow-[0_0_18px_rgba(124,58,237,0.45),inset_0_1px_10px_rgba(255,255,255,0.1)]"
+              >
                 <div className="flex items-center justify-center gap-1.5">
                   {icon}
-                  <p className="font-display text-xl font-black leading-none tabular-nums">{value}</p>
+                  <p className="font-display text-xl font-black leading-none tabular-nums">
+                    {value}
+                  </p>
                 </div>
                 <p className="mt-1 text-[10px] font-bold text-violet-100/90">{label}</p>
               </div>
@@ -759,12 +861,15 @@ function Profile() {
             <span className="min-w-0 flex-1">
               <span className="block font-display text-lg font-black">Daily Challenges</span>
               <span className="mt-0.5 block text-xs font-bold text-violet-100">
-                {dailyChallenges.filter((c) => c.completed).length}/{dailyChallenges.length} complete
+                {dailyChallenges.filter((c) => c.completed).length}/{dailyChallenges.length}{" "}
+                complete
               </span>
               <span className="mt-2 block h-2.5 overflow-hidden rounded-full border border-fuchsia-300/70 bg-[#2a1155]">
                 <span
                   className="block h-full rounded-full bg-[linear-gradient(90deg,#e879f9,#a855f7)]"
-                  style={{ width: `${dailyChallenges.length ? (dailyChallenges.filter((c) => c.completed).length / dailyChallenges.length) * 100 : 0}%` }}
+                  style={{
+                    width: `${dailyChallenges.length ? (dailyChallenges.filter((c) => c.completed).length / dailyChallenges.length) * 100 : 0}%`,
+                  }}
                 />
               </span>
             </span>
@@ -860,13 +965,15 @@ function Profile() {
                   className="flex min-w-0 items-center gap-2 rounded-full border border-border/50 bg-background/35 px-3 py-1.5 text-left transition hover:border-primary/50 hover:text-primary"
                 >
                   <span className="truncate font-mono">{compactIdentity}</span>
-                  {identityCopied ? <Check className="size-3.5 shrink-0" /> : <Copy className="size-3.5 shrink-0" />}
+                  {identityCopied ? (
+                    <Check className="size-3.5 shrink-0" />
+                  ) : (
+                    <Copy className="size-3.5 shrink-0" />
+                  )}
                 </button>
               </div>
               {joined && (
-                <p className="mt-2 text-sm font-semibold text-muted-foreground">
-                  Joined {joined}
-                </p>
+                <p className="mt-2 text-sm font-semibold text-muted-foreground">Joined {joined}</p>
               )}
               {achievementSummary?.inventory.genesisFounderBadge && (
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-xs font-black text-amber-200 shadow-[0_0_22px_oklch(0.85_0.18_80/0.18)]">
@@ -880,7 +987,9 @@ function Profile() {
             <div className="overflow-hidden rounded-2xl border border-amber-300/25 bg-[linear-gradient(135deg,oklch(0.22_0.07_80/0.62),oklch(0.08_0.02_282/0.84))] px-5 py-4 shadow-[inset_0_0_24px_oklch(0.82_0.18_80/0.1),0_0_24px_oklch(0.82_0.18_80/0.08)]">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="label-mono text-[0.68rem] font-black leading-none text-amber-200">CREATOR SCORE</p>
+                  <p className="label-mono text-[0.68rem] font-black leading-none text-amber-200">
+                    CREATOR SCORE
+                  </p>
                   <p className="mt-2 font-display text-4xl font-black leading-none text-amber-300">
                     {formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore)}
                   </p>
@@ -893,7 +1002,9 @@ function Profile() {
             <div className="overflow-hidden rounded-2xl border border-primary/25 bg-[linear-gradient(135deg,oklch(0.22_0.08_315/0.54),oklch(0.08_0.02_282/0.88))] px-5 py-4 shadow-[inset_0_0_24px_oklch(0.7_0.24_295/0.1),0_0_24px_oklch(0.7_0.24_295/0.1)]">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="label-mono text-[0.68rem] font-black leading-none text-primary">KULT POINTS (KP)</p>
+                  <p className="label-mono text-[0.68rem] font-black leading-none text-primary">
+                    KULT POINTS (KP)
+                  </p>
                   <p className="mt-2 font-display text-4xl font-black leading-none text-primary">
                     {formatKultPoints(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
                   </p>
@@ -907,15 +1018,21 @@ function Profile() {
 
           <div className="relative mt-5 grid grid-cols-3 gap-3 text-center">
             <div className="rounded-2xl border border-border/45 bg-background/25 p-3">
-              <p className="font-display text-3xl font-black text-foreground">{formatStat(createdGames.length)}</p>
+              <p className="font-display text-3xl font-black text-foreground">
+                {formatStat(createdGames.length)}
+              </p>
               <p className="mt-1 text-sm font-bold text-muted-foreground">Games</p>
             </div>
             <div className="rounded-2xl border border-border/45 bg-background/25 p-3">
-              <p className="font-display text-3xl font-black text-foreground">{formatStat(creatorStats?.followers)}</p>
+              <p className="font-display text-3xl font-black text-foreground">
+                {formatStat(creatorStats?.followers)}
+              </p>
               <p className="mt-1 text-sm font-bold text-muted-foreground">Followers</p>
             </div>
             <div className="rounded-2xl border border-border/45 bg-background/25 p-3">
-              <p className="font-display text-3xl font-black text-foreground">{formatStat(followingCount)}</p>
+              <p className="font-display text-3xl font-black text-foreground">
+                {formatStat(followingCount)}
+              </p>
               <p className="mt-1 text-sm font-bold text-muted-foreground">Following</p>
             </div>
           </div>
@@ -930,7 +1047,9 @@ function Profile() {
               <p className="label-mono mt-1 text-[9px] text-muted-foreground">SHARES</p>
             </div>
             <div className="rounded-2xl border border-border/55 bg-background/35 p-3 transition hover:border-primary/35 hover:bg-primary/5">
-              <p className="font-display text-2xl font-black">{formatStat(creatorStats?.remixes)}</p>
+              <p className="font-display text-2xl font-black">
+                {formatStat(creatorStats?.remixes)}
+              </p>
               <p className="label-mono mt-1 text-[9px] text-muted-foreground">REMIXES</p>
             </div>
           </div>
@@ -947,7 +1066,10 @@ function Profile() {
             </span>
             <span>
               <span className="block font-display text-lg font-black">Daily Challenges</span>
-              <span className="mt-1 block text-xs text-muted-foreground">{dailyChallenges.filter((c) => c.completed).length}/{dailyChallenges.length} complete</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {dailyChallenges.filter((c) => c.completed).length}/{dailyChallenges.length}{" "}
+                complete
+              </span>
             </span>
           </button>
           <button
@@ -960,7 +1082,9 @@ function Profile() {
             </span>
             <span>
               <span className="block font-display text-lg font-black">Achievements</span>
-              <span className="mt-1 block text-xs text-muted-foreground">{achievementSummary?.inventory.badges.length ?? 0} unlocked</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {achievementSummary?.inventory.badges.length ?? 0} unlocked
+              </span>
             </span>
           </button>
           <button
@@ -973,12 +1097,17 @@ function Profile() {
             </span>
             <span>
               <span className="block font-display text-lg font-black">Notifications</span>
-              <span className="mt-1 block text-xs text-muted-foreground">{notifications.filter((n) => !n.read).length} unread</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {notifications.filter((n) => !n.read).length} unread
+              </span>
             </span>
           </button>
         </div>
 
-        <Dialog open={openPanel === "challenges"} onOpenChange={(open) => !open && setOpenPanel(null)}>
+        <Dialog
+          open={openPanel === "challenges"}
+          onOpenChange={(open) => !open && setOpenPanel(null)}
+        >
           <DialogContent className="max-h-[90vh] overflow-hidden rounded-[1.9rem] border-2 border-fuchsia-300 bg-[radial-gradient(circle_at_22%_7%,rgba(168,85,247,0.42),transparent_25%),linear-gradient(180deg,#18033f_0%,#080018_100%)] p-4 text-white shadow-[0_0_0_2px_rgba(255,255,255,0.18),0_0_46px_rgba(168,85,247,0.95),inset_0_0_28px_rgba(168,85,247,0.26)] sm:max-w-xl sm:p-6 [&>button]:right-4 [&>button]:top-4 [&>button]:grid [&>button]:size-11 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border-2 [&>button]:border-fuchsia-100 [&>button]:bg-[#2b0b66]/95 [&>button]:text-white [&>button]:opacity-100 [&>button]:shadow-[0_0_18px_rgba(217,70,239,0.95),inset_0_1px_8px_rgba(255,255,255,0.24)] [&>button>svg]:size-6">
             <DialogHeader className="text-left">
               <DialogTitle className="flex items-center gap-3 pr-12 font-display text-3xl font-black text-white drop-shadow-[0_4px_0_rgba(76,29,149,0.95),0_0_14px_rgba(217,70,239,0.95)] sm:text-4xl">
@@ -996,48 +1125,70 @@ function Profile() {
             </DialogHeader>
             <div className="max-h-[64vh] overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(232,121,249,0.75)_transparent]">
               <div className="grid gap-3">
-              {dailyChallenges.map((challenge) => (
-                <div
-                  key={challenge.id}
-                  className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border px-3 py-4 backdrop-blur-md sm:gap-4 sm:p-4 ${
-                    challenge.completed
-                      ? "border-fuchsia-100 bg-[radial-gradient(circle_at_12%_20%,rgba(255,255,255,0.3),transparent_19%),linear-gradient(135deg,#a735ff,#5c16ba)] shadow-[0_0_24px_rgba(217,70,239,0.92),inset_0_1px_20px_rgba(255,255,255,0.3),inset_0_-18px_34px_rgba(76,29,149,0.35)]"
-                      : "border-violet-400/45 bg-[linear-gradient(135deg,rgba(21,8,52,0.92),rgba(6,1,24,0.96))] shadow-[0_0_12px_rgba(124,58,237,0.24),inset_0_1px_14px_rgba(255,255,255,0.08)]"
-                  }`}
-                >
-                  {challenge.completed && <Star className="absolute right-5 top-4 size-4 fill-yellow-200 text-yellow-200 drop-shadow-[0_0_8px_rgba(250,204,21,0.9)]" />}
-                  <span className={`relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full border shadow-[inset_0_2px_12px_rgba(255,255,255,0.24),0_3px_10px_rgba(0,0,0,0.2)] sm:size-20 ${
-                    challenge.completed
-                      ? "border-white/80 bg-[radial-gradient(circle_at_35%_25%,#fef3c7,#a855f7_44%,#7e22ce_78%)]"
-                      : "border-violet-300/35 bg-[radial-gradient(circle_at_35%_25%,#4c1d95,#12062e_72%)]"
-                  }`}>
-                    <span className="absolute left-3 top-2 size-4 rounded-full bg-white/55 blur-[2px]" />
-                    <Target className={`relative size-9 drop-shadow-[0_2px_2px_rgba(0,0,0,0.24)] sm:size-11 ${challenge.completed ? "fill-yellow-200/20 text-yellow-100" : "text-violet-300"}`} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className={`block font-display text-lg font-black sm:text-xl ${challenge.completed ? "text-white" : "text-violet-100/85"}`}>{challenge.title}</span>
-                    <span className={`mt-1 block text-sm font-bold ${challenge.completed ? "text-violet-50/85" : "text-violet-200/65"}`}>{challenge.reward}</span>
-                    <span className="mt-3 block h-3 overflow-hidden rounded-full border border-fuchsia-200/35 bg-white/10">
-                      <span
-                        className="block h-full rounded-full bg-[linear-gradient(90deg,#f0abfc,#a855f7)] shadow-[0_0_10px_rgba(217,70,239,0.7)]"
-                        style={{ width: `${Math.min(100, (challenge.progress / challenge.target) * 100)}%` }}
+                {dailyChallenges.map((challenge) => (
+                  <div
+                    key={challenge.id}
+                    className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border px-3 py-4 backdrop-blur-md sm:gap-4 sm:p-4 ${
+                      challenge.completed
+                        ? "border-fuchsia-100 bg-[radial-gradient(circle_at_12%_20%,rgba(255,255,255,0.3),transparent_19%),linear-gradient(135deg,#a735ff,#5c16ba)] shadow-[0_0_24px_rgba(217,70,239,0.92),inset_0_1px_20px_rgba(255,255,255,0.3),inset_0_-18px_34px_rgba(76,29,149,0.35)]"
+                        : "border-violet-400/45 bg-[linear-gradient(135deg,rgba(21,8,52,0.92),rgba(6,1,24,0.96))] shadow-[0_0_12px_rgba(124,58,237,0.24),inset_0_1px_14px_rgba(255,255,255,0.08)]"
+                    }`}
+                  >
+                    {challenge.completed && (
+                      <Star className="absolute right-5 top-4 size-4 fill-yellow-200 text-yellow-200 drop-shadow-[0_0_8px_rgba(250,204,21,0.9)]" />
+                    )}
+                    <span
+                      className={`relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full border shadow-[inset_0_2px_12px_rgba(255,255,255,0.24),0_3px_10px_rgba(0,0,0,0.2)] sm:size-20 ${
+                        challenge.completed
+                          ? "border-white/80 bg-[radial-gradient(circle_at_35%_25%,#fef3c7,#a855f7_44%,#7e22ce_78%)]"
+                          : "border-violet-300/35 bg-[radial-gradient(circle_at_35%_25%,#4c1d95,#12062e_72%)]"
+                      }`}
+                    >
+                      <span className="absolute left-3 top-2 size-4 rounded-full bg-white/55 blur-[2px]" />
+                      <Target
+                        className={`relative size-9 drop-shadow-[0_2px_2px_rgba(0,0,0,0.24)] sm:size-11 ${challenge.completed ? "fill-yellow-200/20 text-yellow-100" : "text-violet-300"}`}
                       />
                     </span>
-                  </span>
-                  <span className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-black ${
-                    challenge.completed
-                      ? "border-fuchsia-100/80 bg-fuchsia-400/40 text-white shadow-[0_0_14px_rgba(245,208,254,0.55),inset_0_1px_8px_rgba(255,255,255,0.2)]"
-                      : "border-violet-300/30 bg-white/8 text-violet-200"
-                  }`}>
-                    {challenge.completed ? (
-                      <span className="flex items-center gap-1"><Check className="size-3.5" /> Completed</span>
-                    ) : (
-                      `${challenge.progress} / ${challenge.target}`
-                    )}
-                  </span>
-                </div>
-              ))}
-              {dailyChallenges.length === 0 && <p className="text-sm text-violet-100">No daily challenges loaded yet.</p>}
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={`block font-display text-lg font-black sm:text-xl ${challenge.completed ? "text-white" : "text-violet-100/85"}`}
+                      >
+                        {challenge.title}
+                      </span>
+                      <span
+                        className={`mt-1 block text-sm font-bold ${challenge.completed ? "text-violet-50/85" : "text-violet-200/65"}`}
+                      >
+                        {challenge.reward}
+                      </span>
+                      <span className="mt-3 block h-3 overflow-hidden rounded-full border border-fuchsia-200/35 bg-white/10">
+                        <span
+                          className="block h-full rounded-full bg-[linear-gradient(90deg,#f0abfc,#a855f7)] shadow-[0_0_10px_rgba(217,70,239,0.7)]"
+                          style={{
+                            width: `${Math.min(100, (challenge.progress / challenge.target) * 100)}%`,
+                          }}
+                        />
+                      </span>
+                    </span>
+                    <span
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-black ${
+                        challenge.completed
+                          ? "border-fuchsia-100/80 bg-fuchsia-400/40 text-white shadow-[0_0_14px_rgba(245,208,254,0.55),inset_0_1px_8px_rgba(255,255,255,0.2)]"
+                          : "border-violet-300/30 bg-white/8 text-violet-200"
+                      }`}
+                    >
+                      {challenge.completed ? (
+                        <span className="flex items-center gap-1">
+                          <Check className="size-3.5" /> Completed
+                        </span>
+                      ) : (
+                        `${challenge.progress} / ${challenge.target}`
+                      )}
+                    </span>
+                  </div>
+                ))}
+                {dailyChallenges.length === 0 && (
+                  <p className="text-sm text-violet-100">No daily challenges loaded yet.</p>
+                )}
               </div>
               <div className="mt-4 flex items-center justify-center gap-2 rounded-full border border-fuchsia-200/40 bg-white/8 px-4 py-3 text-sm font-bold text-violet-100 shadow-[0_0_18px_rgba(217,70,239,0.34),inset_0_1px_10px_rgba(255,255,255,0.12)]">
                 <Star className="size-5 fill-fuchsia-300 text-fuchsia-200" />
@@ -1047,7 +1198,10 @@ function Profile() {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={openPanel === "achievements"} onOpenChange={(open) => !open && setOpenPanel(null)}>
+        <Dialog
+          open={openPanel === "achievements"}
+          onOpenChange={(open) => !open && setOpenPanel(null)}
+        >
           <DialogContent className="max-h-[90vh] overflow-hidden rounded-[1.9rem] border-2 border-fuchsia-300 bg-[radial-gradient(circle_at_22%_7%,rgba(168,85,247,0.42),transparent_25%),linear-gradient(180deg,#18033f_0%,#080018_100%)] p-4 text-white shadow-[0_0_0_2px_rgba(255,255,255,0.18),0_0_46px_rgba(168,85,247,0.95),inset_0_0_28px_rgba(168,85,247,0.26)] sm:max-w-xl sm:p-6 [&>button]:right-4 [&>button]:top-4 [&>button]:grid [&>button]:size-11 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border-2 [&>button]:border-fuchsia-100 [&>button]:bg-[#2b0b66]/95 [&>button]:text-white [&>button]:opacity-100 [&>button]:shadow-[0_0_18px_rgba(217,70,239,0.95),inset_0_1px_8px_rgba(255,255,255,0.24)] [&>button>svg]:size-6">
             <DialogHeader className="text-left">
               <DialogTitle className="flex items-center gap-3 pr-12 font-display text-3xl font-black text-white drop-shadow-[0_4px_0_rgba(76,29,149,0.95),0_0_14px_rgba(217,70,239,0.95)] sm:text-4xl">
@@ -1065,42 +1219,68 @@ function Profile() {
             </DialogHeader>
             <div className="max-h-[64vh] overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(232,121,249,0.75)_transparent]">
               <div className="grid gap-3">
-              {(achievementSummary?.achievements ?? []).map((achievement) => {
-                const AchievementIcon = achievementIconForTitle(achievement.title);
-                const iconStyle = achievementIconStyleForTitle(achievement.title, achievement.unlocked);
-                return (
-                <div
-                  key={achievement.id}
-                  className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border px-3 py-4 backdrop-blur-md sm:gap-4 sm:p-4 ${
-                    achievement.unlocked
-                      ? "border-fuchsia-100 bg-[radial-gradient(circle_at_12%_20%,rgba(255,255,255,0.3),transparent_19%),linear-gradient(135deg,#a735ff,#5c16ba)] shadow-[0_0_24px_rgba(217,70,239,0.92),inset_0_1px_20px_rgba(255,255,255,0.3),inset_0_-18px_34px_rgba(76,29,149,0.35)]"
-                      : "border-violet-400/45 bg-[linear-gradient(135deg,rgba(21,8,52,0.92),rgba(6,1,24,0.96))] shadow-[0_0_12px_rgba(124,58,237,0.24),inset_0_1px_14px_rgba(255,255,255,0.08)]"
-                  }`}
-                >
-                  {achievement.unlocked && <Star className="absolute right-5 top-4 size-4 fill-yellow-200 text-yellow-200 drop-shadow-[0_0_8px_rgba(250,204,21,0.9)]" />}
-                  <span className={`relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full border shadow-[inset_0_2px_12px_rgba(255,255,255,0.24),0_3px_10px_rgba(0,0,0,0.2)] sm:size-20 ${iconStyle.shell}`}>
-                    <span className="absolute left-3 top-2 size-4 rounded-full bg-white/55 blur-[2px]" />
-                    <AchievementIcon className={`relative size-9 drop-shadow-[0_2px_2px_rgba(0,0,0,0.24)] sm:size-11 ${iconStyle.icon}`} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className={`block font-display text-lg font-black sm:text-xl ${achievement.unlocked ? "text-white" : "text-violet-100/85"}`}>{achievement.title}</span>
-                    <span className={`mt-1 block text-sm font-bold ${achievement.unlocked ? "text-violet-50/85" : "text-violet-200/65"}`}>{achievement.description}</span>
-                  </span>
-                  <span className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-black ${
-                    achievement.unlocked
-                      ? "border-fuchsia-100/80 bg-fuchsia-400/40 text-white shadow-[0_0_14px_rgba(245,208,254,0.55),inset_0_1px_8px_rgba(255,255,255,0.2)]"
-                      : "border-violet-300/30 bg-white/8 text-violet-200"
-                  }`}>
-                    {achievement.unlocked ? (
-                      <span className="flex items-center gap-1"><Check className="size-3.5" /> Completed</span>
-                    ) : (
-                      <span className="flex items-center gap-1"><Lock className="size-3.5" /> {achievementLockedLabel(achievement.title)}</span>
-                    )}
-                  </span>
-                </div>
-                );
-              })}
-              {(achievementSummary?.achievements ?? []).length === 0 && <p className="text-sm text-violet-100">No achievements loaded yet.</p>}
+                {(achievementSummary?.achievements ?? []).map((achievement) => {
+                  const AchievementIcon = achievementIconForTitle(achievement.title);
+                  const iconStyle = achievementIconStyleForTitle(
+                    achievement.title,
+                    achievement.unlocked,
+                  );
+                  return (
+                    <div
+                      key={achievement.id}
+                      className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border px-3 py-4 backdrop-blur-md sm:gap-4 sm:p-4 ${
+                        achievement.unlocked
+                          ? "border-fuchsia-100 bg-[radial-gradient(circle_at_12%_20%,rgba(255,255,255,0.3),transparent_19%),linear-gradient(135deg,#a735ff,#5c16ba)] shadow-[0_0_24px_rgba(217,70,239,0.92),inset_0_1px_20px_rgba(255,255,255,0.3),inset_0_-18px_34px_rgba(76,29,149,0.35)]"
+                          : "border-violet-400/45 bg-[linear-gradient(135deg,rgba(21,8,52,0.92),rgba(6,1,24,0.96))] shadow-[0_0_12px_rgba(124,58,237,0.24),inset_0_1px_14px_rgba(255,255,255,0.08)]"
+                      }`}
+                    >
+                      {achievement.unlocked && (
+                        <Star className="absolute right-5 top-4 size-4 fill-yellow-200 text-yellow-200 drop-shadow-[0_0_8px_rgba(250,204,21,0.9)]" />
+                      )}
+                      <span
+                        className={`relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full border shadow-[inset_0_2px_12px_rgba(255,255,255,0.24),0_3px_10px_rgba(0,0,0,0.2)] sm:size-20 ${iconStyle.shell}`}
+                      >
+                        <span className="absolute left-3 top-2 size-4 rounded-full bg-white/55 blur-[2px]" />
+                        <AchievementIcon
+                          className={`relative size-9 drop-shadow-[0_2px_2px_rgba(0,0,0,0.24)] sm:size-11 ${iconStyle.icon}`}
+                        />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span
+                          className={`block font-display text-lg font-black sm:text-xl ${achievement.unlocked ? "text-white" : "text-violet-100/85"}`}
+                        >
+                          {achievement.title}
+                        </span>
+                        <span
+                          className={`mt-1 block text-sm font-bold ${achievement.unlocked ? "text-violet-50/85" : "text-violet-200/65"}`}
+                        >
+                          {achievement.description}
+                        </span>
+                      </span>
+                      <span
+                        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-black ${
+                          achievement.unlocked
+                            ? "border-fuchsia-100/80 bg-fuchsia-400/40 text-white shadow-[0_0_14px_rgba(245,208,254,0.55),inset_0_1px_8px_rgba(255,255,255,0.2)]"
+                            : "border-violet-300/30 bg-white/8 text-violet-200"
+                        }`}
+                      >
+                        {achievement.unlocked ? (
+                          <span className="flex items-center gap-1">
+                            <Check className="size-3.5" /> Completed
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            <Lock className="size-3.5" />{" "}
+                            {achievementLockedLabel(achievement.title)}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+                {(achievementSummary?.achievements ?? []).length === 0 && (
+                  <p className="text-sm text-violet-100">No achievements loaded yet.</p>
+                )}
               </div>
               <div className="mt-4 flex items-center justify-center gap-2 rounded-full border border-fuchsia-200/40 bg-white/8 px-4 py-3 text-sm font-bold text-violet-100 shadow-[0_0_18px_rgba(217,70,239,0.34),inset_0_1px_10px_rgba(255,255,255,0.12)]">
                 <Star className="size-5 fill-fuchsia-300 text-fuchsia-200" />
@@ -1117,9 +1297,13 @@ function Profile() {
               setOpenPanel(null);
               return;
             }
-            void markNotificationsRead(getCurrentUserId()).then(() => {
-              setNotifications((current) => current.map((notification) => ({ ...notification, read: true })));
-            }).catch(() => null);
+            void markNotificationsRead(getCurrentUserId())
+              .then(() => {
+                setNotifications((current) =>
+                  current.map((notification) => ({ ...notification, read: true })),
+                );
+              })
+              .catch(() => null);
           }}
         >
           <DialogContent className="max-h-[82vh] overflow-y-auto border-border/60 bg-card sm:max-w-xl">
@@ -1136,12 +1320,16 @@ function Profile() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-sm font-bold">{notification.title}</p>
-                    {!notification.read && <span className="mt-1 size-1.5 rounded-full bg-primary" />}
+                    {!notification.read && (
+                      <span className="mt-1 size-1.5 rounded-full bg-primary" />
+                    )}
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">{notification.body}</p>
                 </div>
               ))}
-              {notifications.length === 0 && <p className="text-sm text-muted-foreground">No notifications yet.</p>}
+              {notifications.length === 0 && (
+                <p className="text-sm text-muted-foreground">No notifications yet.</p>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -1152,10 +1340,12 @@ function Profile() {
               <span className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
                 <Gift className="size-4" /> Referral rewards
               </span>
-              <h3 className="mt-2 font-display text-2xl font-black">Invite players. Earn KP and Creator Score.</h3>
+              <h3 className="mt-2 font-display text-2xl font-black">
+                Invite players. Earn KP and Creator Score.
+              </h3>
               <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-                Referral rewards land after a referred player completes an authenticated game session
-                longer than 30 seconds.
+                Referral rewards land after a referred player completes an authenticated game
+                session longer than 30 seconds.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -1172,7 +1362,9 @@ function Profile() {
                 <p className="label-mono text-[8px] text-muted-foreground">Rewarded referrals</p>
               </div>
               <div className="rounded-xl border border-border/60 bg-background/45 px-5 py-3 text-center">
-                <p className="font-display text-xl font-black text-primary">{referral?.kpEarned ?? 0} KP</p>
+                <p className="font-display text-xl font-black text-primary">
+                  {referral?.kpEarned ?? 0} KP
+                </p>
                 <p className="label-mono text-[8px] text-muted-foreground">Referral earnings</p>
               </div>
             </div>
@@ -1216,7 +1408,9 @@ function Profile() {
                     }`}
                   >
                     {section.title}
-                    {selected && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-black" />}
+                    {selected && (
+                      <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-black" />
+                    )}
                   </button>
                 );
               })}
@@ -1245,8 +1439,10 @@ function Profile() {
         {/* Recent Activity Section */}
         <div className="mt-14">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h2 className="font-display text-2xl font-black text-violet-700 drop-shadow-[0_0_10px_rgba(124,58,237,0.35)] sm:text-foreground sm:drop-shadow-none">Recent Activity</h2>
-            
+            <h2 className="font-display text-2xl font-black text-violet-700 drop-shadow-[0_0_10px_rgba(124,58,237,0.35)] sm:text-foreground sm:drop-shadow-none">
+              Recent Activity
+            </h2>
+
             <Select
               value={timeFilter}
               onValueChange={(value) => setTimeFilter(value as TimeFilter)}
@@ -1272,47 +1468,60 @@ function Profile() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="relative mt-4 overflow-hidden rounded-[1.55rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1c0846,#0b0224)] p-3 shadow-[0_0_34px_rgba(217,70,239,0.72),inset_0_1px_18px_rgba(255,255,255,0.15)] backdrop-blur-sm sm:mt-6 sm:rounded-2xl sm:border sm:border-border/60 sm:bg-card/40 sm:p-6 sm:shadow-card sm:backdrop-blur-none">
             {activitiesLoading ? (
               <ActivityListSkeleton />
             ) : filteredActivities.length > 0 ? (
               <>
                 <div className="relative max-h-56 space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(232,121,249,0.65)_transparent] sm:max-h-96 sm:space-y-8">
-                  {filteredActivities.slice(0, showAllActivities ? undefined : 2).map((activity) => {
-                    const IconComponent = activityIcons[activity.activityType] || Gamepad2;
-                    const colorClass = activityColors[activity.activityType] || "text-muted-foreground bg-muted";
-                    
-                    return (
-                      <div key={activity._id} className="group grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[2.25rem_minmax(0,1fr)] sm:gap-3">
-                        {/* Timeline Node Icon */}
-                        <div className={`flex size-6 items-center justify-center rounded-full border transition-all duration-300 group-hover:scale-110 sm:size-8 ${colorClass}`}>
-                          <IconComponent className="size-3.5 sm:size-4" />
-                        </div>
-                        
-                        {/* Activity Content */}
-                        <div className="flex items-center justify-between gap-2 rounded-xl border border-fuchsia-200/35 bg-[#2b135c]/75 px-3 py-2 text-white shadow-[0_0_16px_rgba(217,70,239,0.28),inset_0_1px_10px_rgba(255,255,255,0.12)] transition-all duration-300 hover:border-fuchsia-200/70 hover:bg-[#35146e]/90 sm:gap-4 sm:border-border/40 sm:bg-card/20 sm:p-4 sm:text-foreground sm:hover:border-primary/20 sm:hover:bg-card/40 sm:shadow-none">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium leading-5 text-white sm:text-foreground">
-                              {activity.details}
-                            </p>
-                            <p className="text-xs leading-4 text-violet-200/75 sm:mt-1 sm:text-muted-foreground">
-                              {formatTimeAgo(activity.timestamp)}
-                            </p>
+                  {filteredActivities
+                    .slice(0, showAllActivities ? undefined : 2)
+                    .map((activity) => {
+                      const IconComponent = activityIcons[activity.activityType] || Gamepad2;
+                      const colorClass =
+                        activityColors[activity.activityType] || "text-muted-foreground bg-muted";
+
+                      return (
+                        <div
+                          key={activity._id}
+                          className="group grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[2.25rem_minmax(0,1fr)] sm:gap-3"
+                        >
+                          {/* Timeline Node Icon */}
+                          <div
+                            className={`flex size-6 items-center justify-center rounded-full border transition-all duration-300 group-hover:scale-110 sm:size-8 ${colorClass}`}
+                          >
+                            <IconComponent className="size-3.5 sm:size-4" />
                           </div>
-                          
-                          {activity.gameId && (
-                            <button
-                              onClick={() => navigate({ to: "/play/$gameId", params: { gameId: activity.gameId! } })}
-                              className="shrink-0 rounded-full border border-fuchsia-300/30 bg-[#1a0a38]/40 px-3 py-1 text-xs font-bold text-fuchsia-300 transition-colors hover:border-fuchsia-300/70 hover:bg-fuchsia-400/10 active:scale-95 sm:rounded-lg sm:border-border/60 sm:bg-transparent sm:py-1.5 sm:text-primary sm:hover:border-primary sm:hover:bg-primary/5"
-                            >
-                              Play Game
-                            </button>
-                          )}
+
+                          {/* Activity Content */}
+                          <div className="flex items-center justify-between gap-2 rounded-xl border border-fuchsia-200/35 bg-[#2b135c]/75 px-3 py-2 text-white shadow-[0_0_16px_rgba(217,70,239,0.28),inset_0_1px_10px_rgba(255,255,255,0.12)] transition-all duration-300 hover:border-fuchsia-200/70 hover:bg-[#35146e]/90 sm:gap-4 sm:border-border/40 sm:bg-card/20 sm:p-4 sm:text-foreground sm:hover:border-primary/20 sm:hover:bg-card/40 sm:shadow-none">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium leading-5 text-white sm:text-foreground">
+                                {activity.details}
+                              </p>
+                              <p className="text-xs leading-4 text-violet-200/75 sm:mt-1 sm:text-muted-foreground">
+                                {formatTimeAgo(activity.timestamp)}
+                              </p>
+                            </div>
+
+                            {activity.gameId && (
+                              <button
+                                onClick={() =>
+                                  navigate({
+                                    to: "/play/$gameId",
+                                    params: { gameId: activity.gameId! },
+                                  })
+                                }
+                                className="shrink-0 rounded-full border border-fuchsia-300/30 bg-[#1a0a38]/40 px-3 py-1 text-xs font-bold text-fuchsia-300 transition-colors hover:border-fuchsia-300/70 hover:bg-fuchsia-400/10 active:scale-95 sm:rounded-lg sm:border-border/60 sm:bg-transparent sm:py-1.5 sm:text-primary sm:hover:border-primary sm:hover:bg-primary/5"
+                              >
+                                Play Game
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
 
                 {filteredActivities.length > 2 && (

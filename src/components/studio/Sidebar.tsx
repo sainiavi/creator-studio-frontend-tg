@@ -31,7 +31,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-violet-200/70 bg-[linear-gradient(180deg,#fff8ff,#f3e0ff)] py-6 md:flex transition-all duration-300 ease-in-out shadow-[2px_0_20px_rgba(168,85,247,0.06)] ${
+      className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-violet-200/70 bg-[linear-gradient(180deg,#fff8ff,#f3e0ff)] py-6 transition-all duration-300 ease-in-out min-[1190px]:flex shadow-[2px_0_20px_rgba(168,85,247,0.06)] ${
         collapsed ? "w-[72px] px-2" : "w-64 px-4"
       }`}
     >

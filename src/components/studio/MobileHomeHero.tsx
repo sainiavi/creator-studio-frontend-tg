@@ -62,7 +62,7 @@ export function MobileHomeHero({
   const [consoleOpen, setConsoleOpen] = useState(false);
 
   return (
-    <section className="relative z-10 space-y-5 px-3 pb-4 pt-2 sm:hidden">
+    <section className="relative z-10 space-y-5 px-3 pb-4 pt-2 min-[1190px]:hidden">
       <div className="mx-auto w-full max-w-[520px]">
         <div className="animate-float-up opacity-0" style={{ animationDelay: "0ms" }}>
           <div
@@ -143,7 +143,7 @@ export function MobileHomeHero({
       </div>
 
       <div
-        className="animate-float-up relative z-10 mx-auto opacity-0"
+        className="animate-float-up relative z-10 mx-auto w-full max-w-[520px] opacity-0 min-[480px]:max-w-[640px]"
         style={{ animationDelay: "180ms" }}
       >
         <img
@@ -154,7 +154,7 @@ export function MobileHomeHero({
         />
       </div>
 
-      <section className="mx-auto mt-4 w-full max-w-[380px] pt-2">
+      <section className="mx-auto mt-4 w-full max-w-[760px] pt-2">
         <h2 className="animate-float-up mb-4 flex items-center justify-center gap-2 text-center font-display text-base font-black uppercase tracking-wide text-violet-950 opacity-0">
           <span className="animate-pulse-glow text-fuchsia-500">✦</span>
           Popular Worlds
@@ -162,17 +162,17 @@ export function MobileHomeHero({
             ✦
           </span>
         </h2>
-        <div className="grid grid-cols-3 gap-2">
-          {POPULAR_WORLDS.slice(0, 3).map((world, index) => (
-            <PopularWorldCard key={world.title} world={world} onPick={onWorldPick} index={index} />
-          ))}
-        </div>
-        <div className="mt-2 flex justify-center gap-2">
-          {POPULAR_WORLDS.slice(3).map((world, index) => (
-            <div key={world.title} className="w-1/3">
-              <PopularWorldCard world={world} onPick={onWorldPick} index={index + 3} />
-            </div>
-          ))}
+        <div className="-mx-3 px-3 pb-2 min-[500px]:overflow-x-auto min-[500px]:[scrollbar-width:none] min-[500px]:[&::-webkit-scrollbar]:hidden">
+          <div className="flex flex-wrap justify-center gap-2 min-[500px]:min-w-0 min-[500px]:flex-nowrap min-[500px]:justify-start min-[500px]:gap-2.5">
+            {POPULAR_WORLDS.map((world, index) => (
+              <div
+                key={world.title}
+                className="w-[calc((100%_-_1rem)/3)] shrink-0 min-[500px]:min-w-0 min-[500px]:flex-1"
+              >
+                <PopularWorldCard world={world} onPick={onWorldPick} index={index} />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </section>

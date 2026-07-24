@@ -30,8 +30,12 @@ function PosterArtwork({ game, size }: { game: Game; size: GamePosterSize }) {
 
   if (!game.thumbnailUrl) {
     return (
-      <div className={`absolute inset-0 grid place-items-center bg-gradient-to-br ${gradientClass[game.gradient]}`}>
-        <span className={`drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)] ${emojiClass}`}>{game.emoji}</span>
+      <div
+        className={`absolute inset-0 grid place-items-center bg-gradient-to-br ${gradientClass[game.gradient]}`}
+      >
+        <span className={`drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)] ${emojiClass}`}>
+          {game.emoji}
+        </span>
       </div>
     );
   }
@@ -86,7 +90,11 @@ export function GamePosterCard({
   const avatarSize = size === "featured" ? "size-7" : size === "standard" ? "size-6" : "size-5";
 
   const footerPadClass =
-    size === "featured" ? "px-3.5 py-3 gap-2" : size === "standard" ? "px-3 py-2.5 gap-1.5" : "px-2.5 py-2 gap-1";
+    size === "featured"
+      ? "px-3.5 py-3 gap-2"
+      : size === "standard"
+        ? "px-3 py-2.5 gap-1.5"
+        : "px-2.5 py-2 gap-1";
 
   const creatorTextClass = size === "compact" ? "text-[10px]" : "text-[11px]";
 
@@ -95,7 +103,9 @@ export function GamePosterCard({
   };
 
   const shortCreator =
-    game.creator.length > 16 ? `${game.creator.slice(0, 6)}…${game.creator.slice(-4)}` : game.creator;
+    game.creator.length > 16
+      ? `${game.creator.slice(0, 6)}…${game.creator.slice(-4)}`
+      : game.creator;
 
   return (
     <article
