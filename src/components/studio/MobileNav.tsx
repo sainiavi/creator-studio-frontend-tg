@@ -11,8 +11,20 @@ const sideItems = [
 ] as const;
 
 const endItems = [
-  { to: "/leaderboard", label: "Ranks", iconSrc: navRanksIcon, exact: false },
-  { to: "/profile", label: "Profile", iconSrc: navProfileIcon, exact: false },
+  {
+    to: "/leaderboard",
+    label: "Ranks",
+    iconSrc: navRanksIcon,
+    exact: false,
+    iconClassName: "size-9",
+  },
+  {
+    to: "/profile",
+    label: "Profile",
+    iconSrc: navProfileIcon,
+    exact: false,
+    iconClassName: "size-9",
+  },
 ] as const;
 
 export const MOBILE_BAR_COLOR = "#160b2e";
@@ -23,11 +35,13 @@ function NavItem({
   label,
   iconSrc,
   exact,
+  iconClassName = "size-8",
 }: {
   to: string;
   label: string;
   iconSrc: string;
   exact: boolean;
+  iconClassName?: string;
 }) {
   const location = useLocation();
   const selected = exact ? location.pathname === to : location.pathname.startsWith(to);
@@ -45,7 +59,7 @@ function NavItem({
         alt=""
         aria-hidden="true"
         draggable={false}
-        className="size-8 object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+        className={`${iconClassName} object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]`}
       />
       <span className="text-[10px] font-semibold leading-none tracking-wide">{label}</span>
     </Link>
