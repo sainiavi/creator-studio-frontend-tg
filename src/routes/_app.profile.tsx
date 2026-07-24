@@ -306,21 +306,25 @@ function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
           </div>
         )
       ) : (
-        <div className="relative mt-4 min-h-44 overflow-hidden rounded-[1.75rem] bg-[#170436] text-white">
+        <div className="relative mt-4 w-full overflow-hidden rounded-[1.35rem] bg-[#170436] text-white">
           <img
             src={bottomCard}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover object-left"
+            className="relative z-0 block h-auto w-full object-contain"
           />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,transparent_48%,rgba(23,4,54,0.88)_63%,#170436_100%)]" />
-          <div className="relative z-10 ml-[58%] flex min-h-44 flex-col justify-center py-4 pr-4 text-left max-[420px]:ml-[55%]">
-            <h3 className="text-xl font-bold leading-tight max-[420px]:text-base">No games yet.</h3>
-            <p className="mt-2 line-clamp-3 text-xs leading-5 text-violet-100 max-[420px]:text-[10px] max-[420px]:leading-4">
-              {emptyMessage}
+          <div className="absolute inset-y-0 right-0 z-20 flex w-[42%] flex-col justify-center pr-[6%] max-[420px]:w-[45%] max-[420px]:pr-3">
+            <span className="sr-only">{emptyMessage}</span>
+            <h3 className="text-[clamp(0.85rem,3vw,1.25rem)] font-bold leading-tight">
+              No games yet.
+            </h3>
+            <p className="mt-[clamp(0.2rem,1vw,0.5rem)] text-[clamp(0.5rem,1.7vw,0.75rem)] leading-[1.3] text-violet-200">
+              Head to Create to generate
+              <br />
+              your first playable build.
             </p>
             <a
               href="/create"
-              className="mt-3 w-fit whitespace-nowrap rounded-lg bg-[linear-gradient(90deg,#a855f7,#6d28d9)] px-4 py-2 text-xs font-semibold text-white max-[420px]:px-2.5 max-[420px]:py-1.5 max-[420px]:text-[10px]"
+              className="mt-[clamp(0.3rem,1.4vw,0.75rem)] w-fit whitespace-nowrap rounded-md border border-fuchsia-300/45 bg-[linear-gradient(180deg,#a855f7,#6d28d9)] px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.25rem,1vw,0.5rem)] text-[clamp(0.48rem,1.6vw,0.75rem)] font-semibold text-white shadow-[0_4px_12px_rgba(109,40,217,0.45)]"
             >
               ⊕ Create Game
             </a>
@@ -684,11 +688,11 @@ function Profile() {
 
   return (
     <div className="relative min-h-screen sm:min-h-0">
-      <div className="hidden min-[1190px]:block">
+      <div className="sticky top-0 z-50 hidden min-[1190px]:block">
         <PageHeader title="Profile" subtitle="Your creator identity · Published games" />
       </div>
-      <div className="relative z-10 px-4 pb-8 pt-0 sm:px-6 sm:py-8 lg:px-10">
-        <div className="sticky top-0 z-40 -mx-4 mb-5 grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5)] backdrop-blur-xl min-[1190px]:hidden">
+      <div className="relative z-10 px-4 pb-8 pt-0 sm:px-6 sm:pb-8 sm:pt-0 lg:px-10 min-[1190px]:pt-8">
+        <div className="sticky top-0 z-50 -mx-4 mb-5 grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-fuchsia-300/20 bg-[#0b0419]/90 px-3 py-2.5 text-white shadow-[0_10px_30px_rgba(8,4,20,0.5)] backdrop-blur-xl min-[1190px]:hidden">
           <KultLogo className="h-6 w-auto max-w-[72px] shrink-0 object-contain object-left" />
           <h1 className="min-w-0 truncate text-center font-display text-2xl font-black text-white">
             Profile
@@ -703,7 +707,7 @@ function Profile() {
           </button>
         </div>
 
-        <div className="space-y-3 min-[1190px]:hidden">
+        <div className="mx-auto max-w-3xl space-y-3">
           <section className="relative overflow-hidden rounded-[1.75rem] border border-white/80 bg-[radial-gradient(circle_at_72%_30%,#35116f_0%,#16043d_48%,#100126_100%)] px-4 text-white shadow-[0_10px_24px_rgba(35,4,82,0.35)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_68%_72%,rgba(126,34,206,0.48),transparent_28%)]" />
             <div className="relative z-10 grid min-h-40 grid-cols-[80px_minmax(0,1fr)_105px] items-center gap-3 max-[380px]:grid-cols-[68px_minmax(0,1fr)_82px] max-[380px]:gap-2">
@@ -1101,7 +1105,7 @@ function Profile() {
           </button>
         </div>
 
-        <div className="animate-float-up relative hidden overflow-hidden rounded-3xl border border-border/60 bg-[radial-gradient(circle_at_18%_10%,oklch(0.72_0.25_315/0.22),transparent_32%),radial-gradient(circle_at_88%_12%,oklch(0.82_0.16_195/0.16),transparent_30%),linear-gradient(145deg,oklch(0.08_0.02_282),oklch(0.045_0.014_282))] p-5 shadow-[0_24px_80px_oklch(0_0_0/0.45)] min-[1190px]:block sm:p-6">
+        <div className="hidden">
           <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/80 to-transparent" />
           <div className="pointer-events-none absolute -right-20 -top-24 size-56 rounded-full border border-primary/15 bg-primary/5 blur-2xl" />
           <div className="pointer-events-none absolute -bottom-20 -left-20 size-52 rounded-full border border-cyan-300/10 bg-cyan-300/5 blur-2xl" />
@@ -1542,7 +1546,7 @@ function Profile() {
           </DialogContent>
         </Dialog>
 
-        <div className="mt-8 hidden overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card to-card p-6 shadow-card min-[1190px]:block">
+        <div className="hidden">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <span className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary">
@@ -1599,9 +1603,9 @@ function Profile() {
           </div>
         </div>
 
-        <div className="mt-5 min-[1190px]:hidden">
-          <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex min-w-max items-center gap-7 border-b border-violet-700/25">
+        <div className="mx-auto mt-5 max-w-3xl">
+          <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex min-w-max items-center gap-6 border-b border-violet-700/25">
               {profileGameSections.map((section) => {
                 const selected = selectedMobileGameSection.title === section.title;
                 return (
@@ -1609,15 +1613,14 @@ function Profile() {
                     key={section.title}
                     type="button"
                     onClick={() => setMobileGameTab(section.title)}
-                    className={`relative pb-3 font-display text-base font-black transition ${
-                      selected
-                        ? "text-black drop-shadow-[0_1px_6px_rgba(255,255,255,0.5)]"
-                        : "text-violet-800/80"
+                    aria-pressed={selected}
+                    className={`relative shrink-0 rounded-none border-0 bg-transparent px-0 pb-3 pt-1 text-sm font-bold shadow-none transition active:scale-95 ${
+                      selected ? "text-violet-950" : "text-violet-800/70"
                     }`}
                   >
                     {section.title}
                     {selected && (
-                      <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-black" />
+                      <span className="absolute inset-x-0 -bottom-px h-[3px] bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.65)]" />
                     )}
                   </button>
                 );
@@ -1632,7 +1635,7 @@ function Profile() {
           />
         </div>
 
-        <div className="hidden min-[1190px]:block">
+        <div className="hidden">
           {profileGameSections.map((section) => (
             <GameRow
               key={section.title}
@@ -1645,108 +1648,110 @@ function Profile() {
         </div>
 
         {/* Recent Activity Section */}
-        <div className="mt-14">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h2 className="font-display text-2xl font-black text-violet-700 drop-shadow-[0_0_10px_rgba(124,58,237,0.35)] sm:text-foreground sm:drop-shadow-none">
-              Recent Activity
-            </h2>
+        <div className="mx-auto mt-5 max-w-3xl">
+          <div className="relative overflow-hidden rounded-[1.35rem] bg-[#170436] p-4 text-white shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-bold uppercase text-fuchsia-400">Recent Activity</h2>
 
-            <Select
-              value={timeFilter}
-              onValueChange={(value) => setTimeFilter(value as TimeFilter)}
-            >
-              <SelectTrigger className="h-12 w-full min-w-[180px] rounded-[1.35rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1c0846,#0b0224)] px-5 font-display text-sm font-bold text-fuchsia-300 shadow-[0_0_30px_rgba(217,70,239,0.65),inset_0_1px_16px_rgba(255,255,255,0.14)] backdrop-blur-sm transition hover:border-fuchsia-100 hover:bg-[#24104d] sm:h-11 sm:w-[190px] sm:rounded-xl sm:border sm:border-border/70 sm:bg-card/55 sm:px-4 sm:text-primary sm:shadow-[0_0_22px_oklch(0.7_0.25_315/0.12)] sm:backdrop-blur-none sm:hover:border-primary/55 sm:hover:bg-primary/10">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="overflow-hidden rounded-2xl border-border/70 bg-[oklch(0.14_0.02_282/0.98)] p-2 text-foreground shadow-[0_18px_60px_oklch(0_0_0/0.55),0_0_34px_oklch(0.7_0.25_315/0.18)] backdrop-blur-xl">
-                {[
-                  ["today", "Today"],
-                  ["week", "This Week"],
-                  ["month", "This Month"],
-                  ["all", "All Time"],
-                ].map(([value, label]) => (
-                  <SelectItem
-                    key={value}
-                    value={value}
-                    className="my-1 rounded-xl py-2.5 pl-3 pr-9 font-display text-sm font-bold text-muted-foreground focus:bg-primary/15 focus:text-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground [&>span:last-child]:right-3"
-                  >
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <Select
+                value={timeFilter}
+                onValueChange={(value) => setTimeFilter(value as TimeFilter)}
+              >
+                <SelectTrigger className="h-8 w-[112px] rounded-full border border-violet-300/35 bg-[#12032c] px-3 text-xs font-medium text-violet-100 shadow-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="overflow-hidden rounded-xl border-violet-400/30 bg-[#170436] p-1 text-white shadow-xl">
+                  {[
+                    ["today", "Today"],
+                    ["week", "This Week"],
+                    ["month", "This Month"],
+                    ["all", "All Time"],
+                  ].map(([value, label]) => (
+                    <SelectItem
+                      key={value}
+                      value={value}
+                      className="rounded-lg py-2 pl-3 pr-8 text-xs font-medium text-violet-100 focus:bg-fuchsia-500/20 focus:text-white data-[state=checked]:text-fuchsia-300"
+                    >
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="relative mt-4 overflow-hidden rounded-[1.55rem] border-2 border-fuchsia-200 bg-[linear-gradient(145deg,#1c0846,#0b0224)] p-3 shadow-[0_0_34px_rgba(217,70,239,0.72),inset_0_1px_18px_rgba(255,255,255,0.15)] backdrop-blur-sm sm:mt-6 sm:rounded-2xl sm:border sm:border-border/60 sm:bg-card/40 sm:p-6 sm:shadow-card sm:backdrop-blur-none">
-            {activitiesLoading ? (
-              <ActivityListSkeleton />
-            ) : filteredActivities.length > 0 ? (
-              <>
-                <div className="relative max-h-56 space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(232,121,249,0.65)_transparent] sm:max-h-96 sm:space-y-8">
-                  {filteredActivities
-                    .slice(0, showAllActivities ? undefined : 2)
-                    .map((activity) => {
-                      const IconComponent = activityIcons[activity.activityType] || Gamepad2;
-                      const colorClass =
-                        activityColors[activity.activityType] || "text-muted-foreground bg-muted";
+            <div className="mt-3">
+              {activitiesLoading ? (
+                <ActivityListSkeleton />
+              ) : filteredActivities.length > 0 ? (
+                <>
+                  <div className="relative max-h-56 space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(232,121,249,0.65)_transparent] sm:max-h-96 sm:space-y-8">
+                    {filteredActivities
+                      .slice(0, showAllActivities ? undefined : 2)
+                      .map((activity) => {
+                        const IconComponent = activityIcons[activity.activityType] || Gamepad2;
+                        const colorClass =
+                          activityColors[activity.activityType] || "text-muted-foreground bg-muted";
 
-                      return (
-                        <div
-                          key={activity._id}
-                          className="group grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[2.25rem_minmax(0,1fr)] sm:gap-3"
-                        >
-                          {/* Timeline Node Icon */}
+                        return (
                           <div
-                            className={`flex size-6 items-center justify-center rounded-full border transition-all duration-300 group-hover:scale-110 sm:size-8 ${colorClass}`}
+                            key={activity._id}
+                            className="group grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[2.25rem_minmax(0,1fr)] sm:gap-3"
                           >
-                            <IconComponent className="size-3.5 sm:size-4" />
-                          </div>
-
-                          {/* Activity Content */}
-                          <div className="flex items-center justify-between gap-2 rounded-xl border border-fuchsia-200/35 bg-[#2b135c]/75 px-3 py-2 text-white shadow-[0_0_16px_rgba(217,70,239,0.28),inset_0_1px_10px_rgba(255,255,255,0.12)] transition-all duration-300 hover:border-fuchsia-200/70 hover:bg-[#35146e]/90 sm:gap-4 sm:border-border/40 sm:bg-card/20 sm:p-4 sm:text-foreground sm:hover:border-primary/20 sm:hover:bg-card/40 sm:shadow-none">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium leading-5 text-white sm:text-foreground">
-                                {activity.details}
-                              </p>
-                              <p className="text-xs leading-4 text-violet-200/75 sm:mt-1 sm:text-muted-foreground">
-                                {formatTimeAgo(activity.timestamp)}
-                              </p>
+                            {/* Timeline Node Icon */}
+                            <div
+                              className={`flex size-6 items-center justify-center rounded-full border transition-all duration-300 group-hover:scale-110 sm:size-8 ${colorClass}`}
+                            >
+                              <IconComponent className="size-3.5 sm:size-4" />
                             </div>
 
-                            {activity.gameId && (
-                              <button
-                                onClick={() =>
-                                  navigate({
-                                    to: "/play/$gameId",
-                                    params: { gameId: activity.gameId! },
-                                  })
-                                }
-                                className="shrink-0 rounded-full border border-fuchsia-300/30 bg-[#1a0a38]/40 px-3 py-1 text-xs font-bold text-fuchsia-300 transition-colors hover:border-fuchsia-300/70 hover:bg-fuchsia-400/10 active:scale-95 sm:rounded-lg sm:border-border/60 sm:bg-transparent sm:py-1.5 sm:text-primary sm:hover:border-primary sm:hover:bg-primary/5"
-                              >
-                                Play Game
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
+                            {/* Activity Content */}
+                            <div className="flex items-center justify-between gap-2 rounded-xl border border-fuchsia-200/35 bg-[#2b135c]/75 px-3 py-2 text-white shadow-[0_0_16px_rgba(217,70,239,0.28),inset_0_1px_10px_rgba(255,255,255,0.12)] transition-all duration-300 hover:border-fuchsia-200/70 hover:bg-[#35146e]/90 sm:gap-4 sm:border-border/40 sm:bg-card/20 sm:p-4 sm:text-foreground sm:hover:border-primary/20 sm:hover:bg-card/40 sm:shadow-none">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium leading-5 text-white sm:text-foreground">
+                                  {activity.details}
+                                </p>
+                                <p className="text-xs leading-4 text-violet-200/75 sm:mt-1 sm:text-muted-foreground">
+                                  {formatTimeAgo(activity.timestamp)}
+                                </p>
+                              </div>
 
-                {filteredActivities.length > 2 && (
-                  <button
-                    onClick={() => setShowAllActivities(!showAllActivities)}
-                    className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl border border-fuchsia-200/40 bg-[#2b135c]/75 py-3 text-sm font-bold text-fuchsia-200 shadow-[0_0_16px_rgba(217,70,239,0.3),inset_0_1px_10px_rgba(255,255,255,0.12)] transition-all hover:border-fuchsia-200/80 hover:bg-[#35146e]/90 active:scale-[0.99] sm:border-border/60 sm:bg-secondary/20 sm:text-primary sm:shadow-none sm:hover:bg-secondary/40 sm:hover:text-primary-foreground"
-                  >
-                    {showAllActivities ? "Show less" : "View all"}
-                  </button>
-                )}
-              </>
-            ) : (
-              <div className="flex min-h-32 items-center gap-4 py-3 text-sm text-violet-200">
-                <img src={calendarClock} alt="" className="h-24 w-24 shrink-0 object-contain" />
-                <span>No recent activity found for the selected time range.</span>
-              </div>
-            )}
+                              {activity.gameId && (
+                                <button
+                                  onClick={() =>
+                                    navigate({
+                                      to: "/play/$gameId",
+                                      params: { gameId: activity.gameId! },
+                                    })
+                                  }
+                                  className="shrink-0 rounded-full border border-fuchsia-300/30 bg-[#1a0a38]/40 px-3 py-1 text-xs font-bold text-fuchsia-300 transition-colors hover:border-fuchsia-300/70 hover:bg-fuchsia-400/10 active:scale-95 sm:rounded-lg sm:border-border/60 sm:bg-transparent sm:py-1.5 sm:text-primary sm:hover:border-primary sm:hover:bg-primary/5"
+                                >
+                                  Play Game
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+
+                  {filteredActivities.length > 2 && (
+                    <button
+                      onClick={() => setShowAllActivities(!showAllActivities)}
+                      className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl border border-fuchsia-200/40 bg-[#2b135c]/75 py-3 text-sm font-bold text-fuchsia-200 shadow-[0_0_16px_rgba(217,70,239,0.3),inset_0_1px_10px_rgba(255,255,255,0.12)] transition-all hover:border-fuchsia-200/80 hover:bg-[#35146e]/90 active:scale-[0.99] sm:border-border/60 sm:bg-secondary/20 sm:text-primary sm:shadow-none sm:hover:bg-secondary/40 sm:hover:text-primary-foreground"
+                    >
+                      {showAllActivities ? "Show less" : "View all"}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="flex min-h-24 items-center gap-4 py-2 text-xs leading-5 text-violet-200">
+                  <img src={calendarClock} alt="" className="size-20 shrink-0 object-contain" />
+                  <span className="max-w-sm">
+                    No recent activity found for the selected time range.
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
