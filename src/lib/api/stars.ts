@@ -8,7 +8,7 @@ export type StarsOrder = {
   tier?: number | null;
   starsAmount: number;
   currency: "XTR";
-  productCode: "launch_boost" | "game_generation";
+  productCode: "launch_boost" | "game_generation" | "game_edit";
   fulfilledAt?: string | null;
   paidAt?: string | null;
 };
@@ -21,6 +21,12 @@ export async function createLaunchBoostOrder(gameId: string): Promise<StarsOrder
 // Creates a Telegram Stars invoice to pay for one game generation on a tier.
 export async function createGenerationStarsOrder(tier: 1 | 2 | 3): Promise<StarsOrder> {
   const { data } = await api.post("/stars/orders", { productCode: "game_generation", tier });
+  return data.order;
+}
+
+// Creates a Telegram Stars invoice to pay for one AI edit on a tier.
+export async function createEditStarsOrder(tier: 1 | 2 | 3): Promise<StarsOrder> {
+  const { data } = await api.post("/stars/orders", { productCode: "game_edit", tier });
   return data.order;
 }
 

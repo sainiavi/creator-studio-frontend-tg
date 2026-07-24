@@ -19,8 +19,12 @@ import {
   X,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { createLaunchBoostOrder, fetchStarsOrder, type StarsOrder } from "@/lib/api/stars";
+import { createLaunchBoostOrder, createEditStarsOrder, fetchStarsOrder, type StarsOrder } from "@/lib/api/stars";
 import { runCodeJob } from "@/hooks/useCreatorStudio";
+import { sendTonGenerationPayment } from "@/lib/tonPayment";
+import { getTonWallet } from "@/lib/tonWallet";
+import { usePrivy } from "@privy-io/react-auth";
+import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
 import { useStudioContext } from "@/context/StudioContext";
 import { GamePreview } from "@/components/studio/GamePreview";
 import { EditPageSkeleton } from "@/components/studio/PageSkeletons";
@@ -45,6 +49,18 @@ function GameEditor() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
   const { createdGames, addCreatedGame, refreshCreatedGames } = useStudioContext();
+  const { user } = usePrivy();
+  const { signRawHash } = useSignRawHash();
+  // When a paid edit needs payment, hold the pending wish + prices here and let
+  // the user choose TON or Telegram Stars.
+  const [editPayment, setEditPayment] = useState<{
+    request: string;
+    tonAmount: number;
+    tonCurrency: string;
+    starsAmount: number;
+    starsAvailable: boolean;
+  } | null>(null);
+  const [payingEdit, setPayingEdit] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [game, setGame] = useState<any>(null);
@@ -257,15 +273,16 @@ function GameEditor() {
     }
   };
 
-  const sendWish = async (text: string) => {
-    const request = text.trim();
-    if (!request || building || !game?.refinement?.generatedCode) return;
-    setWish("");
+  // Runs one edit against /agents/code, optionally with a payment descriptor.
+  // Returns "PAID_REQUIRED" when the backend gates the edit behind payment so the
+  // caller can show the TON/Stars choice.
+  const runEdit = async (
+    request: string,
+    payment: { method?: "ton" | "stars"; paymentTxHash?: string; starsOrderId?: string } = {},
+  ): Promise<"ok" | "empty" | "paid_required" | "error"> => {
+    const token = ++buildToken.current;
     setBuilding(true);
     setLastError(null);
-    const token = ++buildToken.current;
-    setMessages((m) => [...m, { role: "user", text: request }]);
-
     try {
       const refinement = await runCodeJob(
         {
@@ -273,6 +290,9 @@ function GameEditor() {
           request,
           baseCode: game.refinement.generatedCode,
           refinementLevel: "medium",
+          ...(payment.method ? { paymentMethod: payment.method } : {}),
+          ...(payment.paymentTxHash ? { paymentTxHash: payment.paymentTxHash } : {}),
+          ...(payment.starsOrderId ? { starsOrderId: payment.starsOrderId } : {}),
         },
         // Generous: a failed seed-edit now triggers a full pure-agent rebuild,
         // so allow time for both passes before giving up.
@@ -280,7 +300,7 @@ function GameEditor() {
         (status) => setBuildStatus(status),
         () => buildToken.current !== token,
       );
-      if (buildToken.current !== token) return;
+      if (buildToken.current !== token) return "ok";
       if (refinement?.generatedCode) {
         patchGame((g) => {
           g.refinement = refinement;
@@ -297,17 +317,100 @@ function GameEditor() {
                 : "Done — the change is live in the preview. Hit Save Changes to keep it. ✨",
           },
         ]);
-      } else {
-        setMessages((m) => [...m, { role: "assistant", text: "The build came back empty — please try again." }]);
+        return "ok";
       }
-    } catch (error: unknown) {
+      setMessages((m) => [...m, { role: "assistant", text: "The build came back empty — please try again." }]);
+      return "empty";
+    } catch (error: any) {
+      // Paid-edit gate: surface the TON/Stars choice instead of a failure.
+      const pay = error?.response?.data?.payment;
+      if (error?.response?.status === 402 && (error?.response?.data?.code === "PAID_EDIT_REQUIRED" || pay?.required)) {
+        setEditPayment({
+          request,
+          tonAmount: pay?.methods?.chain?.amount ?? pay?.amount ?? 0,
+          tonCurrency: pay?.methods?.chain?.currency ?? pay?.currency ?? "TON",
+          starsAmount: pay?.methods?.stars?.amount ?? 0,
+          starsAvailable: Boolean(pay?.methods?.stars?.available) && (pay?.methods?.stars?.amount ?? 0) > 0,
+        });
+        setMessages((m) => [...m, { role: "assistant", text: "This edit needs payment. Choose TON or Stars below to apply it." }]);
+        return "paid_required";
+      }
       const message = error instanceof Error ? error.message : "unknown error";
       setMessages((m) => [...m, { role: "assistant", text: `That change failed (${message}). Try again or rephrase.` }]);
+      return "error";
     } finally {
       if (buildToken.current === token) {
         setBuilding(false);
         setBuildStatus("");
       }
+    }
+  };
+
+  const sendWish = async (text: string) => {
+    const request = text.trim();
+    if (!request || building || payingEdit || !game?.refinement?.generatedCode) return;
+    setWish("");
+    setEditPayment(null);
+    setMessages((m) => [...m, { role: "user", text: request }]);
+    await runEdit(request);
+  };
+
+  // Pay for the pending edit with TON, then apply it.
+  const payEditWithTon = async () => {
+    if (!editPayment || payingEdit || building) return;
+    const { request, tonAmount, tonCurrency } = editPayment;
+    setEditPayment(null);
+    try {
+      const tonWallet = getTonWallet(user);
+      if (!tonWallet) {
+        setMessages((m) => [...m, { role: "assistant", text: "Connect your TON wallet in the header to pay with TON." }]);
+        return;
+      }
+      setPayingEdit(true);
+      setBuildStatus(`Confirm ${tonAmount} ${tonCurrency} in your wallet…`);
+      const paymentTxHash = await sendTonGenerationPayment({ wallet: tonWallet, amountTon: tonAmount, signRawHash });
+      setBuildStatus("Payment sent. Applying your edit…");
+      await runEdit(request, { method: "ton", paymentTxHash });
+    } catch (error: any) {
+      setMessages((m) => [...m, { role: "assistant", text: error?.response?.data?.error ?? error?.message ?? "Could not complete TON payment." }]);
+    } finally {
+      setPayingEdit(false);
+    }
+  };
+
+  // Pay for the pending edit with Telegram Stars, then apply it.
+  const payEditWithStars = async () => {
+    if (!editPayment || payingEdit || building) return;
+    const { request, tier } = { request: editPayment.request, tier: (game?.generation?.qualityTier ?? 1) as 1 | 2 | 3 };
+    const starsAmount = editPayment.starsAmount;
+    setEditPayment(null);
+    try {
+      setPayingEdit(true);
+      setBuildStatus("Creating Telegram Stars invoice…");
+      const order = await createEditStarsOrder(tier);
+      if (!order.invoiceUrl) throw new Error("Telegram did not return an invoice link.");
+      setBuildStatus(`Opening Telegram checkout for ${starsAmount} Stars…`);
+      const status = await openTelegramInvoice(order.invoiceUrl);
+      if (status === "cancelled" || status === "failed") {
+        throw new Error(status === "cancelled" ? "Payment cancelled." : "Payment failed.");
+      }
+      setBuildStatus("Payment received. Confirming with Telegram…");
+      let paid = false;
+      for (let i = 0; i < 20; i += 1) {
+        const o = await fetchStarsOrder(order.id).catch(() => null);
+        if (o && (o.status === "PAID" || o.status === "FULFILLED")) {
+          paid = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+      if (!paid) throw new Error("Stars payment not confirmed yet. Try the edit again in a moment.");
+      setBuildStatus("Applying your edit…");
+      await runEdit(request, { method: "stars", starsOrderId: order.id });
+    } catch (error: any) {
+      setMessages((m) => [...m, { role: "assistant", text: error?.response?.data?.error ?? error?.message ?? "Could not complete Stars payment." }]);
+    } finally {
+      setPayingEdit(false);
     }
   };
 
@@ -450,6 +553,28 @@ function GameEditor() {
               <span className="min-w-0 truncate">Game error: {lastError.message} — tap to fix</span>
             </button>
           )}
+          {editPayment && !building && (
+            <div className="mx-4 mb-2 grid grid-cols-2 gap-2">
+              {editPayment.starsAvailable && (
+                <button
+                  onClick={() => void payEditWithStars()}
+                  disabled={payingEdit}
+                  className="flex flex-col items-center gap-0.5 rounded-xl border border-amber-300/50 bg-amber-400/15 px-3 py-2 text-amber-100 transition active:scale-[0.97] disabled:opacity-60"
+                >
+                  <span className="text-sm font-black">⭐ {editPayment.starsAmount} Stars</span>
+                  <span className="text-[10px] opacity-75">Pay in Telegram</span>
+                </button>
+              )}
+              <button
+                onClick={() => void payEditWithTon()}
+                disabled={payingEdit}
+                className={`flex flex-col items-center gap-0.5 rounded-xl border border-cyan-300/50 bg-cyan-400/10 px-3 py-2 text-cyan-100 transition active:scale-[0.97] disabled:opacity-60 ${editPayment.starsAvailable ? "" : "col-span-2"}`}
+              >
+                <span className="text-sm font-black">💎 {editPayment.tonAmount} {editPayment.tonCurrency}</span>
+                <span className="text-[10px] opacity-75">Pay with wallet</span>
+              </button>
+            </div>
+          )}
           <div className="flex gap-2 border-t border-border/50 p-3">
             <input
               value={wish}
@@ -457,13 +582,13 @@ function GameEditor() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") void sendWish(wish);
               }}
-              disabled={building || !hasBuild || !isOwner}
+              disabled={building || payingEdit || !hasBuild || !isOwner}
               placeholder={!isOwner ? "Only the creator can edit this game" : hasBuild ? "Tap to wish… e.g. make enemies faster" : "No build yet for this game"}
               className="min-w-0 flex-1 rounded-xl bg-secondary/60 px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
             />
             <button
               onClick={() => void sendWish(wish)}
-              disabled={building || !wish.trim() || !isOwner}
+              disabled={building || payingEdit || !wish.trim() || !isOwner}
               className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground disabled:opacity-50"
             >
               <Send className="size-4" />
