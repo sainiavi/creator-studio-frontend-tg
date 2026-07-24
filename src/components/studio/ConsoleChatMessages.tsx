@@ -2,7 +2,7 @@ import { ChevronRight, Loader2, Sparkles } from "lucide-react";
 import type { ChatMessage } from "@/lib/createChatFlow";
 import { quickRepliesForStage } from "@/lib/createChatFlow";
 import type { ChatStage } from "@/lib/createChatFlow";
-import assistantAvatar from "@/assets/robot.webp";
+import assistantAvatar from "@/assets/robot.png";
 import userAvatar from "@/assets/chatAvatarRight.webp";
 
 type ConsoleChatMessagesProps = {

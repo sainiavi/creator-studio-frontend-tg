@@ -5,7 +5,7 @@ import character1 from "@/assets/left1.webp";
 import character2 from "@/assets/right1.webp";
 import gameControllerCard from "@/assets/center1.webp";
 import kultTapHand from "@/assets/kultCartoonGlove.webp";
-import robotCharacter from "@/assets/robot.webp";
+import robotCharacter from "@/assets/robot.png";
 import creatorStudioLogo from "@/assets/creatorStudioLogo.webp";
 import { ConsoleChatMessages } from "./ConsoleChatMessages";
 import { CreateConsolePanel } from "./CreateConsolePanel";

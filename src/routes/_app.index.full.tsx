@@ -795,7 +795,7 @@ export function Home() {
                           Browse by Category
                         </h2>
                       </div>
-                      <div className="-mx-3 flex gap-2.5 overflow-x-auto px-3 pb-2 [scrollbar-width:none] min-[480px]:mx-0 min-[480px]:gap-2 min-[480px]:px-0 [&::-webkit-scrollbar]:hidden">
+                      <div className="grid grid-cols-3 gap-2.5 pb-2 min-[1024px]:grid-cols-8 min-[1024px]:gap-2">
                         {browseCategories.map((category) => {
                           const Icon = category.icon;
                           return (
@@ -803,14 +803,14 @@ export function Home() {
                               key={category.name}
                               type="button"
                               onClick={() => setMobileFeedTab(category.name)}
-                              className="group relative flex aspect-[1.05] w-[120px] shrink-0 flex-col items-center justify-center gap-2 rounded-[17px] border border-white bg-[#160b2e] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:bg-[#1d0f42] min-[480px]:min-w-0 min-[480px]:flex-1"
+                              className="group relative flex aspect-[1.05] min-w-0 w-full flex-col items-center justify-center gap-2 rounded-[17px] border border-white bg-[#160b2e] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:bg-[#1d0f42]"
                             >
                               {category.image ? (
                                 <span
                                   className={`relative grid place-items-center transition duration-300 group-hover:scale-105 group-active:scale-95 ${
                                     ["Adventure", "RPG", "Multiplayer"].includes(category.name)
-                                      ? "size-[88px] -my-3 min-[480px]:size-[58px] min-[480px]:my-0"
-                                      : "size-16 -my-1 min-[480px]:size-12 min-[480px]:my-0"
+                                      ? "size-[72px] -my-2 min-[1024px]:my-0 min-[1024px]:size-[58px]"
+                                      : "size-14 -my-1 min-[1024px]:my-0 min-[1024px]:size-12"
                                   }`}
                                 >
                                   <img
@@ -833,7 +833,7 @@ export function Home() {
                                 </span>
                               )}
                               <span
-                                className={`text-[12px] font-bold leading-none min-[480px]:text-[10px] ${category.iconColor}`}
+                                className={`text-[12px] font-bold leading-none min-[1024px]:text-[10px] ${category.iconColor}`}
                               >
                                 {category.name}
                               </span>

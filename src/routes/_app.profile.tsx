@@ -47,7 +47,6 @@ import {
   Gift,
   Check,
   CalendarDays,
-  ChevronLeft,
   ChevronRight,
   Heart,
   Home,
@@ -71,7 +70,6 @@ import {
   Users,
 } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
-import useEmblaCarousel from "embla-carousel-react";
 import {
   fetchUserActivities,
   fetchUserFavorites,
@@ -215,97 +213,39 @@ interface GameRowProps {
 
 function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
   const [showAll, setShowAll] = useState(false);
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: "start",
-    dragFree: true,
-    loop: false,
-    containScroll: "trimSnaps",
-    skipSnaps: true,
-  });
-
-  const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev();
-  }, [emblaApi]);
-
-  const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext();
-  }, [emblaApi]);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-    const viewport = emblaApi.rootNode();
-    const handleWheel = (event: WheelEvent) => {
-      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-      if (Math.abs(delta) < 2) return;
-      viewport.scrollLeft += delta;
-      event.preventDefault();
-    };
-    viewport.addEventListener("wheel", handleWheel, { passive: false });
-    return () => viewport.removeEventListener("wheel", handleWheel);
-  }, [emblaApi]);
 
   return (
     <div className="mt-10">
-      <div className="relative flex items-center justify-between overflow-hidden rounded-[1.35rem] px-4 py-3  backdrop-blur-sm sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:backdrop-blur-none">
-        {games.length > 0 && (
-          <div className="flex items-center gap-2">
-            {!showAll && (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={scrollPrev}
-                  title={`Previous ${title}`}
-                  className="grid size-8 place-items-center rounded-lg border border-white/25 bg-white/15 text-white transition hover:border-fuchsia-300/80 hover:text-white active:scale-95 sm:border-border/60 sm:bg-transparent sm:text-muted-foreground sm:hover:border-primary/50 sm:hover:text-primary"
-                >
-                  <ChevronLeft className="size-4.5" />
-                </button>
-                <button
-                  onClick={scrollNext}
-                  title={`Next ${title}`}
-                  className="grid size-8 place-items-center rounded-lg border border-white/25 bg-white/15 text-white transition hover:border-fuchsia-300/80 hover:text-white active:scale-95 sm:border-border/60 sm:bg-transparent sm:text-muted-foreground sm:hover:border-primary/50 sm:hover:text-primary"
-                >
-                  <ChevronRight className="size-4.5" />
-                </button>
-              </div>
-            )}
-            <button
-              onClick={() => setShowAll(!showAll)}
-              className="ml-2 flex items-center gap-1 rounded-lg border border-violet-700/35 bg-violet-950/20 px-3 py-1.5 text-xs font-bold text-fuchsia-400 shadow-[0_2px_10px_rgba(76,29,149,0.16)] transition hover:border-fuchsia-400/70 hover:bg-violet-950/30 sm:border-border/60 sm:bg-secondary/30 sm:text-primary sm:shadow-none sm:hover:bg-secondary/60 sm:hover:text-primary-foreground"
-            >
-              {showAll ? "Show less" : "View all"} <ChevronRight className="size-3.5" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {games.length > 0 ? (
-        showAll ? (
-          <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4 xl:grid-cols-4 2xl:grid-cols-5">
-            {games.map((g, i) => (
+      <h2 className="sr-only">{title}</h2>
+      {games.length > 0 && (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {games.slice(0, showAll ? undefined : 6).map((game, index) => (
               <GameCard
-                key={g.title + i}
-                game={g}
-                index={i}
+                key={`${game.title}-${index}`}
+                game={game}
+                index={index}
                 onEdit={onEditGame}
                 compact
                 metaTheme="dark"
               />
             ))}
           </div>
-        ) : (
-          <div
-            ref={emblaRef}
-            className="mt-5 cursor-grab overflow-hidden select-none active:cursor-grabbing"
-          >
-            <div className="flex touch-pan-y gap-2.5 sm:gap-4">
-              {games.map((g, i) => (
-                <div key={g.title + i} className="min-w-0 flex-[0_0_44%] sm:flex-[0_0_240px]">
-                  <GameCard game={g} index={i} onEdit={onEditGame} compact metaTheme="dark" />
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      ) : (
+          {games.length > 6 && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="mx-auto mt-5 flex items-center gap-1.5 rounded-full border border-violet-700/35 bg-violet-950/20 px-5 py-2 text-sm font-bold text-fuchsia-500 shadow-[0_2px_10px_rgba(76,29,149,0.16)] transition hover:border-fuchsia-400/70 hover:bg-violet-950/30"
+            >
+              {showAll ? "Show less" : "View more"}
+              <ChevronRight
+                className={`size-4 transition-transform ${showAll ? "rotate-90" : ""}`}
+              />
+            </button>
+          )}
+        </>
+      )}
+
+      {games.length === 0 && (
         <div className="relative mt-4 w-full overflow-hidden rounded-[1.35rem] bg-[#170436] text-white">
           <img
             src={bottomCard}
@@ -1267,7 +1207,7 @@ function Profile() {
           </div>
         </div>
 
-        <div className="mt-8 hidden gap-3 sm:grid sm:grid-cols-3">
+        <div className="mx-auto mt-8 hidden w-full max-w-3xl gap-3 sm:grid sm:grid-cols-3">
           <button
             type="button"
             onClick={() => setOpenPanel("challenges")}
