@@ -748,20 +748,23 @@ export function Home() {
                             key={tab}
                             type="button"
                             onClick={() => setMobileFeedTab(tab)}
+                            aria-pressed={selected}
                             className="relative shrink-0 text-xs transition active:scale-95"
                             style={{
                               marginInline: 2,
                               padding: "6px 14px",
                               borderRadius: 999,
                               border: selected
-                                ? "1px solid rgb(109 40 217)"
+                                ? "1px solid rgba(255, 255, 255, 0.9)"
                                 : "1px solid rgba(109, 40, 217, 0.28)",
                               background: selected
-                                ? "linear-gradient(135deg, #7c3aed, #a855f7)"
+                                ? "linear-gradient(135deg, #6d28d9 0%, #a855f7 55%, #d946ef 100%)"
                                 : "rgba(255, 255, 255, 0.34)",
                               color: selected ? "#ffffff" : "#3b0764",
                               fontWeight: selected ? 900 : 700,
-                              boxShadow: selected ? "0 4px 12px rgba(91, 33, 182, 0.28)" : "none",
+                              boxShadow: selected
+                                ? "0 0 0 2px rgba(168, 85, 247, 0.24), 0 6px 16px rgba(109, 40, 217, 0.42)"
+                                : "none",
                             }}
                           >
                             {tab}
