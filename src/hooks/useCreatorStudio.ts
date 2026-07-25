@@ -109,6 +109,12 @@ function readActiveBuild(): ActiveBuild | null {
     const raw = localStorage.getItem(ACTIVE_BUILD_KEY);
     if (!raw) return null;
     const build = JSON.parse(raw) as ActiveBuild;
+    // Remove records created by the old refresh handler. Commenting out that
+    // handler does not remove the already-persisted failure from localStorage.
+    if (build?.statusText?.startsWith("Build was interrupted before the job started")) {
+      localStorage.removeItem(ACTIVE_BUILD_KEY);
+      return null;
+    }
     // A "building" record older than its own deadline can never finish.
     if (build?.phase === "building" && Date.now() - build.startedAt > build.maxWaitMs + 60_000) {
       localStorage.removeItem(ACTIVE_BUILD_KEY);
@@ -360,12 +366,10 @@ export function useCreatorStudio() {
     const build = readActiveBuild();
     if (!build || build.phase !== "building") return;
     if (!build.jobId) {
-      // Refresh happened before the job was registered — nothing to poll.
-      // updateActiveBuild({
-      //   phase: "failed",
-      //   statusText: "Build was interrupted before the job started — please run it again.",
-      // });
-      console.log("no job found or Build was interrupted before the job started — please run it again. ")
+      // A refresh can happen between creating the optimistic client record and
+      // receiving a backend job id. There is no job to resume, so dismiss the
+      // incomplete record instead of leaving a permanent build/error console.
+      updateActiveBuild(null);
       return;
     }
     const token = ++generationRef.current;
