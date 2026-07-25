@@ -63,19 +63,6 @@ function Templates() {
   }, [studio.engine, gameTemplates]);
 
   useEffect(() => {
-    if (imagesReady) return;
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousRootOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousRootOverflow;
-    };
-  }, [imagesReady]);
-
-  useEffect(() => {
     const target = loadMoreRef.current;
     if (!target || !hasMore || !imagesReady) return;
 
@@ -209,6 +196,18 @@ function Templates() {
             </article>
           ))}
         </div>
+        {!imagesReady && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex h-20 items-center justify-center gap-3 text-violet-800"
+          >
+            <span className="size-7 animate-spin rounded-full border-[3px] border-violet-300/45 border-t-fuchsia-500" />
+            <span className="text-xs font-bold uppercase tracking-[0.12em]">
+              Loading games…
+            </span>
+          </div>
+        )}
         {hasMore && imagesReady && (
           <div
             ref={loadMoreRef}
@@ -219,20 +218,6 @@ function Templates() {
           </div>
         )}
       </div>
-      {!imagesReady && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed inset-0 z-[80] grid place-items-center bg-[#0a0118]/75 text-white backdrop-blur-sm"
-        >
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-fuchsia-300/25 bg-[#160b2e]/95 px-7 py-5 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
-            <span className="size-9 animate-spin rounded-full border-4 border-violet-300/30 border-t-fuchsia-400" />
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-violet-100">
-              Loading games…
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
