@@ -17,50 +17,67 @@ export async function run() {
   });
   assert(unauthenticated.status === 401, `writes require auth (got ${unauthenticated.status})`);
 
-  // token endpoint issues a working token
-  const tokenResponse = await fetchJson(`${BACKEND}/api/auth/token`, {
+  // Caller-provided ids must never mint a token.
+  const legacyTokenResponse = await fetchJson(`${BACKEND}/api/auth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId: "e2e-tester" })
   });
-  assert(tokenResponse.status === 200 && tokenResponse.body?.token, "auth token issued");
+  assert(legacyTokenResponse.status === 401, "userId-only token requests are rejected");
 
-  const referrerToken = await fetchJson(`${BACKEND}/api/auth/token`, {
+  const privyAccessToken = process.env.E2E_PRIVY_ACCESS_TOKEN;
+  const privyIdentityToken = process.env.E2E_PRIVY_IDENTITY_TOKEN;
+  if (!privyAccessToken && !privyIdentityToken) {
+    const list = await fetchJson(`${BACKEND}/api/games/list?limit=3`);
+    assert(list.status === 200 && Array.isArray(list.body?.games), "games list responds");
+    return;
+  }
+
+  // Verified Privy credentials issue a working application token.
+  const tokenResponse = await fetchJson(`${BACKEND}/api/auth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: `e2e-referrer-${Date.now()}` })
+    body: JSON.stringify({ privyAccessToken, privyIdentityToken })
   });
-  const referral = await fetchJson(`${BACKEND}/api/referral/me`, {
-    headers: { Authorization: `Bearer ${referrerToken.body.token}` }
-  });
-  assert(
-    referral.status === 200 && referral.body?.code && referral.body?.link,
-    "referral summary returns a permanent code and link"
-  );
+  assert(tokenResponse.status === 200 && tokenResponse.body?.token, "auth token issued");
 
-  const referredUserId = `e2e-referred-${Date.now()}`;
-  const referredToken = await fetchJson(`${BACKEND}/api/auth/token`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Cookie: `kult_ref=${encodeURIComponent(referral.body.code)}`
-    },
-    body: JSON.stringify({ userId: referredUserId })
-  });
-  assert(referredToken.status === 200 && referredToken.body?.token, "referred user token issued");
+  const referredAccessToken = process.env.E2E_REFERRED_PRIVY_ACCESS_TOKEN;
+  const referredIdentityToken = process.env.E2E_REFERRED_PRIVY_IDENTITY_TOKEN;
+  if (referredAccessToken || referredIdentityToken) {
+    const referral = await fetchJson(`${BACKEND}/api/referral/me`, {
+      headers: { Authorization: `Bearer ${tokenResponse.body.token}` }
+    });
+    assert(
+      referral.status === 200 && referral.body?.code && referral.body?.link,
+      "referral summary returns a permanent code and link"
+    );
 
-  const qualification = await fetchJson(`${BACKEND}/api/referral/qualify`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${referredToken.body.token}`
-    },
-    body: JSON.stringify({ gameId: "e2e-game", durationSeconds: 31 })
-  });
-  assert(
-    qualification.status === 200 && qualification.body?.status === "held",
-    "same-IP referral is held instead of paid"
-  );
+    const referredToken = await fetchJson(`${BACKEND}/api/auth/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `kult_ref=${encodeURIComponent(referral.body.code)}`
+      },
+      body: JSON.stringify({
+        privyAccessToken: referredAccessToken,
+        privyIdentityToken: referredIdentityToken
+      })
+    });
+    assert(referredToken.status === 200 && referredToken.body?.token, "referred user token issued");
+
+    const qualification = await fetchJson(`${BACKEND}/api/referral/qualify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${referredToken.body.token}`
+      },
+      body: JSON.stringify({ gameId: "e2e-game", durationSeconds: 31 })
+    });
+    assert(
+      qualification.status === 200 && qualification.body?.status === "held",
+      "same-IP referral is held instead of paid"
+    );
+  }
 
   const authed = await fetchJson(`${BACKEND}/api/games/create`, {
     method: "POST",
@@ -68,7 +85,7 @@ export async function run() {
       "Content-Type": "application/json",
       Authorization: `Bearer ${tokenResponse.body.token}`
     },
-    body: JSON.stringify({ templateId: "flappy", userId: "e2e-tester" })
+    body: JSON.stringify({ templateId: "flappy" })
   });
   assert(authed.status === 201, `authed create succeeds (got ${authed.status})`);
 

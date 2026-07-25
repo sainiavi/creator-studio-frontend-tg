@@ -1,12 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
-import { usePrivy } from "@privy-io/react-auth";
+import { useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
 import { useEffect, useRef } from "react";
 
 import { clearAuthToken, prefetchAuthToken } from "../lib/api";
-import { getCurrentUserId } from "../lib/identity";
+import { clearLegacyAnonymousIdentity, getCurrentUserId } from "../lib/identity";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { syncPrivyIdentity } from "../lib/privyIdentity";
+import { isTelegramMiniApp } from "../lib/telegramMiniApp";
 
 function NotFoundComponent() {
   return (
@@ -75,17 +76,38 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { ready, authenticated, user } = usePrivy();
+  const { login: loginWithTelegram, state: telegramLoginState } = useLoginWithTelegram();
   const previousUserIdRef = useRef<string | null>(null);
+  const telegramAutoLoginAttemptedRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      !ready ||
+      authenticated ||
+      !isTelegramMiniApp() ||
+      telegramAutoLoginAttemptedRef.current ||
+      telegramLoginState.status === "loading"
+    ) {
+      return;
+    }
+
+    telegramAutoLoginAttemptedRef.current = true;
+    void loginWithTelegram().catch((error) => {
+      // Keep the public experience available; the header button can retry login.
+      console.warn("[auth] Telegram auto-login failed", error);
+    });
+  }, [authenticated, loginWithTelegram, ready, telegramLoginState.status]);
 
   useEffect(() => {
     if (!ready) return;
+    clearLegacyAnonymousIdentity();
     syncPrivyIdentity(authenticated ? user : null);
-    const nextUserId = getCurrentUserId();
-    if (previousUserIdRef.current !== null && previousUserIdRef.current !== nextUserId) {
+    const nextUserId = authenticated && user ? getCurrentUserId() : null;
+    if (!nextUserId || previousUserIdRef.current !== nextUserId) {
       clearAuthToken();
     }
     previousUserIdRef.current = nextUserId;
-    void prefetchAuthToken();
+    if (nextUserId) void prefetchAuthToken();
   }, [authenticated, ready, user?.id]);
 
   return (

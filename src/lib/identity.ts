@@ -1,8 +1,7 @@
 // Single source of truth for "who is the current user".
 //
-// Production: the connected wallet address (set in localStorage by the wallet
-// connect flow) IS the user — a different wallet address is a different user.
-// Development fallback: a stable per-browser anonymous id.
+// Only identities established by the real authentication flow are accepted.
+// Anonymous browser-generated users must never be treated as signed-in users.
 
 const PRIVY_USER_KEY = "kult_privy_user_id";
 const PRIVY_WALLET_KEY = "kult_privy_wallet";
@@ -16,8 +15,6 @@ const WALLET_KEYS = [
   "wallet_address",
   "kult_wallet_address",
 ];
-const ANON_ID_KEY = "kult_anon_uid";
-const ANON_NAME_KEY = "kult_anon_username";
 
 function readStorage(key: string): string | null {
   try {
@@ -62,6 +59,16 @@ export function clearPrivyIdentity() {
   writeStorage(PRIVY_NAME_KEY, null);
 }
 
+/** Remove identities created by the retired anonymous-user flow. */
+export function clearLegacyAnonymousIdentity() {
+  try {
+    localStorage.removeItem("kult_anon_uid");
+    localStorage.removeItem("kult_anon_username");
+  } catch {
+    // localStorage unavailable — ignore
+  }
+}
+
 export function getWalletAddress(): string | null {
   for (const key of WALLET_KEYS) {
     const value = readStorage(key);
@@ -84,33 +91,21 @@ function getTelegramUserId(): string | null {
   return telegramUserId ? `tg_${telegramUserId}` : null;
 }
 
-function getAnonymousId(): string {
-  let uid = localStorage.getItem(ANON_ID_KEY);
-  if (!uid) {
-    uid = `anon_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    localStorage.setItem(ANON_ID_KEY, uid);
-  }
-  return uid;
-}
-
-/** The current user id: wallet address when connected, anonymous id otherwise. */
+/** Returns the authenticated user's id, or an empty value for public visitors. */
 export function getCurrentUserId(): string {
-  return (
+  const userId =
     readStorage(PRIVY_USER_KEY) ??
     getTonWalletAddress() ??
     getWalletAddress() ??
-    getTelegramUserId() ??
-    getAnonymousId()
-  );
+    getTelegramUserId();
+
+  return userId ?? "";
 }
 
-/** Display name: shortened wallet (0x1234…abcd) or the generated anon name. */
+/** Display name for the authenticated identity. */
 export function getCurrentUsername(): string {
   const privyName = readStorage(PRIVY_NAME_KEY);
   if (privyName) return privyName;
-
-  const savedName = localStorage.getItem(ANON_NAME_KEY);
-  if (savedName?.trim()) return savedName.trim();
 
   const tonWallet = getTonWalletAddress();
   if (tonWallet) return `${tonWallet.slice(0, 6)}...${tonWallet.slice(-4)}`;
@@ -118,20 +113,13 @@ export function getCurrentUsername(): string {
   const wallet = getWalletAddress();
   if (wallet) return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
 
-  const adjectives = ["Swift", "Neon", "Pixel", "Cosmic", "Turbo", "Hyper", "Retro", "Glitch"];
-  const nouns = ["Fox", "Owl", "Hawk", "Wolf", "Cat", "Panda", "Tiger", "Bear"];
-  const name =
-    adjectives[Math.floor(Math.random() * adjectives.length)] +
-    nouns[Math.floor(Math.random() * nouns.length)] +
-    Math.floor(Math.random() * 999);
-  localStorage.setItem(ANON_NAME_KEY, name);
-  return name;
+  return "KULT Player";
 }
 
 export function setCurrentUsername(name: string): string {
   const cleanName = name.trim().slice(0, 32);
   if (!cleanName) return getCurrentUsername();
-  localStorage.setItem(ANON_NAME_KEY, cleanName);
+  writeStorage(PRIVY_NAME_KEY, cleanName);
   return cleanName;
 }
 

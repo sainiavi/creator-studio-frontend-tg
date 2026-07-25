@@ -1,11 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/studio/PageHeader";
-import { ArrowUpRight, Play } from "lucide-react";
+import { ArrowUpRight, Play, Sparkles } from "lucide-react";
 import { gradientClass } from "@/lib/games-data";
 import { gradientForId, templateEmoji, engineOf, getThumbnailUrl } from "@/lib/studio-meta";
 import { useStudioContext } from "@/context/StudioContext";
 import { useGameTemplates } from "@/hooks/useGameTemplates";
 import { TemplatesGridSkeleton } from "@/components/studio/PageSkeletons";
+import categoryStrategyIcon from "@/assets/categoryStrategy.webp";
+import categoryArcadeIcon from "@/assets/categoryArcade.webp";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export const Route = createFileRoute("/_app/templates")({
   pendingComponent: TemplatesGridSkeleton,
@@ -19,43 +22,131 @@ export const Route = createFileRoute("/_app/templates")({
 });
 
 const engines = [
-  { id: "threejs", label: "Three.js" },
-  { id: "construct", label: "HTML5" },
+  {
+    id: "threejs",
+    label: "3D Games",
+    description: "Explore immersive worlds",
+    image: categoryStrategyIcon,
+    accent: "text-sky-400",
+  },
+  {
+    id: "construct",
+    label: "Quick Games",
+    description: "Jump in and play",
+    image: categoryArcadeIcon,
+    accent: "text-violet-300",
+  },
 ] as const;
+
+const TEMPLATES_PAGE_SIZE = 10;
 
 function Templates() {
   const { studio, openInStudio } = useStudioContext();
   const navigate = useNavigate();
   const { gameTemplates, loading } = useGameTemplates();
-  const list = gameTemplates.filter((t: any) => engineOf(t) === studio.engine);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(TEMPLATES_PAGE_SIZE);
+  const [loadedImageIds, setLoadedImageIds] = useState<Set<string>>(() => new Set());
+  const list = useMemo(
+    () => gameTemplates.filter((t: any) => engineOf(t) === studio.engine),
+    [gameTemplates, studio.engine],
+  );
+  const visibleTemplates = list.slice(0, visibleCount);
+  const visibleImageIds = visibleTemplates
+    .filter((template: any) => Boolean(getThumbnailUrl(template.id)))
+    .map((template: any) => String(template.id));
+  const imagesReady = visibleImageIds.every((id) => loadedImageIds.has(id));
+  const hasMore = visibleCount < list.length;
+
+  useEffect(() => {
+    setVisibleCount(TEMPLATES_PAGE_SIZE);
+  }, [studio.engine, gameTemplates]);
+
+  useEffect(() => {
+    if (imagesReady) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
+    };
+  }, [imagesReady]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || !hasMore || !imagesReady) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setVisibleCount((count) => Math.min(count + TEMPLATES_PAGE_SIZE, list.length));
+      },
+      { rootMargin: "320px 0px", threshold: 0.01 },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, imagesReady, list.length, visibleCount]);
+
+  const markImageReady = (templateId: string) => {
+    setLoadedImageIds((current) => {
+      if (current.has(templateId)) return current;
+      const next = new Set(current);
+      next.add(templateId);
+      return next;
+    });
+  };
 
   if (loading) return <TemplatesGridSkeleton />;
 
   return (
     <div className="relative min-h-screen text-violet-950">
-      <PageHeader title="Templates" subtitle="Pick a base. Remix it. Ship instantly." />
+      <PageHeader
+        title="Game Templates"
+        subtitle="Choose a world, make it yours, and start playing."
+      />
 
       <div className="relative z-10 px-3 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-10">
-        <div className="flex items-center justify-center sm:justify-start">
-          <div className="inline-flex rounded-full border-2 border-violet-300/70 bg-white/75 p-1 shadow-[0_0_18px_rgba(168,85,247,0.24),inset_0_1px_8px_rgba(255,255,255,0.9)] backdrop-blur">
+        <div className="rounded-[22px] border border-white/20 bg-[#100528]/95 p-2.5 shadow-[0_12px_28px_rgba(49,15,101,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] sm:inline-block sm:p-3">
+          <div className="mb-2.5 flex items-center gap-1.5 px-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-fuchsia-200 sm:text-[11px]">
+            <Sparkles className="size-3.5 text-fuchsia-400" />
+            Pick your game style
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
             {engines.map((e) => (
               <button
                 key={e.id}
                 onClick={() => studio.setEngine(e.id)}
-                className={`rounded-full px-5 py-2 font-display text-xs font-black transition-all ${
+                className={`relative flex min-w-0 items-center gap-2 overflow-hidden rounded-[16px] border px-2.5 py-2 text-left transition-all sm:min-w-[190px] sm:px-3 ${
                   studio.engine === e.id
-                    ? "bg-[linear-gradient(135deg,#a855f7,#ec4899)] text-white shadow-[0_4px_14px_rgba(168,85,247,0.45)]"
-                    : "text-violet-700 hover:text-violet-950"
+                    ? "border-fuchsia-300 bg-[#281052] shadow-[0_0_18px_rgba(217,70,239,0.28)]"
+                    : "border-white/15 bg-[#160b2e] hover:border-violet-300/45 hover:bg-[#1d0f42]"
                 }`}
               >
-                {e.label}
+                <span className="grid size-11 shrink-0 place-items-center">
+                  <img src={e.image} alt="" className="size-10 object-contain" />
+                </span>
+                <span className="min-w-0">
+                  <span className={`block truncate font-display text-xs font-black ${e.accent}`}>
+                    {e.label}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[9px] font-semibold text-violet-200/65 sm:text-[10px]">
+                    {e.description}
+                  </span>
+                </span>
+                {studio.engine === e.id && (
+                  <span className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-fuchsia-400 shadow-[0_0_9px_rgba(232,121,249,0.9)]" />
+                )}
               </button>
             ))}
           </div>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
-          {list.map((t: any, i: number) => (
+          {visibleTemplates.map((t: any, i: number) => (
             <article
               key={t.id}
               className="animate-float-up group flex flex-col overflow-hidden rounded-[21px] border border-white bg-white/95 shadow-[0_8px_20px_rgba(124,58,237,0.12)] backdrop-blur transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(124,58,237,0.2)] sm:rounded-[23px]"
@@ -70,7 +161,13 @@ function Templates() {
                       src={getThumbnailUrl(t.id)}
                       alt=""
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
+                      loading="eager"
+                      decoding="async"
+                      ref={(image) => {
+                        if (image?.complete) markImageReady(String(t.id));
+                      }}
+                      onLoad={() => markImageReady(String(t.id))}
+                      onError={() => markImageReady(String(t.id))}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
                   </>
@@ -112,7 +209,30 @@ function Templates() {
             </article>
           ))}
         </div>
+        {hasMore && imagesReady && (
+          <div
+            ref={loadMoreRef}
+            aria-label="Loading more game templates"
+            className="flex h-20 items-center justify-center"
+          >
+            <span className="size-7 animate-spin rounded-full border-[3px] border-violet-300/45 border-t-fuchsia-500" />
+          </div>
+        )}
       </div>
+      {!imagesReady && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-0 z-[80] grid place-items-center bg-[#0a0118]/75 text-white backdrop-blur-sm"
+        >
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-fuchsia-300/25 bg-[#160b2e]/95 px-7 py-5 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
+            <span className="size-9 animate-spin rounded-full border-4 border-violet-300/30 border-t-fuchsia-400" />
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-violet-100">
+              Loading games…
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

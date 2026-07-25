@@ -213,6 +213,7 @@ interface GameRowProps {
 }
 
 function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
+  const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
 
   return (
@@ -263,12 +264,13 @@ function GameRow({ title, games, emptyMessage, onEditGame }: GameRowProps) {
               <br />
               your first playable build.
             </p>
-            <a
-              href="/create"
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/create" })}
               className="mt-[clamp(0.3rem,1.4vw,0.75rem)] w-fit whitespace-nowrap rounded-md border border-fuchsia-300/45 bg-[linear-gradient(180deg,#a855f7,#6d28d9)] px-[clamp(0.5rem,2vw,1rem)] py-[clamp(0.25rem,1vw,0.5rem)] text-[clamp(0.48rem,1.6vw,0.75rem)] font-semibold text-white shadow-[0_4px_12px_rgba(109,40,217,0.45)]"
             >
               ⊕ Create Game
-            </a>
+            </button>
           </div>
         </div>
       )}

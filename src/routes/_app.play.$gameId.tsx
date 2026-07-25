@@ -1845,7 +1845,7 @@ function CommentsPanel({
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const currentUserId = useRef(localStorage.getItem("kult_anon_uid") ?? "").current;
+  const currentUserId = useRef(getCurrentUserId()).current;
 
   const handleSubmit = useCallback(async () => {
     const trimmed = text.trim();

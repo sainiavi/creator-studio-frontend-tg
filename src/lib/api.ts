@@ -14,9 +14,8 @@ export const api = axios.create({
 });
 
 // --- JWT plumbing -----------------------------------------------------------
-// Write endpoints require a Bearer token. We fetch an anonymous token once,
-// cache it, and attach it to every request. 401s clear the cache and retry
-// once with a fresh token.
+// Write endpoints require a Bearer token backed by a verified Privy session.
+// 401s clear the cache and retry once with a fresh authenticated token.
 
 const TOKEN_KEY = "kult-auth-token";
 const TOKEN_USER_KEY = "kult-auth-token-user";
@@ -64,6 +63,8 @@ async function requestAuthToken(body: Record<string, unknown>): Promise<string |
 async function fetchToken(): Promise<string | null> {
   try {
     const userId = currentIdentity();
+    if (!userId) return null;
+
     const [privyAccessToken, privyIdentityToken] = await Promise.all([
       withTimeout(getAccessToken(), 4000),
       withTimeout(getIdentityToken(), 4000),
@@ -77,15 +78,9 @@ async function fetchToken(): Promise<string | null> {
       privyBody.privyIdentityToken = privyIdentityToken.trim();
     }
 
-    let token: string | null = null;
-    try {
-      token = await requestAuthToken({ userId, ...privyBody });
-    } catch {
-      // Invalid or stale Privy tokens make the backend 400/500 — userId-only still works.
-      if (Object.keys(privyBody).length > 0) {
-        token = await requestAuthToken({ userId }).catch(() => null);
-      }
-    }
+    // A user id by itself is not proof of identity.
+    if (Object.keys(privyBody).length === 0) return null;
+    const token = await requestAuthToken(privyBody).catch(() => null);
 
     if (token) {
       localStorage.setItem(TOKEN_KEY, token);
