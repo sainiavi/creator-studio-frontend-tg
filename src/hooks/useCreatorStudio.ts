@@ -365,6 +365,7 @@ export function useCreatorStudio() {
       //   phase: "failed",
       //   statusText: "Build was interrupted before the job started — please run it again.",
       // });
+      console.log("no job found or Build was interrupted before the job started — please run it again. ")
       return;
     }
     const token = ++generationRef.current;
