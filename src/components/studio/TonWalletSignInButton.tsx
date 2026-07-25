@@ -1,17 +1,14 @@
 import { useLogin, useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
 import { useCreateWallet } from "@privy-io/react-auth/extended-chains";
-import { Loader2, LogOut, Wallet } from "lucide-react";
+import { Loader2, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { getCurrentUsername } from "@/lib/identity";
 import { VITE_PRIVY_APP_ID } from "@/lib/privyConfig";
 import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { prefetchAuthToken } from "@/lib/api";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 import {
-  formatTonAddress,
   getTonWallet,
-  getTonWalletErrorMessage,
   toTonWallet,
   type TonWallet,
 } from "@/lib/tonWallet";
@@ -27,7 +24,7 @@ export function TonWalletSignInButton({
   responsive = false,
   className = "",
 }: TonWalletSignInButtonProps) {
-  const { ready, authenticated, login: loginModal, logout, user } = usePrivy();
+  const { ready, authenticated, login: loginModal, user } = usePrivy();
   const { login: loginWithTelegram, state: telegramState } = useLoginWithTelegram();
   const { createWallet } = useCreateWallet();
   const inTelegram = isTelegramMiniApp();
@@ -35,12 +32,7 @@ export function TonWalletSignInButton({
   const [createdTonWallet, setCreatedTonWallet] = useState<TonWallet | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [authStatus, setAuthStatus] = useState<"idle" | "openTelegram" | "error">("idle");
-  const [tonLoading, setTonLoading] = useState(false);
-  const [tonStatus, setTonStatus] = useState<"idle" | "copied" | "error">("idle");
-  const [tonErrorMessage, setTonErrorMessage] = useState("");
   const creatingTonRef = useRef(false);
-  const identity = getCurrentUsername();
-  const tonWallet = getTonWallet(user) ?? createdTonWallet;
 
   const ensureTonWallet = async (nextUser = user) => {
     if (!nextUser || getTonWallet(nextUser) || createdTonWallet || creatingTonRef.current) {
@@ -49,26 +41,17 @@ export function TonWalletSignInButton({
 
     try {
       creatingTonRef.current = true;
-      setTonLoading(true);
-      setTonStatus("idle");
-      setTonErrorMessage("");
       const { user: refreshedUser, wallet } = await createWallet({ chainType: "ton" });
       const nextWallet = toTonWallet(wallet) ?? getTonWallet(refreshedUser);
       setCreatedTonWallet(nextWallet);
       syncPrivyIdentity(refreshedUser);
       if (!nextWallet) {
-        const message = "Privy returned successfully, but no TON wallet was found on the user.";
-        setTonErrorMessage(message);
-        setTonStatus("error");
+        console.warn("[privy] TON wallet creation completed without returning a TON wallet.");
       }
     } catch (error) {
-      const message = getTonWalletErrorMessage(error);
       console.error("[privy] TON wallet creation failed", error);
-      setTonErrorMessage(message);
-      setTonStatus("error");
     } finally {
       creatingTonRef.current = false;
-      setTonLoading(false);
     }
   };
 
@@ -136,26 +119,6 @@ export function TonWalletSignInButton({
     signInWithTonWallet();
   };
 
-  const handleTonWallet = async () => {
-    if (!authenticated) {
-      signIn();
-      return;
-    }
-
-    if (tonWallet?.address) {
-      try {
-        await navigator.clipboard?.writeText(tonWallet.address);
-        setTonStatus("copied");
-      } catch {
-        setTonStatus("error");
-      }
-      window.setTimeout(() => setTonStatus("idle"), 1600);
-      return;
-    }
-
-    await ensureTonWallet(user);
-  };
-
   if (!VITE_PRIVY_APP_ID) {
     return null;
   }
@@ -169,61 +132,7 @@ export function TonWalletSignInButton({
   }
 
   if (authenticated) {
-    const label = tonWallet?.address
-      ? formatTonAddress(tonWallet.address)
-      : tonLoading
-        ? "Creating"
-        : "Create TON";
-    const mobileLabel = tonLoading ? "..." : tonStatus === "error" ? "!" : "TON";
-
-    return (
-      <div className={`inline-flex h-9 shrink-0 items-center gap-2 ${className}`}>
-        <button
-          type="button"
-          onClick={() => void handleTonWallet()}
-          disabled={tonLoading}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#38bdf8] text-white shadow-[0_0_16px_rgba(56,189,248,0.45)] transition hover:bg-[#0ea5e9] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 ${
-            compact && responsive ? "sm:w-auto sm:gap-2 sm:px-3" : compact ? "" : "w-auto gap-2 px-3"
-          }`}
-          title={
-            tonWallet?.address
-              ? `TON wallet ${tonWallet.address}. Click to copy.`
-              : tonErrorMessage
-                ? `TON wallet error: ${tonErrorMessage}`
-                : `Signed in as ${identity}. Click to create TON wallet.`
-          }
-        >
-          {tonLoading ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Wallet className="size-4 stroke-[1.75]" />
-          )}
-          {!compact && (
-            <>
-              <span className={responsive ? "inline sm:hidden" : "hidden"}>{mobileLabel}</span>
-              <span className={`${responsive ? "hidden sm:inline" : ""} max-w-28 truncate text-xs font-black uppercase`}>
-                {tonStatus === "copied" ? "Copied" : tonStatus === "error" ? "Try again" : label}
-              </span>
-            </>
-          )}
-          {compact && responsive && (
-            <span className="hidden max-w-28 truncate text-xs font-black uppercase sm:inline">
-              {tonStatus === "copied" ? "Copied" : tonStatus === "error" ? "Try again" : label}
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => void logout()}
-          className={`inline-flex size-9 items-center justify-center rounded-full border border-white/18 bg-[#1b1d27] text-white/75 transition hover:bg-[#252833] hover:text-white ${
-            compact && responsive ? "hidden sm:inline-flex" : ""
-          }`}
-          title="Disconnect"
-        >
-          <LogOut className="size-3.5 stroke-[1.75]" />
-        </button>
-      </div>
-    );
+    return null;
   }
 
   const loading = authLoading || telegramLoading;

@@ -524,6 +524,7 @@ function PlayFeed() {
     if (sessionStorage.getItem(key)) return;
 
     const uid = getCurrentUserId();
+    if (!uid) return;
     const sessionId = `${gameId}:${uid}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
     const timer = window.setTimeout(() => {
       const durationSeconds = Math.floor((Date.now() - playStartedAt.current) / 1000);
@@ -570,9 +571,11 @@ function PlayFeed() {
 
   const handleScoreSubmit = useCallback(
     async (score: number) => {
+      const userId = getCurrentUserId();
+      if (!userId) return;
       await submitScore(score).catch(() => {});
       const durationSeconds = Math.floor((Date.now() - playStartedAt.current) / 1000);
-      const qualificationKey = `kult-referral-qualified-${getCurrentUserId()}`;
+      const qualificationKey = `kult-referral-qualified-${userId}`;
       if (durationSeconds > 30 && !localStorage.getItem(qualificationKey)) {
         const result = await qualifyReferral(gameId, durationSeconds).catch(() => null);
         if (result?.qualified || result?.status === "held") {
@@ -751,6 +754,8 @@ function PlayFeed() {
     if (trendingIds.includes(gameId)) return "Trending";
     return "For You";
   });
+  const [reelBatchSize, setReelBatchSize] = useState(10);
+  const [endOfFeedOpen, setEndOfFeedOpen] = useState(false);
 
   useEffect(() => {
     const currentList = getTabGameList(activeTab);
@@ -762,17 +767,49 @@ function PlayFeed() {
     }
   }, [gameId, activeTab, getTabGameList, newCreationsIds, friendsIds, trendingIds]);
 
-  const activeGamesList = useMemo(() => {
+  const allGamesForActiveTab = useMemo(() => {
     const list = getTabGameList(activeTab) as any[];
     if (template && !list.some((t) => t?.id === gameId)) {
       return [template, ...list];
     }
     return list;
   }, [activeTab, getTabGameList, gameId, template]);
+  const activeGamesList = useMemo(
+    () => allGamesForActiveTab.slice(0, reelBatchSize),
+    [allGamesForActiveTab, reelBatchSize],
+  );
+
+  useEffect(() => {
+    setReelBatchSize(10);
+    setEndOfFeedOpen(false);
+  }, [activeTab]);
+
+  useEffect(() => {
+    const currentIndex = activeGamesList.findIndex((candidate: any) => candidate?.id === gameId);
+    if (currentIndex < 0 || currentIndex < activeGamesList.length - 3) return;
+    if (activeGamesList.length >= allGamesForActiveTab.length) return;
+    setReelBatchSize((count) => Math.min(count + 10, allGamesForActiveTab.length));
+  }, [activeGamesList, allGamesForActiveTab.length, gameId]);
+
+  useEffect(() => {
+    const currentIndex = activeGamesList.findIndex((candidate: any) => candidate?.id === gameId);
+    if (currentIndex < 0) return;
+    const upcoming = activeGamesList.slice(currentIndex + 1, currentIndex + 7);
+    upcoming
+      .map((candidate: any) => getThumbnailUrl(String(candidate?.id)) || resolveGameThumbnail(candidate))
+      .filter(Boolean)
+      .forEach((src) => {
+        const image = new Image();
+        image.decoding = "async";
+        image.src = String(src);
+      });
+  }, [activeGamesList, gameId]);
 
   const handleTabClick = useCallback(
     (tabLabel: string, defaultGameId: string) => {
       setActiveTab(tabLabel);
+      setReelBatchSize(10);
+      setEndOfFeedOpen(false);
       navigate({
         to: "/play/$gameId",
         params: { gameId: defaultGameId },
@@ -787,9 +824,17 @@ function PlayFeed() {
     if (cooldownRef.current || activeGamesList.length === 0 || isTransitioning) return;
     const indexInList = activeGamesList.findIndex((t: any) => t.id === gameId);
     const currentIndex = indexInList === -1 ? 0 : indexInList;
-    const nextIndex = (currentIndex + 1) % activeGamesList.length;
+    const nextIndex = currentIndex + 1;
     const nextGame = activeGamesList[nextIndex];
-    if (!nextGame || nextGame.id === gameId) return;
+    if (!nextGame) {
+      if (activeGamesList.length < allGamesForActiveTab.length) {
+        setReelBatchSize((count) => Math.min(count + 10, allGamesForActiveTab.length));
+      } else {
+        setEndOfFeedOpen(true);
+      }
+      return;
+    }
+    if (nextGame.id === gameId) return;
 
     cooldownRef.current = true;
     setIsTransitioning(true);
@@ -806,13 +851,20 @@ function PlayFeed() {
     transitionTimerRef.current = window.setTimeout(() => {
       navigateToReelGame(nextGame.id);
     }, delay);
-  }, [gameId, activeGamesList, isTransitioning, navigateToReelGame, slideDistance]);
+  }, [
+    gameId,
+    activeGamesList,
+    allGamesForActiveTab.length,
+    isTransitioning,
+    navigateToReelGame,
+    slideDistance,
+  ]);
 
   const triggerPrevGame = useCallback(() => {
     if (cooldownRef.current || activeGamesList.length === 0 || isTransitioning) return;
     const indexInList = activeGamesList.findIndex((t: any) => t.id === gameId);
     const currentIndex = indexInList === -1 ? 0 : indexInList;
-    const prevIndex = (currentIndex - 1 + activeGamesList.length) % activeGamesList.length;
+    const prevIndex = currentIndex - 1;
     const prevGame = activeGamesList[prevIndex];
     if (!prevGame || prevGame.id === gameId) return;
 
@@ -922,12 +974,9 @@ function PlayFeed() {
     return index === -1 ? 0 : index;
   }, [activeGamesList, gameId]);
 
-  const prevReelGame = activeGamesList.length
-    ? activeGamesList[(activeIndex - 1 + activeGamesList.length) % activeGamesList.length]
-    : null;
-  const nextReelGame = activeGamesList.length
-    ? activeGamesList[(activeIndex + 1) % activeGamesList.length]
-    : null;
+  const prevReelGame = activeIndex > 0 ? activeGamesList[activeIndex - 1] : null;
+  const nextReelGame =
+    activeIndex < activeGamesList.length - 1 ? activeGamesList[activeIndex + 1] : null;
 
   const reelHandlersRef = useRef({
     handleDragStart,
@@ -1123,7 +1172,7 @@ function PlayFeed() {
         }}
         onMouseUp={handleDragEnd}
         onMouseLeave={handleDragEnd}
-        className="absolute inset-0 h-full w-full select-none"
+        className="absolute inset-x-0 top-0 bottom-[calc(66px+env(safe-area-inset-bottom))] w-full select-none lg:bottom-0"
       >
         {/* Adjacent reel peeks — continuous swipe feel */}
         {nextReelGame && dragY < -4 && (
@@ -1196,18 +1245,68 @@ function PlayFeed() {
                 )}
               </div>
 
-              {/* Play Button Overlay (Mobile/Tablet only) */}
+              {/* Poster-first play state: the game stays paused until the user
+                  explicitly taps Play, matching a video/reel cover. */}
               {!isGameActive && (
-                <div 
-                  className="absolute inset-0 z-20 flex lg:hidden items-center justify-center bg-black/20"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsGameActive(true);
-                  }}
-                >
-                  <div className="grid size-20 place-items-center rounded-full bg-white/20 text-white shadow-xl backdrop-blur-md transition-transform active:scale-95 border border-white/30">
-                    <Play size={40} className="ml-2 fill-current" />
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center overflow-hidden bg-[#070213]/90 px-6 pb-24 lg:hidden">
+                  {(game?.thumbnailUrl || getThumbnailUrl(String(template?.id ?? gameId))) && (
+                    <img
+                      src={game?.thumbnailUrl || getThumbnailUrl(String(template?.id ?? gameId))}
+                      alt=""
+                      className="absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-xl"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(5,1,18,0.3)_48%,rgba(5,1,18,0.88)_100%)]" />
+                  <div className="relative z-10 w-[min(62vw,270px)] overflow-hidden rounded-[24px] border border-white/15 bg-[#13072b] shadow-[0_22px_55px_rgba(0,0,0,0.55)]">
+                    <div className="relative aspect-[3/4]">
+                      {game?.thumbnailUrl || getThumbnailUrl(String(template?.id ?? gameId)) ? (
+                        <>
+                          <img
+                            src={
+                              game?.thumbnailUrl ||
+                              getThumbnailUrl(String(template?.id ?? gameId))
+                            }
+                            alt=""
+                            aria-hidden="true"
+                            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-lg"
+                          />
+                          <img
+                            src={
+                              game?.thumbnailUrl ||
+                              getThumbnailUrl(String(template?.id ?? gameId))
+                            }
+                            alt={`${game.title} cover`}
+                            className="relative h-full w-full object-contain"
+                          />
+                        </>
+                      ) : (
+                        <div
+                          className={`grid h-full w-full place-items-center bg-gradient-to-br ${gradientClass[gradientForId(String(template?.id ?? gameId))]} text-7xl`}
+                        >
+                          {templateEmoji[String(template?.id ?? gameId)] ?? "🎮"}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
+                      <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/70 px-3 py-1.5 text-xs font-black text-white backdrop-blur-md">
+                        <Play className="size-3.5 fill-current" />
+                        {game.plays || "Play"}
+                      </span>
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setIsGameActive(true);
+                    }}
+                    className="relative z-10 mt-5 flex w-[min(62vw,270px)] items-center justify-center gap-3 rounded-full bg-white px-6 py-3.5 font-display text-lg font-black text-[#0b0318] shadow-[0_12px_32px_rgba(0,0,0,0.4)] transition active:scale-[0.97]"
+                  >
+                    <Play className="size-5 fill-current" />
+                    Play
+                  </button>
+                  <p className="relative z-10 mt-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">
+                    Swipe the sides for another game
+                  </p>
                 </div>
               )}
               {/* Desktop Creator Bar (Bottom of Game Frame) */}
@@ -1250,78 +1349,84 @@ function PlayFeed() {
           </div>
         </div>
         </div>
+        {/* Iframe touches cannot bubble to the parent reel. Wide edge zones keep
+            next/previous navigation available without blocking game controls. */}
+        <div
+          aria-label="Swipe up or down to change game"
+          className="absolute bottom-28 left-0 top-24 z-30 flex w-11 touch-none items-center justify-start pl-1.5 lg:hidden"
+        >
+          <span className="h-16 w-1 rounded-full bg-white/25 shadow-[0_0_10px_rgba(255,255,255,0.25)]" />
+        </div>
+        <div
+          aria-label="Swipe up or down to change game"
+          className="absolute bottom-28 right-0 top-24 z-30 flex w-11 touch-none items-center justify-end pr-1.5 lg:hidden"
+        >
+          <span className="flex h-20 w-5 flex-col items-center justify-between rounded-full border border-white/15 bg-black/35 py-2 text-[10px] text-white/65 shadow-[0_0_12px_rgba(0,0,0,0.35)] backdrop-blur">
+            <ArrowUp className="size-3" />
+            <span className="h-5 w-1 rounded-full bg-white/55" />
+            <ArrowDown className="size-3" />
+          </span>
+        </div>
       </main>
 
-      {/* Mobile reel actions — stacked up from bottom-right */}
+      {/* Minimal reel footer: creator identity plus lightweight inline actions. */}
       <aside
-        data-reel-actions
-        className={`absolute bottom-[max(4.25rem,calc(env(safe-area-inset-bottom)+3.25rem))] right-2 z-40 flex flex-col-reverse items-center gap-2.5 lg:hidden [@media(max-height:480px)]:bottom-10 [@media(max-height:480px)]:gap-1 transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        className={`absolute inset-x-0 bottom-0 z-40 flex h-[calc(66px+env(safe-area-inset-bottom))] items-center border-t border-white/10 bg-[linear-gradient(180deg,rgba(7,2,19,0.72),rgba(7,2,19,0.98))] px-3 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_32px_rgba(0,0,0,0.38)] backdrop-blur-xl lg:hidden transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
       >
-        <ActionButton
-          icon={<MoreVertical className="size-5" />}
-          label="More"
-          onClick={() => setDetailsModalOpen(true)}
-        />
-        <ActionButton
-          icon={<Trophy className="size-5" />}
-          label="Ranks"
-          onClick={() => setLeaderboardOpen(true)}
-          active={leaderboardOpen}
-        />
-        <ShareButton
-          count={social.shareCount}
-          open={social.shareMenuOpen}
-          onToggle={() => social.setShareMenuOpen(!social.shareMenuOpen)}
-          onShare={social.handleShare}
-          template={template}
-          game={game}
-          gameId={gameId}
-          disabled={!isShareable}
-        />
-        <FavoriteButton
-          favorited={social.favorited}
-          count={social.favoriteCount}
-          onToggle={social.handleFavorite}
-          animating={social.favoriteAnimating}
-        />
-        <ActionButton
-          icon={<MessageCircle className="size-5" />}
-          label={social.commentCount > 0 ? formatCount(social.commentCount) : "0"}
-          onClick={() => social.setCommentsOpen(!social.commentsOpen)}
-          active={social.commentsOpen}
-        />
-        <LikeButton
-          liked={social.liked}
-          count={social.likeCount}
-          onToggle={social.handleLike}
-          animating={social.likeAnimating}
-        />
-        <div className="relative mb-0.5">
-          <div className="grid size-10 place-items-center rounded-full border border-white/25 bg-white/10 font-display text-sm font-black shadow-lg backdrop-blur-md [@media(max-height:480px)]:size-8">
-            {profile.avatar}
-          </div>
-          {!follow.isSelf && (
-            <button
-              type="button"
-              onClick={() => setIsFollowing(!isFollowing)}
-              className="absolute -bottom-1 left-1/2 grid size-5 -translate-x-1/2 place-items-center rounded-full bg-[#a855f7] text-white shadow-md"
-              aria-label={isFollowing ? "Unfollow" : "Follow"}
-            >
-              {isFollowing ? <Check size={11} strokeWidth={3} /> : <Plus size={11} strokeWidth={3} />}
-            </button>
-          )}
+        <button
+          type="button"
+          onClick={() => setIsFollowing(!isFollowing)}
+          disabled={follow.isSelf}
+          className="mr-2 flex min-w-0 max-w-[112px] shrink items-center gap-2 text-left disabled:cursor-default"
+        >
+          <span className="relative shrink-0">
+            <span className="grid size-9 place-items-center rounded-full border border-white/25 bg-violet-900 font-display text-xs font-black text-white">
+              {profile.avatar}
+            </span>
+            {!follow.isSelf && (
+              <span className="absolute -bottom-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-white text-[11px] font-black text-[#120428]">
+                {isFollowing ? "✓" : "+"}
+              </span>
+            )}
+          </span>
+          <span className="min-w-0 truncate text-[11px] font-black text-white">{profile.name}</span>
+        </button>
+        <div className="flex min-w-0 flex-1 items-center justify-around gap-1">
+          <LikeButton
+            liked={social.liked}
+            count={social.likeCount}
+            onToggle={social.handleLike}
+            animating={social.likeAnimating}
+          />
+          <ActionButton
+            icon={<MessageCircle className="size-5" />}
+            label={social.commentCount > 0 ? formatCount(social.commentCount) : "0"}
+            onClick={() => social.setCommentsOpen(!social.commentsOpen)}
+            active={social.commentsOpen}
+          />
+          <FavoriteButton
+            favorited={social.favorited}
+            count={social.favoriteCount}
+            onToggle={social.handleFavorite}
+            animating={social.favoriteAnimating}
+          />
+          <ShareButton
+            count={social.shareCount}
+            open={social.shareMenuOpen}
+            onToggle={() => social.setShareMenuOpen(!social.shareMenuOpen)}
+            onShare={social.handleShare}
+            template={template}
+            game={game}
+            gameId={gameId}
+            disabled={!isShareable}
+          />
+          <ActionButton
+            icon={<MoreVertical className="size-5" />}
+            label=""
+            onClick={() => setDetailsModalOpen(true)}
+          />
         </div>
       </aside>
-
-      {/* Mobile creator strip (bottom-left, reel style) */}
-      <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-3 right-20 z-40 lg:hidden">
-        <div className="max-w-[70%]">
-          <p className="truncate text-sm font-black text-white drop-shadow">{game.title}</p>
-          <p className="mt-0.5 truncate text-xs font-semibold text-white/70">
-            {profile.name} · {game.category}
-          </p>
-        </div>
-      </div>
 
       {/* Details Modal */}
       <DetailsModal
@@ -1335,6 +1440,34 @@ function PlayFeed() {
         isFollowing={isFollowing}
         setIsFollowing={setIsFollowing}
       />
+
+      {endOfFeedOpen && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/75 px-5 backdrop-blur-sm">
+          <section className="w-full max-w-sm rounded-[1.75rem] border border-fuchsia-300/35 bg-[linear-gradient(145deg,#24084d,#100222)] p-6 text-center shadow-[0_18px_60px_rgba(168,85,247,0.35)]">
+            <Gamepad2 className="mx-auto size-11 text-fuchsia-300" />
+            <h2 className="mt-4 font-display text-2xl font-black text-white">
+              You reached the end
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-violet-200">
+              Turn your own idea into the next playable world.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/create" })}
+              className="mt-5 w-full rounded-xl bg-[linear-gradient(90deg,#ec4899,#7c3aed)] px-4 py-3 text-sm font-black text-white shadow-[0_8px_22px_rgba(168,85,247,0.4)]"
+            >
+              Create your game
+            </button>
+            <button
+              type="button"
+              onClick={() => setEndOfFeedOpen(false)}
+              className="mt-3 text-xs font-bold text-violet-300"
+            >
+              Keep playing this game
+            </button>
+          </section>
+        </div>
+      )}
 
       {/* Comments Panel */}
       <CommentsPanel
@@ -1390,16 +1523,22 @@ function ActionButton({
   return (
     <button
       onClick={onClick}
-      className={`group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 lg:min-w-12 ${active ? "text-white/100" : ""}`}
+      className={`group flex min-w-9 flex-col items-center gap-1 text-white transition-transform active:scale-90 lg:min-w-12 lg:gap-1.5 ${active ? "text-white/100" : ""}`}
     >
       <span
-        className={`grid size-11 place-items-center rounded-full transition lg:size-10 [@media(max-height:480px)]:size-8 ${
-          active ? "bg-white/25 ring-1 ring-white/30" : "bg-white/10 group-hover:bg-white/18"
+        className={`grid size-7 place-items-center rounded-full border border-transparent bg-transparent transition lg:size-10 ${
+          active
+            ? "text-violet-300 lg:border-violet-300/70 lg:bg-violet-500/35 lg:text-violet-100 lg:shadow-[0_0_16px_rgba(139,92,246,0.35)]"
+            : "text-white lg:border-white/10 lg:bg-white/10"
         }`}
       >
-        <div className="scale-75">{icon}</div>
+        <div className="scale-[0.82]">{icon}</div>
       </span>
-      <span className="text-[10px] font-black lg:text-[10px] [@media(max-height:480px)]:hidden">{label}</span>
+      {label ? (
+        <span className="max-w-full truncate text-[9px] font-extrabold leading-none text-white/90 lg:text-[10px]">
+          {label}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -1472,11 +1611,13 @@ function LikeButton({
   return (
     <button
       onClick={onToggle}
-      className="group flex min-w-12 flex-col items-center gap-1.5 transition-transform active:scale-90 lg:min-w-12"
+      className="group flex min-w-9 flex-col items-center gap-1 transition-transform active:scale-90 lg:min-w-12 lg:gap-1.5"
     >
       <span
-        className={`grid size-11 place-items-center rounded-full transition lg:size-10 [@media(max-height:480px)]:size-8 ${
-          liked ? "bg-rose-500/30 ring-1 ring-rose-400/50" : "bg-white/10 group-hover:bg-white/18"
+        className={`grid size-7 place-items-center rounded-full border border-transparent bg-transparent transition lg:size-10 ${
+          liked
+            ? "text-rose-400 lg:border-rose-400/65 lg:bg-rose-500/30 lg:shadow-[0_0_16px_rgba(244,63,94,0.28)]"
+            : "text-white lg:border-white/10 lg:bg-white/10"
         }`}
       >
         <Heart
@@ -1486,7 +1627,7 @@ function LikeButton({
         />
       </span>
       <span
-        className={`text-[10px] font-black lg:text-[10px] [@media(max-height:480px)]:hidden ${liked ? "text-rose-400" : "text-white"}`}
+        className={`max-w-full truncate text-[9px] font-extrabold leading-none lg:text-[10px] ${liked ? "text-rose-400" : "text-white/90"}`}
       >
         {count > 0 ? formatCount(count) : "Like"}
       </span>
@@ -1508,13 +1649,13 @@ function FavoriteButton({
   return (
     <button
       onClick={onToggle}
-      className="group flex min-w-12 flex-col items-center gap-1.5 transition-transform active:scale-90 lg:min-w-12"
+      className="group flex min-w-9 flex-col items-center gap-1 transition-transform active:scale-90 lg:min-w-12 lg:gap-1.5"
     >
       <span
-        className={`grid size-11 place-items-center rounded-full transition lg:size-10 [@media(max-height:480px)]:size-8 ${
+        className={`grid size-7 place-items-center rounded-full border border-transparent bg-transparent transition lg:size-10 ${
           favorited
-            ? "bg-amber-500/30 ring-1 ring-amber-400/50"
-            : "bg-white/10 group-hover:bg-white/18"
+            ? "text-amber-400 lg:border-amber-400/65 lg:bg-amber-500/30 lg:shadow-[0_0_16px_rgba(245,158,11,0.25)]"
+            : "text-white lg:border-white/10 lg:bg-white/10"
         }`}
       >
         {favorited ? (
@@ -1526,7 +1667,7 @@ function FavoriteButton({
         )}
       </span>
       <span
-        className={`text-[10px] font-black lg:text-[10px] [@media(max-height:480px)]:hidden ${favorited ? "text-amber-400" : "text-white"}`}
+        className={`max-w-full truncate text-[9px] font-extrabold leading-none lg:text-[10px] ${favorited ? "text-amber-400" : "text-white/90"}`}
       >
         {count > 0 ? formatCount(count) : "Favorite"}
       </span>
@@ -1798,16 +1939,18 @@ function ShareButton({
         disabled={disabled}
         title={disabled ? "Publish this game before sharing it" : "Share game"}
         data-testid="share-button"
-        className="group flex min-w-12 flex-col items-center gap-1.5 text-white transition-transform active:scale-90 disabled:cursor-not-allowed disabled:opacity-35 lg:min-w-12"
+        className="group flex min-w-9 flex-col items-center gap-1 text-white transition-transform active:scale-90 disabled:cursor-not-allowed disabled:opacity-35 lg:min-w-12 lg:gap-1.5"
       >
         <span
-          className={`grid size-11 place-items-center rounded-full transition lg:size-10 [@media(max-height:480px)]:size-8 ${
-            open ? "bg-white/25 ring-1 ring-white/30" : "bg-white/10 group-hover:bg-white/18"
+          className={`grid size-7 place-items-center rounded-full border border-transparent bg-transparent transition lg:size-10 ${
+            open
+              ? "text-sky-300 lg:border-sky-300/70 lg:bg-sky-500/30 lg:text-sky-100 lg:shadow-[0_0_16px_rgba(56,189,248,0.28)]"
+              : "text-white lg:border-white/10 lg:bg-white/10 lg:group-hover:bg-white/15"
           }`}
         >
           <Send className="size-5" />
         </span>
-        <span className="text-[10px] font-black lg:text-[10px] [@media(max-height:480px)]:hidden">
+        <span className="max-w-full truncate text-[9px] font-extrabold leading-none text-white/90 lg:text-[10px]">
           {count > 0 ? formatCount(count) : "Share"}
         </span>
       </button>

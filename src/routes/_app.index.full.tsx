@@ -55,6 +55,7 @@ import categoryMultiplayerIcon from "@/assets/categoryMultiplayer.png";
 import categoryRPGIcon from "@/assets/categoryRPG.png";
 import categoryStrategyIcon from "@/assets/categoryStrategy.webp";
 import categoryMoreIcon from "@/assets/categoryMore.png";
+import defaultCreatorAvatar from "@/assets/navProfile.webp";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
 import {
@@ -307,14 +308,19 @@ export function Home() {
 
   useEffect(() => {
     const userId = getCurrentUserId();
+    fetchRecentActivities(50)
+      .then((items) => setActivities(items))
+      .catch(() => setActivities([]));
+    if (!userId) {
+      setCreatorStats(null);
+      setNotifications([]);
+      return;
+    }
     fetchCreatorStats(userId)
       .then(setCreatorStats)
       .catch(() => {
         setCreatorStats(null);
       });
-    fetchRecentActivities(50)
-      .then((items) => setActivities(items))
-      .catch(() => setActivities([]));
     const refreshNotifications = () => {
       fetchNotifications(userId)
         .then((data) => setNotifications(data.notifications))
@@ -330,6 +336,10 @@ export function Home() {
   const openNotifications = async () => {
     setNotificationsOpen(true);
     const userId = getCurrentUserId();
+    if (!userId) {
+      setNotifications([]);
+      return;
+    }
     const data = await fetchNotifications(userId).catch(() => null);
     if (data) setNotifications(data.notifications);
     await markNotificationsRead(userId).catch(() => null);
@@ -379,7 +389,9 @@ export function Home() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
   useEffect(() => {
-    fetchPointSummary(getCurrentUserId())
+    const userId = getCurrentUserId();
+    if (!userId) return;
+    fetchPointSummary(userId)
       .then((summary) => {
         setKultPoints(summary.kultPoints ?? summary.lifetimePoints ?? 0);
         setKpLevel(summary.level?.level ?? 1);
@@ -488,6 +500,16 @@ export function Home() {
   const realGames = useMemo(
     () => uniqueGames(communityGames.map(withHomeCategory)),
     [communityGames],
+  );
+  const homeRowCategories = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...browseCategories.map((category) => category.name),
+          ...realGames.map((game) => game.category).filter(Boolean),
+        ]),
+      ),
+    [realGames],
   );
 
   const shelves = useMemo(() => {
@@ -761,10 +783,10 @@ export function Home() {
         </DialogContent>
       </Dialog>
 
-      <div className="relative z-10 grid gap-3 px-3 pb-[calc(7.5rem+env(safe-area-inset-bottom))] pt-3 min-[1190px]:pb-6 min-[1190px]:pt-0 xl:grid-cols-[minmax(0,1fr)_310px]">
+      <div className="relative z-10 grid gap-3 px-3 pb-[calc(7.5rem+env(safe-area-inset-bottom))] pt-1 min-[1190px]:pb-6 min-[1190px]:pt-0 xl:grid-cols-[minmax(0,1fr)_310px]">
         <main className="min-w-0 space-y-3">
           <section className="min-[1190px]:hidden">
-            <div className="mx-auto w-full max-w-2xl space-y-7 px-1 min-[480px]:max-w-[920px] min-[480px]:px-3">
+            <div className="mx-auto w-full max-w-2xl space-y-3 px-1 min-[480px]:max-w-[920px] min-[480px]:px-3">
               {searchQuery.trim() ? (
                 isSearching && (visibleShelves[0]?.games.length ?? 0) === 0 ? (
                   <GamesFeedSkeleton />
@@ -775,134 +797,22 @@ export function Home() {
                     emptyText={`No games match "${searchQuery}".`}
                   />
                 )
-              ) : (
+              ) : null}
+
+              {!searchQuery.trim() && (
                 <>
-                  <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <div className="flex min-w-max items-center gap-6 border-b border-violet-700/25">
-                      {homeFeedTabs.map((tab) => {
-                        const selected = mobileFeedTab === tab;
-                        return (
-                          <button
-                            key={tab}
-                            type="button"
-                            onClick={() => setMobileFeedTab(tab)}
-                            aria-pressed={selected}
-                            className={`relative shrink-0 rounded-none border-0 bg-transparent px-0 pb-3 pt-1 text-sm font-bold shadow-none transition active:scale-95 ${
-                              selected ? "text-violet-950" : "text-violet-800/70"
-                            }`}
-                          >
-                            {tab}
-                            {selected && (
-                              <span className="absolute inset-x-0 -bottom-px h-[3px] bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.65)]" />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <CategoryGameRows
+                    categories={homeRowCategories}
+                    onOpen={openGame}
+                  />
+                  {topCreators.length > 0 && (
+                    <TopCreatorsRow
+                      creators={topCreators}
+                      onViewAll={() => navigate({ to: "/leaderboard" })}
+                    />
+                  )}
                 </>
               )}
-
-              {!searchQuery.trim() &&
-                (gamesLoading ? (
-                  <GamesFeedSkeleton />
-                ) : !hasAnyGames ? (
-                  <p className="py-12 text-center text-sm font-semibold text-violet-700">
-                    {gamesEmptyMessage}
-                  </p>
-                ) : mobileFeedTab === "For You" ? (
-                  <>
-                    <MobileShelf
-                      title="🔥 Trending Now"
-                      games={trendingNow}
-                      cardSize="featured"
-                      onViewAll={() => setMobileFeedTab("Trending")}
-                      onOpen={openGame}
-                      emptyText={gamesEmptyMessage}
-                    />
-
-                    <MobileShelf
-                      title="✨ New Releases"
-                      games={newReleases}
-                      cardSize="standard"
-                      onViewAll={() => setMobileFeedTab("New")}
-                      onOpen={openGame}
-                      emptyText={gamesEmptyMessage}
-                    />
-
-                    <section>
-                      <div className="mb-3 flex items-center justify-between gap-3">
-                        <h2 className="font-display text-2xl font-black tracking-tight text-violet-950">
-                          Browse by Category
-                        </h2>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2.5 pb-2 min-[1024px]:grid-cols-8 min-[1024px]:gap-2">
-                        {browseTiles.map((category) => {
-                          const Icon = category.icon;
-                          return (
-                            <button
-                              key={category.name}
-                              type="button"
-                              onClick={() =>
-                                category.isMore
-                                  ? setShowAllBrowseCategories(true)
-                                  : setMobileFeedTab(category.name)
-                              }
-                              aria-expanded={category.isMore ? false : undefined}
-                              className="group relative flex aspect-[1.05] min-w-0 w-full flex-col items-center justify-center gap-2 rounded-[17px] border border-white bg-[#160b2e] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition active:scale-[0.97] hover:bg-[#1d0f42]"
-                            >
-                              {category.image ? (
-                                <span
-                                  className={`relative grid place-items-center transition duration-300 group-hover:scale-105 group-active:scale-95 ${
-                                    ["Adventure", "RPG", "Multiplayer"].includes(category.name)
-                                      ? "size-[72px] -my-2 min-[1024px]:my-0 min-[1024px]:size-[58px]"
-                                      : "size-14 -my-1 min-[1024px]:my-0 min-[1024px]:size-12"
-                                  }`}
-                                >
-                                  <img
-                                    src={category.image}
-                                    alt=""
-                                    className="h-full w-full object-contain"
-                                    draggable={false}
-                                  />
-                                </span>
-                              ) : (
-                                <span
-                                  className={`relative grid size-12 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br ${category.gradient} shadow-[0_6px_14px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.5)] transition duration-300 group-hover:scale-105 group-active:scale-95 ${category.glow}`}
-                                >
-                                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/0 to-black/15" />
-                                  <span className="pointer-events-none absolute -left-2 -top-3 size-7 rounded-full bg-white/50 blur-md" />
-                                  <Icon className="relative size-6 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
-                                </span>
-                              )}
-                              <span
-                                className={`text-[12px] font-bold leading-none min-[1024px]:text-[10px] ${category.iconColor}`}
-                              >
-                                {category.name}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </section>
-
-                    {topCreators.length > 0 && (
-                      <TopCreatorsRow
-                        creators={topCreators}
-                        onViewAll={() => navigate({ to: "/leaderboard" })}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <FeedGrid
-                    games={feedTabGames}
-                    onOpen={openGame}
-                    emptyText={`No ${mobileFeedTab} games found.`}
-                    onLoadMore={loadMoreGames}
-                    hasMore={hasMoreGames}
-                    loadingMore={loadingMoreGames}
-                  />
-                ))}
             </div>
           </section>
 
@@ -1314,6 +1224,262 @@ function GamesFeedSkeleton() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+const HOME_CATEGORY_PAGE_SIZE = 6;
+
+function compactCreatorName(value: string | undefined) {
+  const name = value?.trim() || "Player";
+  return name.length > 10 ? `${name.slice(0, 5)}…${name.slice(-5)}` : name;
+}
+
+type CategoryRowVariant = "portrait" | "square" | "wide" | "slim";
+
+const categoryRowLayout: Record<
+  CategoryRowVariant,
+  { width: string; aspect: string }
+> = {
+  portrait: {
+    width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
+    aspect: "aspect-[3/4]",
+  },
+  square: {
+    width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
+    aspect: "aspect-square",
+  },
+  wide: {
+    width: "w-[64%] min-[480px]:w-[38%] min-[760px]:w-[24%]",
+    aspect: "aspect-[4/3]",
+  },
+  slim: {
+    width: "w-[31.5%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
+    aspect: "aspect-[2/3]",
+  },
+};
+
+function CategoryMiniCard({
+  game,
+  onOpen,
+  variant,
+}: {
+  game: Game;
+  onOpen: () => void;
+  variant: CategoryRowVariant;
+}) {
+  const creator = compactCreatorName(game.creator);
+  const layout = categoryRowLayout[variant];
+  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+
+  useEffect(() => {
+    setThumbnailLoaded(false);
+    setThumbnailFailed(false);
+  }, [game.thumbnailUrl]);
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`group shrink-0 text-left ${layout.width}`}
+      title={game.creator}
+    >
+      <span
+        className={`relative block overflow-hidden rounded-[14px] border border-white bg-[#160b2e] shadow-[0_6px_16px_rgba(30,7,65,0.26)] ${layout.aspect}`}
+      >
+        {!thumbnailLoaded && (
+          <Skeleton className="absolute inset-0 h-full w-full rounded-none bg-violet-950/55" />
+        )}
+        {game.thumbnailUrl && !thumbnailFailed ? (
+          <>
+            <img
+              src={game.thumbnailUrl}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              draggable={false}
+              className={`absolute inset-0 h-full w-full scale-110 object-cover blur-lg transition-opacity ${
+                thumbnailLoaded ? "opacity-45" : "opacity-0"
+              }`}
+              onError={() => setThumbnailFailed(true)}
+            />
+            <img
+              src={game.thumbnailUrl}
+              alt=""
+              loading="lazy"
+              draggable={false}
+              className={`relative h-full w-full object-contain transition duration-300 group-active:scale-[0.98] ${
+                thumbnailLoaded ? "opacity-100" : "opacity-0"
+              }`}
+              onLoad={(event) => {
+                if (event.currentTarget.naturalWidth > 0) setThumbnailLoaded(true);
+              }}
+              onError={() => {
+                setThumbnailLoaded(false);
+                setThumbnailFailed(true);
+              }}
+            />
+          </>
+        ) : null}
+        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        {game.plays && game.plays !== "New" && (
+          <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur">
+            <Play className="size-2.5 fill-current" />
+            {game.plays}
+          </span>
+        )}
+      </span>
+      <span className="mt-1 flex min-w-0 items-center gap-1 px-0.5">
+        <img
+          src={defaultCreatorAvatar}
+          alt=""
+          className="size-[18px] shrink-0 rounded-full object-cover ring-1 ring-white"
+        />
+        <span className="min-w-0 truncate text-[10px] font-bold text-violet-950 min-[480px]:text-xs">
+          {creator}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function CategoryGameRow({
+  category,
+  onOpen,
+  variant,
+}: {
+  category: string;
+  onOpen: (game: Game) => void;
+  variant: CategoryRowVariant;
+}) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [games, setGames] = useState<Game[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  const loadPage = useCallback(
+    async (nextOffset: number, append: boolean) => {
+      const page = await fetchGamesPage(nextOffset, HOME_CATEGORY_PAGE_SIZE, category);
+      setGames((current) => uniqueGames(append ? [...current, ...page.games] : page.games));
+      setOffset(nextOffset + page.games.length);
+      setHasMore(page.hasMore && page.games.length > 0);
+    },
+    [category],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    void fetchGamesPage(0, HOME_CATEGORY_PAGE_SIZE, category)
+      .then((page) => {
+        if (cancelled) return;
+        setGames(uniqueGames(page.games));
+        setOffset(page.games.length);
+        setHasMore(page.hasMore && page.games.length > 0);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGames([]);
+          setHasMore(false);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [category]);
+
+  const loadMore = useCallback(() => {
+    if (!hasMore || loading || loadingMore) return;
+    setLoadingMore(true);
+    void loadPage(offset, true)
+      .catch(() => setHasMore(false))
+      .finally(() => setLoadingMore(false));
+  }, [hasMore, loadPage, loading, loadingMore, offset]);
+
+  const handleScroll = () => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const remaining = viewport.scrollWidth - viewport.scrollLeft - viewport.clientWidth;
+    if (remaining < viewport.clientWidth * 0.7) loadMore();
+  };
+
+  if (!loading && games.length === 0) return null;
+  const layout = categoryRowLayout[variant];
+
+  return (
+    <section>
+      <h2 className="mb-1 font-display text-lg font-black leading-none tracking-tight text-violet-950">
+        {category}
+      </h2>
+      <div
+        ref={viewportRef}
+        onScroll={handleScroll}
+        className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <div className="flex gap-1.5 min-[480px]:gap-2">
+          {loading
+            ? Array.from({ length: HOME_CATEGORY_PAGE_SIZE }).map((_, index) => (
+                <div
+                  key={index}
+                  className={`shrink-0 ${layout.width}`}
+                >
+                  <Skeleton className={`rounded-[14px] ${layout.aspect}`} />
+                  <Skeleton className="mt-1.5 h-3.5 w-4/5 rounded-full" />
+                </div>
+              ))
+            : games.map((game, index) => (
+                <CategoryMiniCard
+                  key={`${game.templateId ?? game.title}-${index}`}
+                  game={game}
+                  onOpen={() => onOpen(game)}
+                  variant={variant}
+                />
+              ))}
+          {loadingMore && (
+            <div className="grid w-16 shrink-0 place-items-center">
+              <Loader2 className="size-6 animate-spin text-fuchsia-500" />
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CategoryGameRows({
+  categories,
+  onOpen,
+}: {
+  categories: string[];
+  onOpen: (game: Game) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      {categories.map((category, index) => {
+        const position = index % 5;
+        const variant: CategoryRowVariant =
+          position === 0
+            ? "portrait"
+            : position === 1 || position === 2
+              ? "square"
+              : position === 3
+                ? "wide"
+                : "slim";
+        return (
+          <CategoryGameRow
+            key={category}
+            category={category}
+            onOpen={onOpen}
+            variant={variant}
+          />
+        );
+      })}
     </div>
   );
 }

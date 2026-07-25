@@ -42,6 +42,8 @@ import { api } from "@/lib/api";
 import { useGameTemplates } from "@/hooks/useGameTemplates";
 import { ActivityListSkeleton, ProfileSkeleton } from "@/components/studio/PageSkeletons";
 import { useStudioContext } from "@/context/StudioContext";
+import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   Copy,
   Gift,
@@ -69,7 +71,7 @@ import {
   X,
   Users,
 } from "lucide-react";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   fetchUserActivities,
   fetchUserFavorites,
@@ -282,6 +284,8 @@ type TimeFilter = "today" | "week" | "month" | "all";
 
 function Profile() {
   const navigate = useNavigate();
+  const { ready: authReady, authenticated, user, login } = usePrivy();
+  const loginAttemptedRef = useRef(false);
   const { createdGames } = useStudioContext();
   const { gameTemplates } = useGameTemplates();
   const [activities, setActivities] = useState<UserActivity[]>([]);
@@ -309,6 +313,12 @@ function Profile() {
   const [draftDisplayName, setDraftDisplayName] = useState(displayName);
   const [editingDisplayName, setEditingDisplayName] = useState(false);
   const [identityCopied, setIdentityCopied] = useState(false);
+
+  useEffect(() => {
+    if (!authReady || authenticated || loginAttemptedRef.current) return;
+    loginAttemptedRef.current = true;
+    login({ loginMethods: [isTelegramMiniApp() ? "telegram" : "email"] });
+  }, [authReady, authenticated, login]);
 
   const getThumbnail = useCallback((id: string | undefined, fallbackUrl?: string) => {
     if (!id) return fallbackUrl;
@@ -391,6 +401,7 @@ function Profile() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
   useEffect(() => {
+    if (!authenticated || !user) return;
     const uid = getCurrentUserId();
 
     Promise.allSettled([
@@ -403,10 +414,11 @@ function Profile() {
         if (data && Array.isArray(data.likes)) setLikedIds(data.likes.map((l) => l.gameId));
       }),
     ]).finally(() => setActivitiesLoading(false));
-  }, []);
+  }, [authenticated, user]);
 
   // Resolve REAL records for every game referenced by likes/favorites/history.
   useEffect(() => {
+    if (!authenticated || !user) return;
     const referenced = new Set<string>([...likedIds, ...favoriteIds]);
     for (const act of activities) {
       if (act.gameId) referenced.add(act.gameId);
@@ -427,7 +439,7 @@ function Profile() {
         setGameInfo(map);
       })
       .catch(() => {});
-  }, [likedIds, favoriteIds, activities, createdGames, gameTemplates]);
+  }, [authenticated, user, likedIds, favoriteIds, activities, createdGames, gameTemplates]);
 
   useEffect(() => {
     setLikedGames(likedIds.map((id) => mapActivityToGame(id, "")));
@@ -501,6 +513,7 @@ function Profile() {
 
   const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
   useEffect(() => {
+    if (!authenticated || !user) return;
     const userId = getCurrentUserId();
     fetchCreatorStats(userId)
       .then(setCreatorStats)
@@ -523,7 +536,7 @@ function Profile() {
     fetchReferralSummary()
       .then(setReferral)
       .catch(() => {});
-  }, []);
+  }, [authenticated, user]);
 
   const formatStat = (value: number | undefined) => {
     const n = value ?? 0;
@@ -642,6 +655,38 @@ function Profile() {
     : 0;
   const featuredAchievements = (achievementSummary?.achievements ?? []).slice(0, 2);
 
+  if (!authReady) return <ProfileSkeleton />;
+
+  if (!authenticated || !user) {
+    return (
+      <div className="grid min-h-[calc(100vh-6rem)] place-items-center px-4 text-white">
+        <section className="w-full max-w-sm rounded-[1.75rem] border border-fuchsia-300/30 bg-[#16062f]/95 p-6 text-center shadow-[0_18px_50px_rgba(44,10,91,0.45)]">
+          <Lock className="mx-auto size-10 text-fuchsia-300" />
+          <h1 className="mt-4 font-display text-xl font-black">Sign in to view your profile</h1>
+          <p className="mt-2 text-sm text-violet-200">
+            Your games, rewards, points, and activity are private.
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              login({ loginMethods: [isTelegramMiniApp() ? "telegram" : "email"] })
+            }
+            className="mt-5 w-full rounded-xl bg-[linear-gradient(90deg,#d946ef,#7c3aed)] px-4 py-3 text-sm font-bold text-white shadow-[0_8px_22px_rgba(168,85,247,0.35)]"
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/" })}
+            className="mt-3 text-xs font-semibold text-violet-300"
+          >
+            Back to Discover
+          </button>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen sm:min-h-0">
       <div className="sticky top-0 z-50 hidden min-[1190px]:block">
@@ -741,12 +786,12 @@ function Profile() {
 
           <div className="grid grid-cols-2 gap-3">
             <section className="relative min-h-44 overflow-hidden rounded-[1.75rem] bg-[#170436] p-4 text-white shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
-              <p className="relative z-10 max-w-[42%] text-sm font-bold uppercase leading-tight text-amber-400">
+              <p className="relative z-10 max-w-[48%] text-[11px] font-bold uppercase leading-tight tracking-tight text-amber-400">
                 Creator
                 <br />
                 Score
               </p>
-              <p className="relative z-10 mt-2 text-5xl font-semibold text-amber-400">
+              <p className="relative z-10 mt-2 max-w-[68%] whitespace-nowrap text-[clamp(1.35rem,6vw,2.25rem)] font-semibold leading-none tracking-[-0.04em] tabular-nums text-amber-400">
                 {formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore)}
               </p>
               <img
@@ -756,12 +801,12 @@ function Profile() {
               />
             </section>
             <section className="relative min-h-44 overflow-hidden rounded-[1.75rem] bg-[#170436] p-4 text-white shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
-              <p className="relative z-10 text-sm font-bold uppercase leading-tight text-fuchsia-400">
+              <p className="relative z-10 text-[11px] font-bold uppercase leading-tight tracking-tight text-fuchsia-400">
                 Kult
                 <br />
                 Points (KP)
               </p>
-              <p className="relative z-10 mt-2 text-5xl font-semibold">
+              <p className="relative z-10 mt-2 max-w-[68%] whitespace-nowrap text-[clamp(1.35rem,6vw,2.25rem)] font-semibold leading-none tracking-[-0.04em] tabular-nums">
                 {formatKultPoints(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
               </p>
               <div className="absolute bottom-3 left-4 z-10 w-[30%] text-xs">
@@ -1007,10 +1052,10 @@ function Profile() {
           <section className="relative overflow-hidden rounded-[1.35rem] border-2 border-yellow-200/90 bg-[linear-gradient(145deg,#2b170c,#140705)] px-4 py-4 shadow-[0_0_24px_rgba(250,204,21,0.4),inset_0_1px_14px_rgba(255,255,255,0.12)]">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-display text-[11px] font-black tracking-[0.18em] text-yellow-200">
+                <p className="font-display text-[10px] font-black tracking-[0.14em] text-yellow-200">
                   CREATOR SCORE
                 </p>
-                <p className="mt-1 font-display text-4xl font-black leading-none tabular-nums text-yellow-300">
+                <p className="mt-1 whitespace-nowrap font-display text-[clamp(1.35rem,6vw,2rem)] font-black leading-none tracking-tight tabular-nums text-yellow-300">
                   {formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore)}
                 </p>
               </div>
@@ -1021,10 +1066,10 @@ function Profile() {
           <section className="relative overflow-hidden rounded-[1.35rem] border-2 border-fuchsia-200/90 bg-[linear-gradient(145deg,#1a0646,#0b0224)] px-4 py-4 shadow-[0_0_28px_rgba(217,70,239,0.55),inset_0_1px_14px_rgba(255,255,255,0.12)]">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-display text-[11px] font-black tracking-[0.18em] text-fuchsia-300">
+                <p className="font-display text-[10px] font-black tracking-[0.14em] text-fuchsia-300">
                   KULT POINTS (KP)
                 </p>
-                <p className="mt-1 font-display text-4xl font-black leading-none tabular-nums text-fuchsia-300">
+                <p className="mt-1 whitespace-nowrap font-display text-[clamp(1.35rem,6vw,2rem)] font-black leading-none tracking-tight tabular-nums text-fuchsia-300">
                   {formatKultPoints(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
                 </p>
                 <p className="mt-1.5 font-display text-xs font-black tracking-[0.2em] text-fuchsia-200/90">
@@ -1230,10 +1275,10 @@ function Profile() {
             <div className="overflow-hidden rounded-2xl border border-amber-300/25 bg-[linear-gradient(135deg,oklch(0.22_0.07_80/0.62),oklch(0.08_0.02_282/0.84))] px-5 py-4 shadow-[inset_0_0_24px_oklch(0.82_0.18_80/0.1),0_0_24px_oklch(0.82_0.18_80/0.08)]">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="label-mono text-[0.68rem] font-black leading-none text-amber-200">
+                  <p className="label-mono text-[0.6rem] font-black leading-none text-amber-200">
                     CREATOR SCORE
                   </p>
-                  <p className="mt-2 font-display text-4xl font-black leading-none text-amber-300">
+                  <p className="mt-2 whitespace-nowrap font-display text-[clamp(1.5rem,4vw,2.25rem)] font-black leading-none tracking-tight tabular-nums text-amber-300">
                     {formatStat(creatorStats?.lifetimeScore ?? creatorStats?.creatorScore)}
                   </p>
                 </div>
@@ -1245,10 +1290,10 @@ function Profile() {
             <div className="overflow-hidden rounded-2xl border border-primary/25 bg-[linear-gradient(135deg,oklch(0.22_0.08_315/0.54),oklch(0.08_0.02_282/0.88))] px-5 py-4 shadow-[inset_0_0_24px_oklch(0.7_0.24_295/0.1),0_0_24px_oklch(0.7_0.24_295/0.1)]">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="label-mono text-[0.68rem] font-black leading-none text-primary">
+                  <p className="label-mono text-[0.6rem] font-black leading-none text-primary">
                     KULT POINTS (KP)
                   </p>
-                  <p className="mt-2 font-display text-4xl font-black leading-none text-primary">
+                  <p className="mt-2 whitespace-nowrap font-display text-[clamp(1.5rem,4vw,2.25rem)] font-black leading-none tracking-tight tabular-nums text-primary">
                     {formatKultPoints(pointSummary?.kultPoints ?? pointSummary?.lifetimePoints)}
                   </p>
                   <p className="mt-1 label-mono text-[0.62rem] font-bold text-primary/75">

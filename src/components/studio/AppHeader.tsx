@@ -27,6 +27,7 @@ export function AppHeader({ className = "" }: { className?: string }) {
 
   useEffect(() => {
     const userId = getCurrentUserId();
+    if (!userId) return;
     const refresh = () => {
       fetchNotifications(userId)
         .then((data) => setNotifications(data.notifications))
@@ -38,7 +39,9 @@ export function AppHeader({ className = "" }: { className?: string }) {
   }, []);
 
   useEffect(() => {
-    fetchPointSummary(getCurrentUserId())
+    const userId = getCurrentUserId();
+    if (!userId) return;
+    fetchPointSummary(userId)
       .then((summary) => {
         setKultPoints(summary.kultPoints ?? summary.lifetimePoints ?? 0);
         setKpLevel(summary.level?.level ?? 1);
@@ -49,6 +52,7 @@ export function AppHeader({ className = "" }: { className?: string }) {
   const openNotifications = async () => {
     setNotificationsOpen(true);
     const userId = getCurrentUserId();
+    if (!userId) return;
     const data = await fetchNotifications(userId).catch(() => null);
     if (data) setNotifications(data.notifications);
     await markNotificationsRead(userId).catch(() => null);

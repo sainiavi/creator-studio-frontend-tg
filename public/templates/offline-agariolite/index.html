@@ -161,10 +161,17 @@ var cg = {
      else
        this.pause()
    },
-   init: function() {
-     cg.autosize()
-     this.z = new Image()
-     this.z.src = 'zazub.png'
+	   init: function() {
+	     cg.autosize()
+	     this.z = new Image()
+	     this.zReady = false
+	     this.z.onload = function() {
+	       cg.zReady = this.naturalWidth > 0 && this.naturalHeight > 0
+	     }
+	     this.z.onerror = function() {
+	       cg.zReady = false
+	     }
+	     this.z.src = 'zazub.png'
 
      this.canvas = $('canvas')
      this.canvas.attr({width: this.config.width, height: this.config.height})
@@ -196,11 +203,12 @@ var cg = {
 
      this.tick()
    },
-   inZBounds: function(x,y) {
-     return (x > cg.zLogoX &&
-        x < cg.zLogoX + cg.zWidth &&
-        y > cg.zLogoY &&
-        y < cg.zLogoY + cg.zHeight)
+	   inZBounds: function(x,y) {
+	     return (cg.zReady &&
+	        x > cg.zLogoX &&
+	        x < cg.zLogoX + cg.zWidth &&
+	        y > cg.zLogoY &&
+	        y < cg.zLogoY + cg.zHeight)
    },
    autosize: function() {
      if(cg.config.autosize) {
@@ -267,10 +275,12 @@ var cg = {
      w = this.ctx.measureText(t = 'Agario.sx').width
      this.ctx.fillText(t, (this.config.width - w)/2, cg.config.height / 2 + 180)
 
-     this.zHeight = 81
-     this.zWidth = 296
-     this.ctx.drawImage(this.z, this.zLogoX = (cg.config.width - this.zWidth) / 2, this.zLogoY = cg.config.height / 2 + 200) //296x81
-   }
+	     if(this.zReady && this.z.complete && this.z.naturalWidth > 0) {
+	       this.zHeight = 81
+	       this.zWidth = 296
+	       this.ctx.drawImage(this.z, this.zLogoX = (cg.config.width - this.zWidth) / 2, this.zLogoY = cg.config.height / 2 + 200) //296x81
+	     }
+	   }
  }
  var Circle = function(inCenter) {
    min = cg.config.circle.minRadius

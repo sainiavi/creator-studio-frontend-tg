@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getCurrentUserId, getCurrentUsername } from "@/lib/identity";
 import {
   fetchLeaderboard,
@@ -9,8 +9,6 @@ import {
 
 
 export function useLeaderboard(gameId: string) {
-  const userId = useRef(getCurrentUserId()).current;
-  const username = useRef(getCurrentUsername()).current;
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,10 +24,13 @@ export function useLeaderboard(gameId: string) {
 
   const submitScore = useCallback(
     async (score: number) => {
+      const userId = getCurrentUserId();
+      if (!userId) return;
+      const username = getCurrentUsername();
       const leaderboard = await submitLeaderboardScore(gameId, userId, username, score);
       setEntries(leaderboard.entries);
     },
-    [gameId, userId, username],
+    [gameId],
   );
 
   useEffect(() => {

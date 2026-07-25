@@ -5,6 +5,10 @@ import type { Game } from "../games-data";
 
 export function mapApiGameToGame(g: Record<string, unknown>, index: number): Game {
   const creatorId = typeof g.creatorId === "string" ? g.creatorId : undefined;
+  const creatorName =
+    (typeof g.creatorName === "string" && g.creatorName) ||
+    (typeof g.username === "string" && g.username) ||
+    (typeof g.displayName === "string" && g.displayName);
   const points = g.points as Record<string, unknown> | undefined;
   return {
     title: String(g.title ?? "Untitled"),
@@ -12,9 +16,11 @@ export function mapApiGameToGame(g: Record<string, unknown>, index: number): Gam
     plays: "New",
     emoji: "🎮",
     gradient: (index % 2 === 0 ? "violet" : "cyan") as "violet" | "cyan",
-    creator: creatorId?.startsWith("0x")
-      ? `${creatorId.slice(0, 6)}…${creatorId.slice(-4)}`
-      : "community",
+    creator:
+      creatorName ||
+      (creatorId?.startsWith("0x")
+        ? `${creatorId.slice(0, 6)}…${creatorId.slice(-4)}`
+        : creatorId || "community"),
     creatorId,
     thumbnailUrl: resolveGameThumbnail(g),
     templateId: String(g.id ?? g.templateId ?? ""),
@@ -26,8 +32,10 @@ export function mapApiGameToGame(g: Record<string, unknown>, index: number): Gam
   };
 }
 
-export async function fetchGamesPage(offset = 0, limit = GAMES_PAGE_SIZE) {
-  const { data } = await api.get("/games/list", { params: { limit, offset } });
+export async function fetchGamesPage(offset = 0, limit = GAMES_PAGE_SIZE, category?: string) {
+  const { data } = await api.get("/games/list", {
+    params: { limit, offset, ...(category ? { category } : {}) },
+  });
   const raw = (data?.games ?? []) as Record<string, unknown>[];
   const games = raw.filter((g) => g?.title).map(mapApiGameToGame);
   return { games, hasMore: raw.length >= limit };
