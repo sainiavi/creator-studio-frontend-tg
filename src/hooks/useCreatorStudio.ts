@@ -361,10 +361,10 @@ export function useCreatorStudio() {
     if (!build || build.phase !== "building") return;
     if (!build.jobId) {
       // Refresh happened before the job was registered — nothing to poll.
-      updateActiveBuild({
-        phase: "failed",
-        statusText: "Build was interrupted before the job started — please run it again.",
-      });
+      // updateActiveBuild({
+      //   phase: "failed",
+      //   statusText: "Build was interrupted before the job started — please run it again.",
+      // });
       return;
     }
     const token = ++generationRef.current;
