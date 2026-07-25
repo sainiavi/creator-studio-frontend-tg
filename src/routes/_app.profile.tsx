@@ -70,6 +70,7 @@ import {
   TrendingUp,
   X,
   Users,
+  LogOut,
 } from "lucide-react";
 import { useState, useCallback, useEffect, useRef } from "react";
 import {
@@ -284,7 +285,7 @@ type TimeFilter = "today" | "week" | "month" | "all";
 
 function Profile() {
   const navigate = useNavigate();
-  const { ready: authReady, authenticated, user, login } = usePrivy();
+  const { ready: authReady, authenticated, user, login, logout } = usePrivy();
   const loginAttemptedRef = useRef(false);
   const { createdGames } = useStudioContext();
   const { gameTemplates } = useGameTemplates();
@@ -773,6 +774,15 @@ function Profile() {
                   <CalendarDays className="size-3.5 text-fuchsia-400" />
                   Joined {joined ?? "11 June 2026"}
                 </p>
+                {authenticated && (
+                  <button
+                    type="button"
+                    onClick={() => void logout()}
+                    className="mt-2 flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-violet-100 transition hover:bg-white/15"
+                  >
+                    <LogOut className="size-3" /> Disconnect
+                  </button>
+                )}
               </div>
              </div>
               <img

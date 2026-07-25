@@ -1,11 +1,11 @@
 import { useLogin, useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
 import { useCreateWallet } from "@privy-io/react-auth/extended-chains";
-import { Loader2, Wallet } from "lucide-react";
+import { Loader2, LogOut, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { VITE_PRIVY_APP_ID } from "@/lib/privyConfig";
 import { syncPrivyIdentity } from "@/lib/privyIdentity";
-import { prefetchAuthToken } from "@/lib/api";
+import { clearAuthToken, prefetchAuthToken } from "@/lib/api";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 import {
   getTonWallet,
@@ -24,7 +24,7 @@ export function TonWalletSignInButton({
   responsive = false,
   className = "",
 }: TonWalletSignInButtonProps) {
-  const { ready, authenticated, login: loginModal, user } = usePrivy();
+  const { ready, authenticated, login: loginModal, logout, user } = usePrivy();
   const { login: loginWithTelegram, state: telegramState } = useLoginWithTelegram();
   const { createWallet } = useCreateWallet();
   const inTelegram = isTelegramMiniApp();
@@ -132,7 +132,20 @@ export function TonWalletSignInButton({
   }
 
   if (authenticated) {
-    return null;
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          clearAuthToken();
+          void logout();
+        }}
+        className={`inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition hover:border-fuchsia-300/50 active:scale-95 ${className}`}
+        title="Log out"
+        aria-label="Log out"
+      >
+        <LogOut className="size-4 stroke-[1.75]" />
+      </button>
+    );
   }
 
   const loading = authLoading || telegramLoading;

@@ -19,6 +19,7 @@ import {
   Gamepad2,
   Globe2,
   Heart,
+  Loader2,
   MessageCircle,
   Mountain,
   Pencil,
