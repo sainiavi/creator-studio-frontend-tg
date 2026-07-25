@@ -71,7 +71,7 @@ export function MobileNav() {
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 min-[1190px]:hidden">
       <div className="pointer-events-auto relative overflow-visible pt-8">
         <nav
-          className="relative border-t border-violet-400/25 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_28px_rgba(88,28,135,0.35)]"
+          className="relative border-t border-violet-400/25 pb-[env(safe-area-inset-bottom,0px)] pt-2 shadow-[0_-8px_28px_rgba(88,28,135,0.35)]"
           style={{ backgroundColor: barColor }}
         >
           <div className="flex h-[68px] items-stretch">
