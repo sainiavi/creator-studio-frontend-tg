@@ -1297,6 +1297,7 @@ function CategoryMiniCard({
     >
       <span
         className={`relative block overflow-hidden rounded-[14px] border border-white bg-[#160b2e] shadow-[0_6px_16px_rgba(30,7,65,0.26)] ${layout.aspect}`}
+        style={{ aspectRatio: "2 / 3" }}
       >
         {thumbnailUrl && !thumbnailLoaded && (
           <Skeleton className="absolute inset-0 h-full w-full rounded-none bg-violet-950/55" />

@@ -48,6 +48,7 @@ import { api } from "@/lib/api";
 import type { LeaderboardEntry } from "@/lib/api/leaderboards";
 import type { SharePlatform } from "@/lib/api/social";
 import { qualifyReferral } from "@/lib/api/referral";
+import defaultCreatorAvatar from "@/assets/navProfile.webp";
 import {
   clearPlayReturnPath,
   getPlayBackFallback,
@@ -1311,15 +1312,11 @@ function PlayFeed() {
               )}
               {/* Desktop Creator Bar (Bottom of Game Frame) */}
               <div className="absolute bottom-0 left-0 right-0 h-[76px] px-4 bg-zinc-950/90 backdrop-blur-md hidden lg:flex items-center justify-between z-30 border-t border-white/10">
-                <div className="flex items-center gap-3">
-                  <div className="grid size-10 shrink-0 place-items-center rounded-full border border-white/20 bg-black/40 font-display text-sm font-black shadow-lg">
-                    {profile.avatar}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">{profile.name}</p>
-                    <p className="text-[10px] text-white/70">Browse their games</p>
-                  </div>
-                </div>
+                <img
+                  src={defaultCreatorAvatar}
+                  alt="Creator"
+                  className="size-11 shrink-0 rounded-full border border-white/25 object-cover shadow-lg"
+                />
                 <div className="flex items-center gap-3">
                   {isFullscreen && (
                     <button
@@ -1333,7 +1330,7 @@ function PlayFeed() {
                   <button
                     onClick={() => setIsFollowing(!isFollowing)}
                     disabled={follow.isSelf}
-                    className="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-black transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-45"
+                    className="min-w-28 rounded-full bg-white px-6 py-2.5 text-sm font-black text-black shadow-[0_8px_20px_rgba(255,255,255,0.16)] transition hover:scale-[1.02] hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-45"
                     title={follow.isSelf ? "You cannot follow yourself" : undefined}
                   >
                     {follow.isSelf ? "You" : isFollowing ? "Following" : "Follow"}
@@ -1369,27 +1366,26 @@ function PlayFeed() {
         </div>
       </main>
 
-      {/* Minimal reel footer: creator identity plus lightweight inline actions. */}
+      {/* Minimal reel footer: creator image, standalone follow, and actions. */}
       <aside
-        className={`absolute inset-x-0 bottom-0 z-40 flex h-[calc(66px+env(safe-area-inset-bottom))] items-center border-t border-white/10 bg-[linear-gradient(180deg,rgba(7,2,19,0.72),rgba(7,2,19,0.98))] px-3 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_32px_rgba(0,0,0,0.38)] backdrop-blur-xl lg:hidden transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        className={`absolute inset-x-0 bottom-0 z-40 flex h-[calc(72px+env(safe-area-inset-bottom))] items-center border-t border-white/10 bg-[linear-gradient(180deg,rgba(7,2,19,0.72),rgba(7,2,19,0.98))] px-3 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_32px_rgba(0,0,0,0.38)] backdrop-blur-xl lg:hidden transition-opacity duration-300 ${isUiHidden ? "opacity-0 pointer-events-none" : "opacity-100"}`}
       >
+        <img
+          src={defaultCreatorAvatar}
+          alt="Creator"
+          className="mr-2 size-10 shrink-0 rounded-full border border-white/30 object-cover shadow-[0_0_12px_rgba(168,85,247,0.35)]"
+        />
         <button
           type="button"
           onClick={() => setIsFollowing(!isFollowing)}
           disabled={follow.isSelf}
-          className="mr-2 flex min-w-0 max-w-[112px] shrink items-center gap-2 text-left disabled:cursor-default"
+          className={`mr-2 min-w-[76px] shrink-0 rounded-full px-3.5 py-2 text-[11px] font-black shadow-lg transition active:scale-95 disabled:cursor-default disabled:opacity-50 ${
+            isFollowing
+              ? "border border-white/20 bg-white/10 text-white"
+              : "bg-white text-[#120428]"
+          }`}
         >
-          <span className="relative shrink-0">
-            <span className="grid size-9 place-items-center rounded-full border border-white/25 bg-violet-900 font-display text-xs font-black text-white">
-              {profile.avatar}
-            </span>
-            {!follow.isSelf && (
-              <span className="absolute -bottom-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-white text-[11px] font-black text-[#120428]">
-                {isFollowing ? "✓" : "+"}
-              </span>
-            )}
-          </span>
-          <span className="min-w-0 truncate text-[11px] font-black text-white">{profile.name}</span>
+          {follow.isSelf ? "You" : isFollowing ? "Following" : "Follow"}
         </button>
         <div className="flex min-w-0 flex-1 items-center justify-around gap-1">
           <LikeButton
