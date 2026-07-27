@@ -1284,10 +1284,7 @@ function CategoryMiniCard({
       className={`group h-full shrink-0 text-left ${layout.width}`}
       title={game.creator}
     >
-      <span
-        className="relative block h-[58vw] min-h-[210px] max-h-[280px] overflow-hidden rounded-[14px] border border-white bg-[#160b2e] shadow-[0_6px_16px_rgba(30,7,65,0.26)]"
-        style={{ aspectRatio: "2 / 3" }}
-      >
+      <span className="relative block aspect-[4/3] overflow-hidden rounded-[14px] border border-white bg-[#160b2e] shadow-[0_6px_16px_rgba(30,7,65,0.26)]">
         {thumbnailUrl && !thumbnailLoaded && (
           <Skeleton className="absolute inset-0 h-full w-full rounded-none bg-violet-950/55" />
         )}
@@ -1413,11 +1410,11 @@ function CategoryGameRow({
         onScroll={handleScroll}
         className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        <div className="flex items-stretch gap-1.5 min-[480px]:gap-2">
+        <div className="flex items-stretch gap-3">
           {loading
             ? Array.from({ length: HOME_CATEGORY_PAGE_SIZE }).map((_, index) => (
                 <div key={index} className={`shrink-0 ${layout.width}`}>
-                  <Skeleton className="h-[58vw] min-h-[210px] max-h-[280px] rounded-[14px]" />
+                  <Skeleton className="aspect-[4/3] rounded-[14px]" />
                   <Skeleton className="mt-1.5 h-3.5 w-4/5 rounded-full" />
                 </div>
               ))
