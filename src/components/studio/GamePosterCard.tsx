@@ -110,7 +110,7 @@ export function GamePosterCard({
   return (
     <article
       onClick={onClick}
-      className={`group relative flex w-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-[17px] border border-white bg-[#160b2e] shadow-[0_10px_28px_rgba(8,4,20,0.45),0_0_0_1px_rgba(168,85,247,0.1)] transition duration-300 active:scale-[0.985] sm:rounded-[21px] ${
+      className={`group relative flex h-full w-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-[17px] border border-white bg-[#160b2e] shadow-[0_10px_28px_rgba(8,4,20,0.45),0_0_0_1px_rgba(168,85,247,0.1)] transition duration-300 active:scale-[0.985] sm:rounded-[21px] ${
         animated ? "animate-float-up" : ""
       } ${className}`}
       style={animated ? { animationDelay: `${index * 50}ms`, opacity: 0 } : undefined}
@@ -161,7 +161,7 @@ export function GamePosterCard({
         )}
       </div>
 
-      <div className={`flex min-w-0 flex-col ${footerPadClass}`}>
+      <div className={`flex min-w-0 flex-1 flex-col ${footerPadClass}`}>
         <div className="flex min-w-0 items-center justify-between gap-2">
           <h3 className={`min-w-0 truncate font-display font-black text-white ${titleClass}`}>
             {game.title}
@@ -175,7 +175,7 @@ export function GamePosterCard({
         </div>
 
         <span
-          className={`w-fit rounded-full border border-violet-400/40 font-bold uppercase tracking-wide text-violet-200/90 ${pillClass}`}
+          className={`max-w-full truncate rounded-full border border-violet-400/40 font-bold uppercase tracking-wide text-violet-200/90 ${pillClass}`}
         >
           {game.category}
         </span>

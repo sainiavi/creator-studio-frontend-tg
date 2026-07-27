@@ -1103,9 +1103,9 @@ function GameShelf({
           ref={emblaRef}
           className="cursor-grab overflow-hidden select-none active:cursor-grabbing"
         >
-          <div className="flex touch-pan-y gap-2">
+          <div className="flex items-stretch touch-pan-y gap-2">
             {games.map((game, index) => (
-              <div key={`${game.title}-${index}`} className={basisClass}>
+              <div key={`${game.title}-${index}`} className={`${basisClass} flex`}>
                 <GameTile
                   game={game}
                   onOpen={() => openGame(game)}
@@ -1244,19 +1244,19 @@ const categoryRowLayout: Record<
 > = {
   portrait: {
     width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-[3/4]",
+    aspect: "aspect-[4/3]",
   },
   square: {
     width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-square",
+    aspect: "aspect-[4/3]",
   },
   wide: {
-    width: "w-[64%] min-[480px]:w-[38%] min-[760px]:w-[24%]",
+    width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
     aspect: "aspect-[4/3]",
   },
   slim: {
-    width: "w-[31.5%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-[2/3]",
+    width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
+    aspect: "aspect-[4/3]",
   },
 };
 
@@ -1283,7 +1283,7 @@ function CategoryMiniCard({
     <button
       type="button"
       onClick={onOpen}
-      className={`group shrink-0 text-left ${layout.width}`}
+      className={`group h-full shrink-0 text-left ${layout.width}`}
       title={game.creator}
     >
       <span
@@ -1410,7 +1410,7 @@ function CategoryGameRow({
         onScroll={handleScroll}
         className="-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        <div className="flex gap-1.5 min-[480px]:gap-2">
+        <div className="flex items-stretch gap-1.5 min-[480px]:gap-2">
           {loading
             ? Array.from({ length: HOME_CATEGORY_PAGE_SIZE }).map((_, index) => (
                 <div
@@ -1449,16 +1449,8 @@ function CategoryGameRows({
 }) {
   return (
     <div className="space-y-2">
-      {categories.map((category, index) => {
-        const position = index % 5;
-        const variant: CategoryRowVariant =
-          position === 0
-            ? "portrait"
-            : position === 1 || position === 2
-              ? "square"
-              : position === 3
-                ? "wide"
-                : "slim";
+      {categories.map((category) => {
+        const variant: CategoryRowVariant = "wide";
         return (
           <CategoryGameRow
             key={category}
@@ -1666,6 +1658,7 @@ function GameTile({
   return (
     <div
       ref={tileRef}
+      className="h-full w-full"
       onPointerDown={(event) => {
         pointerStart.current = { x: event.clientX, y: event.clientY };
       }}
