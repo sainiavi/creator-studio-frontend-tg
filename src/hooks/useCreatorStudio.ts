@@ -38,6 +38,33 @@ function paidGenerationMessage(error: any) {
   return `You've already used your free game. Generate another for ${amount} ${currency}.`;
 }
 
+function logGenerationRequest(
+  phase: string,
+  detail: Record<string, unknown>,
+  error?: unknown,
+) {
+  const payload = {
+    phase,
+    at: new Date().toISOString(),
+    ...detail,
+    ...(error
+      ? {
+          error:
+            error instanceof Error
+              ? { name: error.name, message: error.message, code: (error as { code?: string }).code }
+              : String(error),
+          status: (error as { response?: { status?: number } })?.response?.status ?? null,
+          serverError: (error as { response?: { data?: { error?: string } } })?.response?.data?.error ?? null,
+        }
+      : {}),
+  };
+  if (error) {
+    console.warn("[generation]", payload);
+  } else {
+    console.info("[generation]", payload);
+  }
+}
+
 // Polls an existing code job until it finishes. Separated from runCodeJob so a
 // build can be resumed after a page refresh from just its persisted jobId.
 export async function pollCodeJob(
@@ -74,7 +101,7 @@ export async function runCodeJob(
   isCancelled?: () => boolean,
   onJobId?: (jobId: string) => void,
 ) {
-  const response = await api.post("/agents/code", body, { timeout: 30000 });
+  const response = await api.post("/agents/code", body, { timeout: 45000 });
   const jobId = response.data?.jobId;
   if (!jobId) throw new Error("No jobId returned for code generation");
   onJobId?.(jobId);
@@ -624,6 +651,12 @@ export function useCreatorStudio() {
         // Phase 1 (fast): vague prompt — let the backend routing agent pick the closest template.
         // No code/assets/plan, so it returns well under the ~100s gateway timeout.
         try {
+          logGenerationRequest("routing.start", {
+            strategy,
+            tier,
+            timeoutMs: 120_000,
+            promptLength: effectivePrompt.length,
+          });
           const response = await api.post(
             "/games/generate-from-prompt",
             {
@@ -647,8 +680,14 @@ export function useCreatorStudio() {
               ...(paymentTxHash ? { paymentTxHash } : {}),
               ...(pay.starsOrderId ? { starsOrderId: pay.starsOrderId } : {}),
             },
-            { timeout: 90000 },
+            { timeout: 120_000 },
           );
+          logGenerationRequest("routing.done", {
+            requestId: response.data?.requestId ?? null,
+            gameId: response.data?.game?.id ?? null,
+            templateId: response.data?.game?.templateId ?? null,
+            warnings: response.data?.warnings ?? [],
+          });
           const result = response.data;
           baseGame = {
             ...result.game,
@@ -675,6 +714,7 @@ export function useCreatorStudio() {
         } catch (error: any) {
           const paymentMessage = paidGenerationMessage(error);
           if (paymentMessage) {
+            logGenerationRequest("routing.payment-required", { strategy, tier }, error);
             setStatus("Payment required");
             setAgentStatus(paymentMessage);
             updateActiveBuild({
@@ -684,6 +724,16 @@ export function useCreatorStudio() {
             });
             throw error;
           }
+          logGenerationRequest(
+            "routing.failed",
+            {
+              strategy,
+              tier,
+              timedOut: error?.code === "ECONNABORTED",
+              axiosMessage: error?.message ?? null,
+            },
+            error,
+          );
           // Routing failed (offline/timeout) — keep the instant local build, still playable.
           baseGame = localGame;
           setStatus("Generated locally");
@@ -715,6 +765,12 @@ export function useCreatorStudio() {
       void (async () => {
         let codeJobId: string | undefined;
         try {
+          logGenerationRequest("code-job.start", {
+            strategy,
+            tier,
+            gameId: baseGame?.id ?? null,
+            maxWaitMs,
+          });
           const refinement = await runCodeJob(
             {
               gamePackage: baseGame,
@@ -740,6 +796,12 @@ export function useCreatorStudio() {
           );
 
           if (generationRef.current !== token) return; // superseded by a newer generation
+          logGenerationRequest("code-job.done", {
+            strategy,
+            tier,
+            hasCode: Boolean(refinement?.generatedCode),
+            source: refinement?.source ?? refinement?.model ?? null,
+          });
           if (refinement?.generatedCode) {
             setGeneratedPackage((prev) => ({
               ...(prev ?? baseGame),
@@ -774,6 +836,16 @@ export function useCreatorStudio() {
           }
         } catch (error: any) {
           if (generationRef.current !== token) return;
+          logGenerationRequest(
+            "code-job.failed",
+            {
+              strategy,
+              tier,
+              gameId: baseGame?.id ?? null,
+              timedOut: error?.code === "ECONNABORTED",
+            },
+            error,
+          );
           // Surface the real failure (e.g. "interrupted by a server restart",
           // "insufficient balance") instead of calling everything a timeout.
           const detail =
