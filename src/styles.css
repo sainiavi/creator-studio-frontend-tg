@@ -700,3 +700,12 @@ kbd {
   height: 100%;
   width: 100%;
 }
+.home-category-card-media {
+  aspect-ratio: 2 / 3;
+}
+
+@media (min-width: 1280px) {
+  .home-category-card-media {
+    aspect-ratio: 4 / 3;
+  }
+}
