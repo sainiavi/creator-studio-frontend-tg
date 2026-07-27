@@ -1244,19 +1244,19 @@ const categoryRowLayout: Record<
 > = {
   portrait: {
     width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-[4/3]",
+    aspect: "aspect-[2/3]",
   },
   square: {
     width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-[4/3]",
+    aspect: "aspect-[2/3]",
   },
   wide: {
     width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-[4/3]",
+    aspect: "aspect-[2/3]",
   },
   slim: {
     width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-[4/3]",
+    aspect: "aspect-[2/3]",
   },
 };
 
