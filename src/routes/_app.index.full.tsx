@@ -1235,22 +1235,18 @@ function compactCreatorName(value: string | undefined) {
 
 type CategoryRowVariant = "portrait" | "square" | "wide" | "slim";
 
-const categoryRowLayout: Record<CategoryRowVariant, { width: string; aspect: string }> = {
+const categoryRowLayout: Record<CategoryRowVariant, { width: string }> = {
   portrait: {
     width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-[2/3]",
   },
   square: {
     width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-[2/3]",
   },
   wide: {
     width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-[2/3]",
   },
   slim: {
     width: "w-[39%] min-[480px]:w-[22%] min-[760px]:w-[16%]",
-    aspect: "aspect-[2/3]",
   },
 };
 
@@ -1289,7 +1285,7 @@ function CategoryMiniCard({
       title={game.creator}
     >
       <span
-        className={`relative block h-[58vw] min-h-[210px] max-h-[280px] overflow-hidden rounded-[14px] border border-white bg-[#160b2e] shadow-[0_6px_16px_rgba(30,7,65,0.26)] min-[480px]:h-auto ${layout.aspect}`}
+        className="relative block h-[58vw] min-h-[210px] max-h-[280px] overflow-hidden rounded-[14px] border border-white bg-[#160b2e] shadow-[0_6px_16px_rgba(30,7,65,0.26)]"
         style={{ aspectRatio: "2 / 3" }}
       >
         {thumbnailUrl && !thumbnailLoaded && (
@@ -1421,9 +1417,7 @@ function CategoryGameRow({
           {loading
             ? Array.from({ length: HOME_CATEGORY_PAGE_SIZE }).map((_, index) => (
                 <div key={index} className={`shrink-0 ${layout.width}`}>
-                  <Skeleton
-                    className={`h-[58vw] min-h-[210px] max-h-[280px] rounded-[14px] min-[480px]:h-auto ${layout.aspect}`}
-                  />
+                  <Skeleton className="h-[58vw] min-h-[210px] max-h-[280px] rounded-[14px]" />
                   <Skeleton className="mt-1.5 h-3.5 w-4/5 rounded-full" />
                 </div>
               ))
