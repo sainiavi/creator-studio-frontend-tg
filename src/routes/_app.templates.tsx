@@ -8,7 +8,7 @@ import { useGameTemplates } from "@/hooks/useGameTemplates";
 import { TemplatesGridSkeleton } from "@/components/studio/PageSkeletons";
 import categoryStrategyIcon from "@/assets/categoryStrategy.webp";
 import categoryArcadeIcon from "@/assets/categoryArcade.webp";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_app/templates")({
   pendingComponent: TemplatesGridSkeleton,
@@ -38,48 +38,18 @@ const engines = [
   },
 ] as const;
 
-const TEMPLATES_PAGE_SIZE = 10;
-
 function Templates() {
   const { studio, openInStudio } = useStudioContext();
   const navigate = useNavigate();
   const { gameTemplates, loading } = useGameTemplates();
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  const [visibleCount, setVisibleCount] = useState(TEMPLATES_PAGE_SIZE);
-  const [loadedImageIds, setLoadedImageIds] = useState<Set<string>>(() => new Set());
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(() => new Set());
   const list = useMemo(
     () => gameTemplates.filter((t: any) => engineOf(t) === studio.engine),
     [gameTemplates, studio.engine],
   );
-  const visibleTemplates = list.slice(0, visibleCount);
-  const visibleImageIds = visibleTemplates
-    .filter((template: any) => Boolean(getThumbnailUrl(template.id)))
-    .map((template: any) => String(template.id));
-  const imagesReady = visibleImageIds.every((id) => loadedImageIds.has(id));
-  const hasMore = visibleCount < list.length;
 
-  useEffect(() => {
-    setVisibleCount(TEMPLATES_PAGE_SIZE);
-  }, [studio.engine, gameTemplates]);
-
-  useEffect(() => {
-    const target = loadMoreRef.current;
-    if (!target || !hasMore || !imagesReady) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) return;
-        setVisibleCount((count) => Math.min(count + TEMPLATES_PAGE_SIZE, list.length));
-      },
-      { rootMargin: "320px 0px", threshold: 0.01 },
-    );
-
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [hasMore, imagesReady, list.length, visibleCount]);
-
-  const markImageReady = (templateId: string) => {
-    setLoadedImageIds((current) => {
+  const markImageFailed = (templateId: string) => {
+    setFailedImageIds((current) => {
       if (current.has(templateId)) return current;
       const next = new Set(current);
       next.add(templateId);
@@ -133,7 +103,7 @@ function Templates() {
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
-          {visibleTemplates.map((t: any, i: number) => (
+          {list.map((t: any, i: number) => (
             <article
               key={t.id}
               className="animate-float-up group flex flex-col overflow-hidden rounded-[21px] border border-white bg-white/95 shadow-[0_8px_20px_rgba(124,58,237,0.12)] backdrop-blur transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(124,58,237,0.2)] sm:rounded-[23px]"
@@ -142,19 +112,15 @@ function Templates() {
               <div
                 className={`relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br ${gradientClass[gradientForId(t.id)]}`}
               >
-                {getThumbnailUrl(t.id) ? (
+                {!failedImageIds.has(String(t.id)) ? (
                   <>
                     <img
                       src={getThumbnailUrl(t.id)}
                       alt=""
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="eager"
+                      loading="lazy"
                       decoding="async"
-                      ref={(image) => {
-                        if (image?.complete) markImageReady(String(t.id));
-                      }}
-                      onLoad={() => markImageReady(String(t.id))}
-                      onError={() => markImageReady(String(t.id))}
+                      onError={() => markImageFailed(String(t.id))}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10" />
                   </>
@@ -196,27 +162,6 @@ function Templates() {
             </article>
           ))}
         </div>
-        {!imagesReady && (
-          <div
-            role="status"
-            aria-live="polite"
-            className="flex h-20 items-center justify-center gap-3 text-violet-800"
-          >
-            <span className="size-7 animate-spin rounded-full border-[3px] border-violet-300/45 border-t-fuchsia-500" />
-            <span className="text-xs font-bold uppercase tracking-[0.12em]">
-              Loading games…
-            </span>
-          </div>
-        )}
-        {hasMore && imagesReady && (
-          <div
-            ref={loadMoreRef}
-            aria-label="Loading more game templates"
-            className="flex h-20 items-center justify-center"
-          >
-            <span className="size-7 animate-spin rounded-full border-[3px] border-violet-300/45 border-t-fuchsia-500" />
-          </div>
-        )}
       </div>
     </div>
   );

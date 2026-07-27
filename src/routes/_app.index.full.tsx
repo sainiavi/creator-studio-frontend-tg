@@ -38,7 +38,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { resolveGameThumbnail } from "@/lib/studio-meta";
+import { getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
 import { fetchGamesPage, mapApiGameToGame } from "@/lib/api/games";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { VIEWS_TOP_LIMIT } from "@/lib/pagination";
@@ -1271,13 +1271,22 @@ function CategoryMiniCard({
 }) {
   const creator = compactCreatorName(game.creator);
   const layout = categoryRowLayout[variant];
+  const thumbnailCandidates = Array.from(
+    new Set(
+      [
+        game.thumbnailUrl,
+        game.templateId ? getThumbnailUrl(game.templateId) : null,
+      ].filter((value): value is string => Boolean(value)),
+    ),
+  );
+  const [thumbnailIndex, setThumbnailIndex] = useState(0);
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
-  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const thumbnailUrl = thumbnailCandidates[thumbnailIndex];
 
   useEffect(() => {
+    setThumbnailIndex(0);
     setThumbnailLoaded(false);
-    setThumbnailFailed(false);
-  }, [game.thumbnailUrl]);
+  }, [game.thumbnailUrl, game.templateId]);
 
   return (
     <button
@@ -1289,12 +1298,12 @@ function CategoryMiniCard({
       <span
         className={`relative block overflow-hidden rounded-[14px] border border-white bg-[#160b2e] shadow-[0_6px_16px_rgba(30,7,65,0.26)] ${layout.aspect}`}
       >
-        {!thumbnailLoaded && (
+        {thumbnailUrl && !thumbnailLoaded && (
           <Skeleton className="absolute inset-0 h-full w-full rounded-none bg-violet-950/55" />
         )}
-        {game.thumbnailUrl && !thumbnailFailed ? (
+        {thumbnailUrl ? (
           <img
-            src={game.thumbnailUrl}
+            src={thumbnailUrl}
             alt=""
             loading="lazy"
             draggable={false}
@@ -1306,10 +1315,14 @@ function CategoryMiniCard({
             }}
             onError={() => {
               setThumbnailLoaded(false);
-              setThumbnailFailed(true);
+              setThumbnailIndex((current) => current + 1);
             }}
           />
-        ) : null}
+        ) : (
+          <span className="absolute inset-0 grid place-items-center bg-gradient-to-br from-violet-950 via-purple-950 to-slate-950 text-4xl">
+            {game.emoji || "🎮"}
+          </span>
+        )}
         <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
         {game.plays && game.plays !== "New" && (
           <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur">

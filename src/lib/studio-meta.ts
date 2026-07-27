@@ -14,7 +14,18 @@ const apiBase = rawBaseUrl.replace(/\/$/, "").endsWith("/api")
 // endpoint (which redirects to storage) remains the fallback.
 const thumbnailsBase = (import.meta.env.VITE_THUMBNAILS_BASE ?? "").replace(/\/$/, "");
 
+// Optimized covers bundled with the matching offline templates. Keep this
+// allowlist explicit so templates without a supplied local cover continue to
+// use the backend/CDN thumbnail fallback instead of returning a static 404.
+const localTemplateThumbnailIds = new Set(
+  `offline-12minibattles offline-1on1soccer offline-1on1tennis offline-2048 offline-2048cupcakes offline-8ballclassic offline-agariolite offline-ageofwar offline-alpha_1.2.6 offline-amongus offline-awesometanks offline-badicecream offline-badpiggies offline-basketballlegends offline-basketbros offline-basketrandom offline-beta_1.3 offline-bloonstd offline-bloonstd2 offline-bloonstd3 offline-bloonstd4 offline-bloxorz offline-blumgiracers offline-blumgirocket offline-bobtherobber2 offline-bobtherobber5 offline-breakingthebank offline-bubbleshooter offline-candycrush offline-chess offline-choppyorc offline-circloo offline-circloo2 offline-clashofvikings offline-dadish offline-dadish2 offline-dadish3 offline-doodlejump offline-drawclimber offline-ducklife offline-ducklife2 offline-ducklingsio offline-earntodie offline-eggycar offline-evilglitch offline-fancypantsadventure offline-fireboyandwatergirl offline-fireboyandwatergirl2 offline-fireboyandwatergirl3 offline-fireboyandwatergirl4 offline-floodrunner2 offline-floodrunner3 offline-footballlegends offline-freerider3 offline-fruitninja offline-getontop offline-googlebaseball offline-hanger2 offline-hillclimbracinglite offline-idlebreakout offline-ironsnout offline-johnnytrigger offline-jumpingshell offline-karatebros offline-learntofly offline-learntoflyidle offline-mergeroundracers offline-minesweeper offline-monstertracks offline-motox3m2 offline-motox3m3 offline-motox3mpoolparty offline-motox3mspookyland offline-motox3mwinter offline-noobminer offline-oppositeday offline-ovo offline-pacman offline-papasburgeria offline-papaspizzeria offline-parkingfury offline-parkingfury2 offline-parkingfury3 offline-picosschool offline-pixelspeedrun offline-plonky offline-polytrack`
+    .split(" "),
+);
+
 export function getThumbnailUrl(templateId: string): string {
+  if (localTemplateThumbnailIds.has(templateId)) {
+    return `/templates/${encodeURIComponent(templateId)}/thumbnail.webp`;
+  }
   if (thumbnailsBase) return `${thumbnailsBase}/${encodeURIComponent(templateId)}`;
   return `${apiBase}/thumbnails/${encodeURIComponent(templateId)}`;
 }
