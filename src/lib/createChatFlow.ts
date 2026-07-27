@@ -5,7 +5,7 @@ export type ChatMessage = {
   text: string;
 };
 
-export type ChatStage = "game" | "vibe" | "concept" | "ready";
+export type ChatStage = "game" | "vibe" | "ready";
 
 export const CREATE_CHAT_GREETING =
   "Hey there! What kind of game do you want to create?";
@@ -88,22 +88,52 @@ export async function fetchConceptFromAgent(
           vibe,
         },
       },
-      { timeout: 45000 },
+      { timeout: 30000 },
     );
-    const text = String(data?.result?.content ?? "")
+
+    const jobId = data?.jobId;
+    if (!jobId) throw new Error("No jobId returned for concept generation");
+
+    const startedAt = Date.now();
+    const maxWaitMs = 12 * 60 * 1000;
+    let consecutivePollFailures = 0;
+    let result: any = null;
+
+    while (Date.now() - startedAt < maxWaitMs) {
+      await new Promise((resolve) => window.setTimeout(resolve, 2500));
+      let job: any;
+      try {
+        const poll = await api.get(`/agents/jobs/${encodeURIComponent(jobId)}`, {
+          timeout: 15000,
+        });
+        consecutivePollFailures = 0;
+        job = poll.data;
+      } catch (error) {
+        // Temporary mobile-network/proxy failures do not discard a still-
+        // running backend generation.
+        consecutivePollFailures += 1;
+        if (consecutivePollFailures < 5) continue;
+        throw error;
+      }
+      if (job?.status === "complete") {
+        result = job.result;
+        break;
+      }
+      if (job?.status === "failed") {
+        throw new Error(job.error?.message ?? "Concept generation failed");
+      }
+    }
+
+    if (!result) throw new Error("Concept generation did not finish in time");
+    const text = String(result?.content ?? "")
       .trim()
       .replace(/^["'`]+|["'`]+$/g, "");
     if (!/^[^:\n]{2,60}:\s.+/s.test(text)) return null;
     return text.split("\n")[0].trim();
-  } catch {
+  } catch (error) {
+    console.error("Game concept generation failed", error);
     return null;
   }
-}
-
-export function isCreateConfirmation(text: string) {
-  return /^(ok|okay|yes|yep|sure|create it|build it|go ahead|start)(,?\s+)?(create|build|make|start)?\s*(it)?!?$/i.test(
-    text.trim(),
-  );
 }
 
 export function quickRepliesForStage(stage: ChatStage) {

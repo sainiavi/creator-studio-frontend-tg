@@ -1293,35 +1293,22 @@ function CategoryMiniCard({
           <Skeleton className="absolute inset-0 h-full w-full rounded-none bg-violet-950/55" />
         )}
         {game.thumbnailUrl && !thumbnailFailed ? (
-          <>
-            <img
-              src={game.thumbnailUrl}
-              alt=""
-              aria-hidden="true"
-              loading="lazy"
-              draggable={false}
-              className={`absolute inset-0 h-full w-full scale-110 object-cover blur-lg transition-opacity ${
-                thumbnailLoaded ? "opacity-45" : "opacity-0"
-              }`}
-              onError={() => setThumbnailFailed(true)}
-            />
-            <img
-              src={game.thumbnailUrl}
-              alt=""
-              loading="lazy"
-              draggable={false}
-              className={`relative h-full w-full object-contain transition duration-300 group-active:scale-[0.98] ${
-                thumbnailLoaded ? "opacity-100" : "opacity-0"
-              }`}
-              onLoad={(event) => {
-                if (event.currentTarget.naturalWidth > 0) setThumbnailLoaded(true);
-              }}
-              onError={() => {
-                setThumbnailLoaded(false);
-                setThumbnailFailed(true);
-              }}
-            />
-          </>
+          <img
+            src={game.thumbnailUrl}
+            alt=""
+            loading="lazy"
+            draggable={false}
+            className={`absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-300 group-active:scale-[0.98] ${
+              thumbnailLoaded ? "opacity-100" : "opacity-0"
+            }`}
+            onLoad={(event) => {
+              if (event.currentTarget.naturalWidth > 0) setThumbnailLoaded(true);
+            }}
+            onError={() => {
+              setThumbnailLoaded(false);
+              setThumbnailFailed(true);
+            }}
+          />
         ) : null}
         <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
         {game.plays && game.plays !== "New" && (

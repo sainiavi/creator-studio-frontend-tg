@@ -28,7 +28,6 @@ export function ConsoleChatMessages({
   className = "",
 }: ConsoleChatMessagesProps) {
   const quickReplies = quickRepliesForStage(chatStage);
-  const showCreateConfirm = chatStage === "concept" && !isThinking;
 
   return (
     <section className={`flex flex-col ${className}`}>
@@ -87,7 +86,7 @@ export function ConsoleChatMessages({
         )}
       </div>
 
-      {(quickReplies.length > 0 || showCreateConfirm) && onQuickReply && (
+      {quickReplies.length > 0 && onQuickReply && (
         <div className="mt-3 grid shrink-0 gap-2 border-t border-fuchsia-500/20 pt-3">
           {quickReplies.map((idea) => (
             <button
@@ -101,16 +100,6 @@ export function ConsoleChatMessages({
               <ChevronRight className="size-5 shrink-0 text-violet-300 transition group-hover:translate-x-0.5 group-hover:text-fuchsia-200" />
             </button>
           ))}
-          {showCreateConfirm && (
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onQuickReply("Ok, create it!")}
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(100deg,#db2777,#7c3aed)] px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white shadow-[0_8px_20px_rgba(126,34,206,0.35)]"
-            >
-              Ok, create it! <ChevronRight className="size-4" />
-            </button>
-          )}
         </div>
       )}
     </section>

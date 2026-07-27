@@ -60,8 +60,7 @@ export function CreateChatPanel({
   };
 
   const quickReplies = quickRepliesForStage(chatStage);
-  const showCreateConfirm = chatStage === "concept" && !isThinking;
-  const showChips = !consoleLayout && (quickReplies.length > 0 || showCreateConfirm);
+  const showChips = !consoleLayout && quickReplies.length > 0;
 
   const shellClass = consoleLayout
     ? "flex h-full min-h-0 w-full flex-col overflow-hidden"
@@ -155,16 +154,6 @@ export function CreateChatPanel({
               {idea.length > 22 ? `${idea.slice(0, 20)}…` : idea}
             </button>
           ))}
-          {showCreateConfirm && (
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onQuickReply("Ok, create it!")}
-              className="shrink-0 rounded-full bg-fuchsia-500 px-3 py-1 text-[10px] font-black text-white"
-            >
-              Ok, create it!
-            </button>
-          )}
         </div>
       )}
 
@@ -187,9 +176,7 @@ export function CreateChatPanel({
               ? placeholder
               : chatStage === "vibe"
                 ? "Describe the vibe…"
-                : chatStage === "concept"
-                  ? 'Say "Ok, create it!" or tweak…'
-                  : "Add more detail or tap Generate…"
+                : "Add more detail or tap Generate…"
           }
           disabled={disabled || isThinking}
           className={inputClass}

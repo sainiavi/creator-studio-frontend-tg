@@ -3,10 +3,7 @@ import {
   CREATE_CHAT_GREETING,
   ChatMessage,
   ChatStage,
-  conceptFor,
   fetchConceptFromAgent,
-  gameKind,
-  isCreateConfirmation,
 } from "@/lib/createChatFlow";
 
 type UseCreateChatFlowOptions = {
@@ -52,9 +49,8 @@ export function useCreateChatFlow(options: UseCreateChatFlowOptions = {}) {
       }
 
       if (chatStage === "vibe") {
-        const game = gameKind(gameRequest || value);
+        const requestedGame = gameRequest || value;
         setVibeRequest(value);
-        setChatStage("concept");
         onPromptChange?.([gameRequest, value].filter(Boolean).join(". "));
         setMessages((current) => [
           ...current,
@@ -64,18 +60,28 @@ export function useCreateChatFlow(options: UseCreateChatFlowOptions = {}) {
         setIsThinking(true);
         void (async () => {
           try {
-            const concept =
-              (await fetchConceptFromAgent(gameRequest || value, value)) ??
-              conceptFor(game, value);
-            setSelectedConcept(concept);
+            const concept = await fetchConceptFromAgent(requestedGame, value);
+            // If the model job fails, retain the user's exact request instead
+            // of substituting an unrelated template-derived game.
+            const prompt = [requestedGame, value, concept].filter(Boolean).join(". ");
+            setSelectedConcept(concept ?? "");
+            setFinalPrompt(prompt);
+            setChatStage("ready");
+            onPromptChange?.(prompt);
             setMessages((current) => [
               ...current,
-              { role: "assistant", text: concept },
+              ...(concept
+                ? [{ role: "assistant" as const, text: concept }]
+                : [{
+                    role: "assistant" as const,
+                    text: "I couldn't expand the concept, but your exact game idea and vibe are saved.",
+                  }]),
               {
                 role: "assistant",
-                text: 'Say "Ok, create it!" to lock this concept in and start building.',
+                text: "Choose one of the three generation options below to start building.",
               },
             ]);
+            onReady?.(prompt);
           } catch {
             setChatStage("vibe");
             setMessages((current) => [
@@ -92,24 +98,6 @@ export function useCreateChatFlow(options: UseCreateChatFlowOptions = {}) {
         return;
       }
 
-      if (chatStage === "concept") {
-        const extraPrompt = isCreateConfirmation(value) ? "" : value;
-        const prompt = [gameRequest, vibeRequest, selectedConcept, extraPrompt]
-          .filter(Boolean)
-          .join(". ");
-        setFinalPrompt(prompt);
-        setChatStage("ready");
-        onPromptChange?.(prompt);
-        setMessages((current) => [
-          ...current,
-          { role: "user", text: value },
-          {
-            role: "assistant",
-            text: `Plan ready for ${selectedConcept.split(":")[0] || "your game"}! Choose Hybrid Mode or Pure Agent Strategy below to start building.`,
-          },
-        ]);
-        onReady?.(prompt);
-      }
     },
     [
       chatInput,
@@ -127,7 +115,7 @@ export function useCreateChatFlow(options: UseCreateChatFlowOptions = {}) {
     const value = chatInput.trim();
     if (!value || isThinking) return;
 
-    if (chatStage === "game" || chatStage === "vibe" || chatStage === "concept") {
+    if (chatStage === "game" || chatStage === "vibe") {
       sendChat(value);
       return;
     }

@@ -40,9 +40,7 @@ export function ConsoleChatInput({
       ? placeholder
       : chatStage === "vibe"
         ? "Describe the vibe…"
-        : chatStage === "concept"
-          ? 'Say "Ok, create it!"…'
-          : "Add more detail…";
+        : "Add more detail…";
 
   return (
     <label

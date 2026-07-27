@@ -433,7 +433,31 @@ function Create() {
 
   const handleCreatePanelSubmit = () => {
     if (phase === "building" || isThinking) return;
-    submitComposerPrompt();
+    const instruction = chatInput.trim();
+    if (!instruction) return;
+
+    // "Generate Game" is the end of prompt entry, not another guided-chat
+    // step. Preserve any template/remix context, then immediately reveal the
+    // three generation modes.
+    const existingPrompt = (finalPrompt || chatPrompt || studio.prompt).trim();
+    const prompt =
+      existingPrompt && existingPrompt !== instruction
+        ? `${existingPrompt}. ${instruction}`
+        : instruction;
+
+    setFinalPrompt(prompt);
+    setGameRequest((current) => current || instruction);
+    setChatInput("");
+    setChatStage("ready");
+    studio.setPrompt(prompt);
+    setMessages((current) => [
+      ...current,
+      { role: "user", text: instruction },
+      {
+        role: "assistant",
+        text: "Instructions saved. Choose one of the three generation options below.",
+      },
+    ]);
   };
 
   const startTierBuild = (tier: 1 | 2 | 3) => {
