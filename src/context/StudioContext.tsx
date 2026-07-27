@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { usePrivy } from "@privy-io/react-auth";
 import { useCreatorStudio } from "@/hooks/useCreatorStudio";
 import { api } from "@/lib/api";
 import { engineOf } from "@/lib/studio-meta";
 import { findGameTemplate } from "@/lib/templates-loader";
-import { getCurrentUserId, ownsGame } from "@/lib/identity";
+import { ownsGame } from "@/lib/identity";
 
 type Studio = ReturnType<typeof useCreatorStudio>;
 
@@ -26,7 +27,11 @@ const StudioContext = createContext<StudioContextValue | null>(null);
 // localStorage holds lean metadata only: generated code is 20-30KB per game
 // and would blow the ~5MB quota within a few dozen creations. Full packages
 // (with code) live in memory and in the backend.
-function persistCreatedGames(games: any[]) {
+const LEGACY_CREATED_GAMES_KEY = "kult-created-games";
+const createdGamesKey = (privyUserId: string) => `kult-created-games:${privyUserId}`;
+
+function persistCreatedGames(privyUserId: string, games: any[]) {
+  if (!privyUserId) return;
   try {
     const lean = games.slice(0, 60).map((g: any) => {
       const { refinement, plan, promptBundle, ...rest } = g ?? {};
@@ -34,7 +39,7 @@ function persistCreatedGames(games: any[]) {
       void promptBundle;
       return { ...rest, hasBuild: Boolean(refinement?.generatedCode) };
     });
-    localStorage.setItem("kult-created-games", JSON.stringify(lean));
+    localStorage.setItem(createdGamesKey(privyUserId), JSON.stringify(lean));
   } catch {
     // quota exceeded — keep the in-memory state, drop persistence silently
   }
@@ -54,13 +59,32 @@ function isDeadDraft(game: any) {
 export function StudioProvider({ children }: { children: ReactNode }) {
   const studio = useCreatorStudio();
   const navigate = useNavigate();
+  const { ready: authReady, authenticated, user } = usePrivy();
+  const privyUserId = authReady && authenticated ? (user?.id ?? "") : "";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const [createdGames, setCreatedGames] = useState<any[]>(() => {
+  const [createdGames, setCreatedGames] = useState<any[]>([]);
+
+  const loadCachedGames = useCallback((userId: string) => {
+    if (!userId) return [];
     try {
-      const stored = localStorage.getItem("kult-created-games");
+      const key = createdGamesKey(userId);
+      let stored = localStorage.getItem(key);
+
+      // One-time migration from the old cache shared by every account. Only
+      // records verified as belonging to this identity are retained.
+      if (!stored) {
+        const legacy = localStorage.getItem(LEGACY_CREATED_GAMES_KEY);
+        const legacyGames: any[] = legacy ? JSON.parse(legacy) : [];
+        const ownedLegacyGames = legacyGames.filter((g) => ownsGame(g?.creatorId));
+        if (ownedLegacyGames.length) {
+          persistCreatedGames(userId, ownedLegacyGames);
+          stored = localStorage.getItem(key);
+        }
+        localStorage.removeItem(LEGACY_CREATED_GAMES_KEY);
+      }
+
       const parsed: any[] = stored ? JSON.parse(stored) : [];
-      // dedupe + keep only the current user's games (wallet = user)
       return parsed
         .filter((g) => ownsGame(g?.creatorId))
         .filter((g) => !isDeadDraft(g))
@@ -68,12 +92,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     } catch {
       return [];
     }
-  });
+  }, []);
+
+  // Switching Privy accounts must immediately switch the in-memory game list.
+  useEffect(() => {
+    setCreatedGames(loadCachedGames(privyUserId));
+  }, [loadCachedGames, privyUserId]);
 
   const addCreatedGame = (game: any) => {
     setCreatedGames((prev) => {
       const updated = [game, ...prev.filter((g: any) => g?.id !== game?.id)];
-      persistCreatedGames(updated);
+      persistCreatedGames(privyUserId, updated);
       return updated;
     });
   };
@@ -82,10 +111,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     await api.delete(`/games/${encodeURIComponent(gameId)}`).catch(() => {});
     setCreatedGames((prev) => {
       const updated = prev.filter((g: any) => g?.id !== gameId);
-      persistCreatedGames(updated);
+      persistCreatedGames(privyUserId, updated);
       return updated;
     });
-  }, []);
+  }, [privyUserId]);
 
   // A failed pure-agent build leaves a dead draft behind — no code and no
   // template to play. Delete it right away so it never lands in My Creations.
@@ -101,28 +130,26 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   // When both sides have the same game, prefer the copy that carries the
   // generated build (the backend saves it when the code job completes).
   const refreshCreatedGames = useCallback(async () => {
+    if (!privyUserId) {
+      setCreatedGames([]);
+      return;
+    }
     try {
       // Only the current user's creations belong in My Creations.
       const response = await api.get("/games/list", {
         timeout: 15000,
-        params: { creatorId: getCurrentUserId(), limit: 20 },
+        params: { creatorId: privyUserId, limit: 100 },
       });
       const remote: any[] = response.data?.games ?? [];
-      if (!remote.length) return;
       setCreatedGames((prev) => {
         const remoteById = new Map(remote.filter((g: any) => g?.id).map((g: any) => [g.id, g]));
-        // The backend list is authoritative: cached entries from before creator
-        // attribution (no creatorId) that the server doesn't know are stale
-        // copies of other users' games — drop them.
-        const kept = prev.filter(
-          (g: any) => !isDeadDraft(g) && (g?.creatorId || (g?.id && remoteById.has(g.id))),
-        );
-        let changed = kept.length !== prev.length;
+        // The backend list is authoritative. A cached game absent from this
+        // authenticated creator's response belongs to another account or is stale.
+        const kept = prev.filter((g: any) => !isDeadDraft(g) && g?.id && remoteById.has(g.id));
         const upgraded = kept.map((g: any) => {
           const r = remoteById.get(g?.id);
           if (!r) return g;
           if (r.refinement?.generatedCode && !g?.refinement?.generatedCode) {
-            changed = true;
             return r;
           }
           // The backend generates a real cover image in the background —
@@ -134,22 +161,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const remoteIsReal =
             r.thumbnailUrl && !String(r.thumbnailUrl).startsWith("data:image/svg+xml");
           if (localIsPlaceholder && remoteIsReal) {
-            changed = true;
             return { ...g, thumbnailUrl: r.thumbnailUrl };
           }
           return g;
         });
         const known = new Set(kept.map((g: any) => g?.id));
         const added = remote.filter((g: any) => g?.id && !known.has(g.id));
-        if (!changed && added.length === 0) return prev;
         const merged = [...upgraded, ...added];
-        persistCreatedGames(merged);
+        persistCreatedGames(privyUserId, merged);
         return merged;
       });
     } catch {
       // backend offline — local games still show
     }
-  }, []);
+  }, [privyUserId]);
 
   useEffect(() => {
     void refreshCreatedGames();
