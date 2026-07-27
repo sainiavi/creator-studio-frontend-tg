@@ -24,9 +24,10 @@ function isTelegram(account: User["linkedAccounts"][number]): account is Telegra
 
 function preferredWallet(user: User, chainType?: string): Wallet | null {
   const wallets = user.linkedAccounts.filter(isWallet);
-  return (
-    wallets.find((wallet) => wallet.chainType === chainType) ?? wallets[0] ?? user.wallet ?? null
-  );
+  if (chainType) {
+    return wallets.find((wallet) => wallet.chainType === chainType) ?? null;
+  }
+  return wallets[0] ?? user.wallet ?? null;
 }
 
 function telegramAccount(user: User): TelegramAccount | null {
@@ -37,15 +38,17 @@ export function getPrivyIdentity(user: User | null) {
   if (!user) return null;
 
   const tonWallet = preferredWallet(user, "ton");
-  const wallet = preferredWallet(user);
+  const evmWallet = preferredWallet(user, "ethereum");
   const telegram = telegramAccount(user);
   const telegramUserId = telegram?.telegramUserId ?? telegram?.telegram_user_id ?? null;
   const telegramUsername = telegram?.username ?? null;
   const telegramName = telegram?.firstName ?? telegram?.first_name ?? null;
 
   return {
-    userId: user.id,
-    walletAddress: wallet?.chainType === "ethereum" ? wallet.address : null,
+    // The verified EVM/0G wallet is the public product identity. Privy's DID
+    // remains available in the signed auth token as an ownership alias.
+    userId: evmWallet?.address ?? user.id,
+    walletAddress: evmWallet?.chainType === "ethereum" ? evmWallet.address : null,
     tonWalletAddress: tonWallet?.chainType === "ton" ? tonWallet.address : null,
     telegramUserId,
     username: telegramUsername ? `@${telegramUsername}` : (telegramName ?? null),

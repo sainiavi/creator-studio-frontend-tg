@@ -3,7 +3,7 @@ import { useCreateWallet } from "@privy-io/react-auth/extended-chains";
 import { Loader2, LogOut, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { getCurrentUsername } from "@/lib/identity";
+import { getCurrentUsername, getWalletAddress } from "@/lib/identity";
 import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { prefetchAuthToken } from "@/lib/api";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
@@ -34,7 +34,13 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   const tonWallet = getTonWallet(user) ?? createdTonWallet ?? getStoredTonWallet();
 
   const ensureTonWallet = async (nextUser = user) => {
-    if (!nextUser || getTonWallet(nextUser) || createdTonWallet || creatingTonRef.current) {
+    if (
+      !inTelegram ||
+      !nextUser ||
+      getTonWallet(nextUser) ||
+      createdTonWallet ||
+      creatingTonRef.current
+    ) {
       return;
     }
 
@@ -69,7 +75,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
       setAuthStatus("idle");
       syncPrivyIdentity(nextUser);
       void prefetchAuthToken();
-      void ensureTonWallet(nextUser);
+      if (inTelegram) void ensureTonWallet(nextUser);
     },
     onError: () => {
       setAuthLoading(false);
@@ -79,7 +85,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   });
 
   useEffect(() => {
-    if (!authenticated || !user) return;
+    if (!inTelegram || !authenticated || !user) return;
     if (getTonWallet(user) || createdTonWallet) return;
     void ensureTonWallet(user);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when auth/user identity changes
@@ -166,7 +172,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
         className={`mb-4 flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 ${
           collapsed ? "size-10" : "gap-2 px-3 py-2"
         }`}
-        title={inTelegram ? "Sign in with Telegram" : "Connect TON wallet"}
+        title={inTelegram ? "Sign in with Telegram" : "Sign in with email OTP"}
       >
         {loading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
         {!collapsed && (
@@ -181,7 +187,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
                     : "TELEGRAM SIGN IN"
                 : authStatus === "error"
                   ? "TRY AGAIN"
-                  : "TON WALLET"}
+                  : "EMAIL OTP"}
           </span>
         )}
       </button>
@@ -193,44 +199,48 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
       {!collapsed && (
         <div className="rounded-xl border border-sky-200/70 bg-white/75 px-3 py-2 text-sky-950">
           <p className="label-mono text-[10px] font-black text-sky-500">
-            {inTelegram ? "TELEGRAM SIGNED IN" : "TON WALLET CONNECTED"}
+            {inTelegram ? "TELEGRAM SIGNED IN" : "0G WALLET CONNECTED"}
           </p>
           <p className="mt-1 truncate font-mono text-xs font-bold">
-            {tonWallet?.address ? formatTonAddress(tonWallet.address) : identity}
+            {inTelegram && tonWallet?.address
+              ? formatTonAddress(tonWallet.address)
+              : getWalletAddress() || identity}
           </p>
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={activateTonWallet}
-        onPointerUp={activateTonWallet}
-        onTouchEnd={activateTonWallet}
-        disabled={tonLoading}
-        className={`flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white hover:text-sky-950 disabled:cursor-not-allowed disabled:opacity-70 ${
-          collapsed ? "size-10" : "w-full gap-2 px-3 py-2"
-        }`}
-        title={
-          tonWallet?.address
-            ? `TON wallet ${tonWallet.address}. Click to copy.`
-            : tonErrorMessage
-              ? `TON wallet error: ${tonErrorMessage}`
-              : "Create TON wallet"
-        }
-      >
-        {tonLoading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
-        {!collapsed && (
-          <span className="label-mono truncate text-xs font-bold">
-            {tonStatus === "copied"
-              ? "TON COPIED"
-              : tonStatus === "error"
-                ? tonErrorMessage || "TON ERROR"
-                : tonWallet?.address
-                  ? formatTonAddress(tonWallet.address)
-                  : "CREATE TON WALLET"}
-          </span>
-        )}
-      </button>
+      {inTelegram && (
+        <button
+          type="button"
+          onClick={activateTonWallet}
+          onPointerUp={activateTonWallet}
+          onTouchEnd={activateTonWallet}
+          disabled={tonLoading}
+          className={`flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white hover:text-sky-950 disabled:cursor-not-allowed disabled:opacity-70 ${
+            collapsed ? "size-10" : "w-full gap-2 px-3 py-2"
+          }`}
+          title={
+            tonWallet?.address
+              ? `TON wallet ${tonWallet.address}. Click to copy.`
+              : tonErrorMessage
+                ? `TON wallet error: ${tonErrorMessage}`
+                : "Create TON wallet"
+          }
+        >
+          {tonLoading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
+          {!collapsed && (
+            <span className="label-mono truncate text-xs font-bold">
+              {tonStatus === "copied"
+                ? "TON COPIED"
+                : tonStatus === "error"
+                  ? tonErrorMessage || "TON ERROR"
+                  : tonWallet?.address
+                    ? formatTonAddress(tonWallet.address)
+                    : "CREATE TON WALLET"}
+            </span>
+          )}
+        </button>
+      )}
 
       <button
         type="button"

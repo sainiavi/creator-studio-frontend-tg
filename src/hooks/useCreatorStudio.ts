@@ -7,7 +7,6 @@ import { createNotification } from "@/lib/api/social";
 
 const defaultPrompt = "cyberpunk doge samurai fighting AI robots in a neon arena";
 
-
 // Posts a code-generation job and polls until it finishes. Long generations
 // (up to ~15 min for pure-agent) cannot survive a single HTTP request through
 // browsers and gateways, so the backend returns a jobId immediately and we
@@ -15,15 +14,22 @@ const defaultPrompt = "cyberpunk doge samurai fighting AI robots in a neon arena
 const PROGRESS_STAGE_LABELS: Record<string, string> = {
   "writing-code": "Writing game code",
   "editing-seed": "Customizing game code",
-  "repairing": "Repairing build",
+  repairing: "Repairing build",
   "fixing-syntax": "Fixing syntax",
   "fixing-runtime": "Testing & fixing the build",
 };
 
 function paidGenerationMessage(error: any) {
-  if (error?.response?.status !== 402 || error?.response?.data?.code !== "PAID_GENERATION_REQUIRED") {
+  if (error?.response?.status !== 402) {
     return null;
   }
+  if (error?.response?.data?.code === "SUBSCRIPTION_REQUIRED") {
+    const subscription = error.response.data.subscription;
+    return subscription?.walletRequired
+      ? "Connect an EVM wallet and subscribe to continue generating games."
+      : `${subscription?.requiredTierName ?? "A Creator subscription"} is required to use this generation mode.`;
+  }
+  if (error?.response?.data?.code !== "PAID_GENERATION_REQUIRED") return null;
   const payment = error.response.data.payment;
   const amount = payment?.amount ?? 1;
   const currency = payment?.currency ?? "TON";
@@ -153,14 +159,29 @@ function templateForPrompt(prompt: string, gameTemplates: any[]) {
       : null;
 
   return (
-    match(["offline-fruitninja"], ["fruit ninja", "fruitninja", "fruit slice", "fruit slicing", "slice fruit", "slicing", "slash fruit", "blade fruit"]) ||
+    match(
+      ["offline-fruitninja"],
+      [
+        "fruit ninja",
+        "fruitninja",
+        "fruit slice",
+        "fruit slicing",
+        "slice fruit",
+        "slicing",
+        "slash fruit",
+        "blade fruit",
+      ],
+    ) ||
     match(["chess"], ["chess", "checkmate", "chessboard", "grandmaster"]) ||
     match(["head-soccer-2026"], ["soccer", "football", "world cup", "sports"]) ||
     match(["goof-runner"], ["endless runner", "runner", "run", "jump", "parkour"]) ||
     match(["mini-racer"], ["racing", "racer", "race", "car", "cars", "driving", "traffic"]) ||
     match(["bubble-shooter"], ["bubble", "shooter", "aim"]) ||
     match(["blocks-match3"], ["match 3", "match-3", "match three", "blocks", "jewel", "candy"]) ||
-    gameTemplates.find((template) => template.category?.toLowerCase() && text.includes(template.category.toLowerCase())) ||
+    gameTemplates.find(
+      (template) =>
+        template.category?.toLowerCase() && text.includes(template.category.toLowerCase()),
+    ) ||
     gameTemplates.find((template) => text.includes(template.name.toLowerCase())) ||
     null
   );
@@ -287,11 +308,13 @@ function localTemplateExport(gameTemplates: any[], themePresets: any) {
 
 export function useCreatorStudio() {
   const generationRef = useRef(0);
-  const [templatesModule, setTemplatesModule] = useState<Awaited<ReturnType<typeof loadTemplateModule>> | null>(
-    null,
-  );
+  const [templatesModule, setTemplatesModule] = useState<Awaited<
+    ReturnType<typeof loadTemplateModule>
+  > | null>(null);
   const gameTemplates = templatesModule?.gameTemplates ?? [];
-  const themePresets = templatesModule?.themePresets ?? { neon: { label: "Neon", mood: "", colors: [] } };
+  const themePresets = templatesModule?.themePresets ?? {
+    neon: { label: "Neon", mood: "", colors: [] },
+  };
   const templatesReady = templatesModule !== null;
 
   useEffect(() => {
@@ -331,13 +354,17 @@ export function useCreatorStudio() {
   useEffect(() => {
     if (!templatesModule) return;
     setGeneratedPackage(
-      localPackage(templatesModule.gameTemplates[0], {
-        prompt: defaultPrompt,
-        theme: "neon",
-        difficulty: "normal",
-        customization: "light",
-        extra: "none",
-      }, templatesModule.themePresets),
+      localPackage(
+        templatesModule.gameTemplates[0],
+        {
+          prompt: defaultPrompt,
+          theme: "neon",
+          difficulty: "normal",
+          customization: "light",
+          extra: "none",
+        },
+        templatesModule.themePresets,
+      ),
     );
   }, [templatesModule]);
   const [activeBuild, setActiveBuild] = useState<ActiveBuild | null>(() => readActiveBuild());
@@ -494,7 +521,8 @@ export function useCreatorStudio() {
     async (tier: Tier = 1, promptOverride = "", payment: GenerationPayment = {}) => {
       // Accept a legacy bare TON tx-hash string for backwards compatibility, or a
       // {method, paymentTxHash, starsOrderId} descriptor for the Stars-vs-TON choice.
-      const pay: GenerationPayment = typeof payment === "string" ? { method: "ton", paymentTxHash: payment } : payment;
+      const pay: GenerationPayment =
+        typeof payment === "string" ? { method: "ton", paymentTxHash: payment } : payment;
       const paymentTxHash = pay.paymentTxHash ?? "";
       // The tier owns the strategy: Tier 1 = hybrid (edit a seed), Tier 2 & 3 =
       // pure-agent (write from scratch). The backend enforces the same mapping;
@@ -570,10 +598,14 @@ export function useCreatorStudio() {
         localGame.category = localMatch?.category ?? "Arcade";
         localGame.gameplay = {
           ...(localGame.gameplay ?? {}),
-          mechanic: /fruit\s*ninja|fruitninja|fruit\s*slice|slice\s*fruit|slicing/i.test(effectivePrompt)
+          mechanic: /fruit\s*ninja|fruitninja|fruit\s*slice|slice\s*fruit|slicing/i.test(
+            effectivePrompt,
+          )
             ? "Swipe or drag to slice flying fruit, build combo streaks, and avoid bombs."
             : localGame.gameplay?.mechanic,
-          controls: /fruit\s*ninja|fruitninja|fruit\s*slice|slice\s*fruit|slicing/i.test(effectivePrompt)
+          controls: /fruit\s*ninja|fruitninja|fruit\s*slice|slice\s*fruit|slicing/i.test(
+            effectivePrompt,
+          )
             ? "Touch or mouse drag to slice"
             : localGame.gameplay?.controls,
         };
@@ -668,7 +700,10 @@ export function useCreatorStudio() {
           game: {
             id: baseGame?.id,
             templateId: baseGame?.templateId,
-            title: strategy === "pure-agent" ? (baseGame?.title || titleFromPrompt(effectivePrompt)) : baseGame?.title,
+            title:
+              strategy === "pure-agent"
+                ? baseGame?.title || titleFromPrompt(effectivePrompt)
+                : baseGame?.title,
           },
         });
       }
@@ -741,7 +776,8 @@ export function useCreatorStudio() {
           if (generationRef.current !== token) return;
           // Surface the real failure (e.g. "interrupted by a server restart",
           // "insufficient balance") instead of calling everything a timeout.
-          const detail = paidGenerationMessage(error) ?? error.response?.data?.error ?? error?.message;
+          const detail =
+            paidGenerationMessage(error) ?? error.response?.data?.error ?? error?.message;
           const fallback = strategy === "pure-agent" ? playableFallbackGame : baseGame;
           if (strategy === "pure-agent") {
             setGeneratedPackage(fallback);

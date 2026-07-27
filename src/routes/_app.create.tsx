@@ -1,6 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Rocket, Bot, Loader2, Check, Play, ArrowRight, Zap, Crown, Wand2, Sparkles } from "lucide-react";
+import {
+  Rocket,
+  Bot,
+  Loader2,
+  Check,
+  Play,
+  ArrowRight,
+  Zap,
+  Crown,
+  Wand2,
+  Sparkles,
+} from "lucide-react";
 
 // Three quality tiers. The tier the user taps owns the models AND the strategy
 // on the backend (Tier 1 = hybrid seed-edit, Tier 2 & 3 = fully agentic from
@@ -48,6 +59,10 @@ import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
 import { useCreateChatFlow } from "@/hooks/useCreateChatFlow";
 import buildIcon from "@/assets/buildIcon.png";
 import consoleIcon from "@/assets/consoleIcon.png";
+import {
+  fetchCreatorSubscriptionTiers,
+  purchaseCreatorSubscription,
+} from "@/lib/api/creatorSubscription";
 
 export const Route = createFileRoute("/_app/create")({
   pendingComponent: CreatePageSkeleton,
@@ -81,7 +96,7 @@ const stageToStep: Record<string, number> = {
 
 function Create() {
   const { studio, addCreatedGame, removeCreatedGame } = useStudioContext();
-  const { ready: authReady, authenticated, user, login } = usePrivy();
+  const { ready: authReady, authenticated, user, login, linkWallet } = usePrivy();
   const { signRawHash } = useSignRawHash();
   const navigate = useNavigate();
   const [templateSeed, setTemplateSeed] = useState<any | null>(null);
@@ -118,6 +133,11 @@ function Create() {
   const [paymentChoice, setPaymentChoice] = useState<{
     tier: 1 | 2 | 3;
     buildPrompt: string;
+    billingMode: "subscription" | "legacy";
+    subscriptionTier?: 1 | 2;
+    subscriptionName?: string;
+    subscriptionPrice0G?: string;
+    walletRequired?: boolean;
     tonAmount: number;
     tonCurrency: string;
     starsAmount: number;
@@ -230,7 +250,7 @@ function Create() {
     if (phase !== "failed") return;
     const statusText = activeBuild?.statusText ?? studio.agentStatus ?? "";
     if (!statusText) return;
-    if (/free game|TON|payment required|generate another/i.test(statusText)) {
+    if (/free game|TON|payment required|subscription|required|generate another/i.test(statusText)) {
       setGenerationNotice(statusText);
       setGenerationNoticeKind("payment");
     } else if (!generationNotice) {
@@ -247,6 +267,11 @@ function Create() {
     const currency = payment?.currency ?? "TON";
     const existing = Number(payment?.existingGames ?? 0);
     const serverError = String(data?.error ?? "").trim();
+    if (data?.code === "SUBSCRIPTION_REQUIRED") {
+      return (
+        serverError || `${data?.subscription?.requiredTierName ?? "A subscription"} is required.`
+      );
+    }
     if (data?.code === "PAID_GENERATION_REQUIRED") {
       return (
         serverError ||
@@ -275,12 +300,39 @@ function Create() {
       const isPaidRequired =
         error?.response?.status === 402 &&
         (error?.response?.data?.code === "PAID_GENERATION_REQUIRED" || Boolean(payment?.required));
+      const subscription = error?.response?.data?.subscription;
+      const isSubscriptionRequired =
+        error?.response?.status === 402 && error?.response?.data?.code === "SUBSCRIPTION_REQUIRED";
 
-      if (isPaidRequired) {
+      if (isSubscriptionRequired) {
+        const requiredTier = (subscription?.requiredTier === 2 ? 2 : 1) as 1 | 2;
+        const tiers = await fetchCreatorSubscriptionTiers().catch(() => null);
+        const plan = tiers?.tiers?.find((item) => item.tier === requiredTier);
+        setPaymentChoice({
+          tier,
+          buildPrompt,
+          billingMode: "subscription",
+          subscriptionTier: requiredTier,
+          subscriptionName: plan?.name ?? subscription?.requiredTierName,
+          subscriptionPrice0G: plan?.price0G,
+          walletRequired: Boolean(subscription?.walletRequired),
+          tonAmount: 0,
+          tonCurrency: "0G",
+          starsAmount: 0,
+          starsAvailable: false,
+        });
+        showNotice(
+          subscription?.walletRequired
+            ? "Connect an EVM wallet, then activate your Creator subscription."
+            : `${plan?.name ?? subscription?.requiredTierName ?? "A Creator subscription"} is required for this mode.`,
+          "payment",
+        );
+      } else if (isPaidRequired) {
         // Present the choice: pay in TON or in Telegram Stars.
         setPaymentChoice({
           tier,
           buildPrompt,
+          billingMode: "legacy",
           tonAmount: payment?.methods?.chain?.amount ?? payment?.amount ?? 1,
           tonCurrency: payment?.methods?.chain?.currency ?? payment?.currency ?? "TON",
           starsAmount: payment?.methods?.stars?.amount ?? 0,
@@ -299,6 +351,38 @@ function Create() {
         }
         showNotice(formatPaidGenerationNotice(error), "error");
       }
+    }
+  };
+
+  const subscribeAndBuild = async () => {
+    if (!paymentChoice || paymentChoice.billingMode !== "subscription" || isPaying) return;
+    const choice = paymentChoice;
+    try {
+      setIsPaying(true);
+      if (choice.walletRequired) {
+        showNotice("Link your EVM wallet to continue.", "payment");
+        await linkWallet();
+        clearAuthToken();
+        await prefetchAuthToken();
+      }
+      const subscriptionTier = choice.subscriptionTier ?? 1;
+      showNotice(
+        `Confirm ${choice.subscriptionName ?? "Creator subscription"} in your 0G wallet.`,
+        "payment",
+      );
+      await purchaseCreatorSubscription(subscriptionTier, 1);
+      showNotice("Subscription active. Starting your game build…", "info");
+      setPaymentChoice(null);
+      const game = await studio.generateFromPrompt(choice.tier, choice.buildPrompt);
+      if (game) addCreatedGame(game);
+      setGenerationNotice("");
+    } catch (error: any) {
+      showNotice(
+        error?.response?.data?.error ?? error?.message ?? "Could not activate subscription.",
+        "error",
+      );
+    } finally {
+      setIsPaying(false);
     }
   };
 
@@ -526,30 +610,52 @@ function Create() {
             <p className="mt-1 leading-snug">{generationNotice}</p>
             {generationNoticeKind === "payment" && paymentChoice && (
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {paymentChoice.starsAvailable && (
+                {paymentChoice.billingMode === "subscription" ? (
                   <button
                     type="button"
-                    onClick={() => void payWithStars()}
+                    onClick={() => void subscribeAndBuild()}
                     disabled={isPaying}
-                    className="flex flex-col items-center gap-0.5 rounded-xl border border-amber-300/50 bg-amber-400/20 px-3 py-2.5 text-amber-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60"
+                    className="col-span-2 flex flex-col items-center gap-0.5 rounded-xl border border-fuchsia-300/50 bg-fuchsia-400/20 px-3 py-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60"
                   >
                     <span className="font-display text-sm font-black">
-                      ⭐ {paymentChoice.starsAmount} Stars
+                      {paymentChoice.walletRequired
+                        ? "Connect EVM wallet"
+                        : `${paymentChoice.subscriptionName ?? "Subscribe"} · ${paymentChoice.subscriptionPrice0G ?? ""} 0G`}
                     </span>
-                    <span className="text-[10px] font-bold opacity-75">Pay in Telegram</span>
+                    <span className="text-[10px] font-bold opacity-75">
+                      {paymentChoice.walletRequired
+                        ? "Link wallet, then activate your plan"
+                        : "30 days of game generation"}
+                    </span>
                   </button>
+                ) : (
+                  <>
+                    {paymentChoice.starsAvailable && (
+                      <button
+                        type="button"
+                        onClick={() => void payWithStars()}
+                        disabled={isPaying}
+                        className="flex flex-col items-center gap-0.5 rounded-xl border border-amber-300/50 bg-amber-400/20 px-3 py-2.5 text-amber-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60"
+                      >
+                        <span className="font-display text-sm font-black">
+                          ⭐ {paymentChoice.starsAmount} Stars
+                        </span>
+                        <span className="text-[10px] font-bold opacity-75">Pay in Telegram</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void payWithTon()}
+                      disabled={isPaying}
+                      className={`flex flex-col items-center gap-0.5 rounded-xl border border-cyan-300/50 bg-cyan-400/15 px-3 py-2.5 text-cyan-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60 ${paymentChoice.starsAvailable ? "" : "col-span-2"}`}
+                    >
+                      <span className="font-display text-sm font-black">
+                        💎 {paymentChoice.tonAmount} {paymentChoice.tonCurrency}
+                      </span>
+                      <span className="text-[10px] font-bold opacity-75">Pay with wallet</span>
+                    </button>
+                  </>
                 )}
-                <button
-                  type="button"
-                  onClick={() => void payWithTon()}
-                  disabled={isPaying}
-                  className={`flex flex-col items-center gap-0.5 rounded-xl border border-cyan-300/50 bg-cyan-400/15 px-3 py-2.5 text-cyan-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60 ${paymentChoice.starsAvailable ? "" : "col-span-2"}`}
-                >
-                  <span className="font-display text-sm font-black">
-                    💎 {paymentChoice.tonAmount} {paymentChoice.tonCurrency}
-                  </span>
-                  <span className="text-[10px] font-bold opacity-75">Pay with wallet</span>
-                </button>
               </div>
             )}
             {generationNoticeKind === "payment" && !paymentChoice && (

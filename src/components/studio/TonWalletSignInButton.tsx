@@ -7,11 +7,7 @@ import { VITE_PRIVY_APP_ID } from "@/lib/privyConfig";
 import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { clearAuthToken, prefetchAuthToken } from "@/lib/api";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
-import {
-  getTonWallet,
-  toTonWallet,
-  type TonWallet,
-} from "@/lib/tonWallet";
+import { getTonWallet, toTonWallet, type TonWallet } from "@/lib/tonWallet";
 
 type TonWalletSignInButtonProps = {
   compact?: boolean;
@@ -35,7 +31,13 @@ export function TonWalletSignInButton({
   const creatingTonRef = useRef(false);
 
   const ensureTonWallet = async (nextUser = user) => {
-    if (!nextUser || getTonWallet(nextUser) || createdTonWallet || creatingTonRef.current) {
+    if (
+      !inTelegram ||
+      !nextUser ||
+      getTonWallet(nextUser) ||
+      createdTonWallet ||
+      creatingTonRef.current
+    ) {
       return;
     }
 
@@ -61,7 +63,7 @@ export function TonWalletSignInButton({
       setAuthStatus("idle");
       syncPrivyIdentity(nextUser);
       void prefetchAuthToken();
-      void ensureTonWallet(nextUser);
+      if (inTelegram) void ensureTonWallet(nextUser);
     },
     onError: () => {
       setAuthLoading(false);
@@ -71,7 +73,7 @@ export function TonWalletSignInButton({
   });
 
   useEffect(() => {
-    if (!authenticated || !user) return;
+    if (!inTelegram || !authenticated || !user) return;
     if (getTonWallet(user) || createdTonWallet) return;
     void ensureTonWallet(user);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when auth/user identity changes
@@ -102,8 +104,8 @@ export function TonWalletSignInButton({
   };
 
   const signInWithTonWallet = () => {
-    // Privy has no "TON Wallet" login button. Web path = email verify, then we
-    // create an embedded TON wallet. Telegram stays on the mini-app path only.
+    // Browser login is deliberately email OTP only. Privy provisions the
+    // embedded Ethereum wallet configured in privyConfig.
     setAuthLoading(true);
     setAuthStatus("idle");
     login({
@@ -160,7 +162,7 @@ export function TonWalletSignInButton({
         : "Telegram Sign In"
     : authStatus === "error"
       ? "Try again"
-      : "TON Wallet";
+      : "0G Wallet";
 
   return (
     <button
@@ -170,10 +172,20 @@ export function TonWalletSignInButton({
       className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 ${btnClass} ${
         compact || responsive ? "sm:w-auto sm:gap-2 sm:px-3" : "w-auto gap-2 px-3"
       } ${className}`}
-      title={inTelegram ? "Sign in with Telegram" : "Connect TON wallet"}
+      title={inTelegram ? "Sign in with Telegram" : "Sign in with email OTP"}
     >
-      {loading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4 stroke-[1.75]" />}
-      {!compact && <span className={`text-xs font-black uppercase tracking-wide ${responsive ? "hidden sm:inline" : ""}`}>{label}</span>}
+      {loading ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : (
+        <Wallet className="size-4 stroke-[1.75]" />
+      )}
+      {!compact && (
+        <span
+          className={`text-xs font-black uppercase tracking-wide ${responsive ? "hidden sm:inline" : ""}`}
+        >
+          {label}
+        </span>
+      )}
       {compact && responsive && (
         <span className="hidden text-xs font-black uppercase tracking-wide sm:inline">{label}</span>
       )}

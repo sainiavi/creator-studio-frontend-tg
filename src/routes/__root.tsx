@@ -108,7 +108,7 @@ function RootComponent() {
     }
     previousUserIdRef.current = nextUserId;
     if (nextUserId) void prefetchAuthToken();
-  }, [authenticated, ready, user?.id]);
+  }, [authenticated, ready, user]);
 
   return (
     <QueryClientProvider client={queryClient}>
