@@ -101,7 +101,7 @@ export async function runCodeJob(
   isCancelled?: () => boolean,
   onJobId?: (jobId: string) => void,
 ) {
-  const response = await api.post("/agents/code", body, { timeout: 45000 });
+  const response = await api.post("/agents/code", body, { timeout: 900000 });
   const jobId = response.data?.jobId;
   if (!jobId) throw new Error("No jobId returned for code generation");
   onJobId?.(jobId);
@@ -446,7 +446,7 @@ export function useCreatorStudio() {
         );
         if (generationRef.current !== token) return;
         if (refinement?.generatedCode) {
-          setGeneratedPackage((prev) => ({
+          setGeneratedPackage((prev: any) => ({
             ...(prev ?? {}),
             ...(build.game ?? {}),
             tier: "ai-refinement",
@@ -803,7 +803,7 @@ export function useCreatorStudio() {
             source: refinement?.source ?? refinement?.model ?? null,
           });
           if (refinement?.generatedCode) {
-            setGeneratedPackage((prev) => ({
+            setGeneratedPackage((prev: any) => ({
               ...(prev ?? baseGame),
               tier: "ai-refinement",
               refinement,
@@ -888,7 +888,7 @@ export function useCreatorStudio() {
         8 * 60 * 1000,
         (statusText) => setAgentStatus(statusText),
       );
-      setGeneratedPackage((prev) => ({
+      setGeneratedPackage((prev: any) => ({
         ...prev,
         tier: "ai-refinement",
         refinement,
@@ -896,7 +896,7 @@ export function useCreatorStudio() {
       setAgentStatus(`Code agent: ${refinement?.model ?? "deepseek-v4-pro"}`);
       setStatus(refinement?.generatedCode ? "AI code generated" : "AI prompt ready");
     } catch (error: any) {
-      setGeneratedPackage((prev) => ({
+      setGeneratedPackage((prev: any) => ({
         ...prev,
         tier: "ai-refinement",
         refinement: {
