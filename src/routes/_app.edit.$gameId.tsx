@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { publishGamePackage, unpublishGamePackage } from "@/lib/api/publishGame";
 import { createLaunchBoostOrder, createEditStarsOrder, fetchStarsOrder, type StarsOrder } from "@/lib/api/stars";
 import { runCodeJob } from "@/hooks/useCreatorStudio";
 import { sendTonGenerationPayment } from "@/lib/tonPayment";
@@ -49,7 +50,7 @@ function GameEditor() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
   const { createdGames, addCreatedGame, refreshCreatedGames } = useStudioContext();
-  const { user } = usePrivy();
+  const { user, authenticated } = usePrivy();
   const { signRawHash } = useSignRawHash();
   // When a paid edit needs payment, hold the pending wish + prices here and let
   // the user choose TON or Telegram Stars.
@@ -109,6 +110,28 @@ function GameEditor() {
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]);
+
+  // AI builds finish after the game record exists — poll until code is ready.
+  useEffect(() => {
+    if (!gameId || game?.refinement?.generatedCode) return;
+    let cancelled = false;
+    const loadManagedGame = () => {
+      api
+        .get(`/games/${encodeURIComponent(gameId)}/manage`)
+        .then((res) => {
+          if (cancelled) return;
+          const found = res.data?.game;
+          if (found?.id === gameId) setGame(found);
+        })
+        .catch(() => {});
+    };
+    loadManagedGame();
+    const interval = setInterval(loadManagedGame, 12000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [gameId, game?.refinement?.generatedCode]);
 
   useEffect(() => {
     setCodeDraft(game?.refinement?.generatedCode ?? "");
@@ -190,9 +213,11 @@ function GameEditor() {
       if (dirty && !(await save())) {
         throw new Error("Save the latest changes before publishing.");
       }
-      const response = await api.post(`/games/${encodeURIComponent(gameId)}/publish`);
-      const publishedGame = response.data?.game ?? game;
-      const awardedPoints = response.data?.points?.awarded ? Number(response.data.points.cs ?? response.data.points.points ?? 0) : 0;
+      const response = await publishGamePackage(gameId);
+      const publishedGame = response.game ?? game;
+      const awardedPoints = response.points?.awarded
+        ? Number(response.points.cs ?? response.points.points ?? 0)
+        : 0;
       setPublishPoints(awardedPoints > 0 ? awardedPoints : null);
       setGame(publishedGame);
       addCreatedGame(publishedGame);
@@ -211,8 +236,8 @@ function GameEditor() {
     setPublishing(true);
     setPublishError("");
     try {
-      const response = await api.delete(`/games/${encodeURIComponent(gameId)}/publish`);
-      const draftGame = response.data?.game ?? game;
+      const response = await unpublishGamePackage(gameId);
+      const draftGame = response.game ?? game;
       setGame(draftGame);
       addCreatedGame(draftGame);
       setPublishDialogOpen(false);
@@ -426,8 +451,23 @@ function GameEditor() {
   }
 
   const hasBuild = Boolean(game.refinement?.generatedCode);
+  const isLocalCreation = createdGames.some((g: any) => g?.id === gameId);
   // Wallet identity = user. Only the creator can change their game.
-  const isOwner = ownsGame(game.creatorId);
+  const isOwner =
+    authenticated &&
+    (ownsGame(game.creatorId) ||
+      (isLocalCreation && (!game.creatorId || game.creatorId === "anonymous")));
+  const wishDisabledReason = !authenticated
+    ? "Sign in to edit this game"
+    : !isOwner
+      ? "Only the creator can edit this game"
+      : !hasBuild
+        ? "Waiting for the AI build to finish…"
+        : building
+          ? "Applying your change…"
+          : payingEdit
+            ? "Complete payment to continue"
+            : null;
   const isPublished = game.publish?.published === true;
   const boostEndsAt = game.launchBoost?.endsAt ? new Date(game.launchBoost.endsAt) : null;
   const hasActiveBoost = Boolean(game.launchBoost?.active && boostEndsAt && boostEndsAt.getTime() > Date.now());
@@ -582,9 +622,12 @@ function GameEditor() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") void sendWish(wish);
               }}
-              disabled={building || payingEdit || !hasBuild || !isOwner}
-              placeholder={!isOwner ? "Only the creator can edit this game" : hasBuild ? "Tap to wish… e.g. make enemies faster" : "No build yet for this game"}
-              className="min-w-0 flex-1 rounded-xl bg-secondary/60 px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
+              disabled={Boolean(wishDisabledReason)}
+              placeholder={
+                wishDisabledReason ??
+                "Tap to wish… e.g. make enemies faster"
+              }
+              className="min-w-0 flex-1 rounded-xl bg-secondary/60 px-3 py-2 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-70"
             />
             <button
               onClick={() => void sendWish(wish)}

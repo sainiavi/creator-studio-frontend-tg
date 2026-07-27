@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/studio/PageHeader";
+import { CreatorSubscriptionPanel } from "@/components/studio/CreatorSubscriptionPanel";
+import { ZeroGWalletPanel } from "@/components/studio/ZeroGWalletPanel";
 import { KultLogo } from "@/components/studio/KultLogo";
 import { GameCard } from "@/components/studio/GameCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -318,7 +320,7 @@ function Profile() {
   useEffect(() => {
     if (!authReady || authenticated || loginAttemptedRef.current) return;
     loginAttemptedRef.current = true;
-    login({ loginMethods: [isTelegramMiniApp() ? "telegram" : "email"] });
+    login({ loginMethods: isTelegramMiniApp() ? ["telegram"] : ["google", "email"] });
   }, [authReady, authenticated, login]);
 
   const getThumbnail = useCallback((id: string | undefined, fallbackUrl?: string) => {
@@ -670,7 +672,7 @@ function Profile() {
           <button
             type="button"
             onClick={() =>
-              login({ loginMethods: [isTelegramMiniApp() ? "telegram" : "email"] })
+              login({ loginMethods: isTelegramMiniApp() ? ["telegram"] : ["google", "email"] })
             }
             className="mt-5 w-full rounded-xl bg-[linear-gradient(90deg,#d946ef,#7c3aed)] px-4 py-3 text-sm font-bold text-white shadow-[0_8px_22px_rgba(168,85,247,0.35)]"
           >
@@ -1280,6 +1282,13 @@ function Profile() {
               )}
             </div>
           </div>
+
+          {!isTelegramMiniApp() && authenticated && (
+            <div className="relative mt-5 grid gap-3">
+              <ZeroGWalletPanel className="border-primary/25 bg-background/30 text-foreground" />
+              <CreatorSubscriptionPanel className="border-primary/25 bg-background/30" />
+            </div>
+          )}
 
           <div className="relative mt-6 grid gap-3 sm:grid-cols-2">
             <div className="overflow-hidden rounded-2xl border border-amber-300/25 bg-[linear-gradient(135deg,oklch(0.22_0.07_80/0.62),oklch(0.08_0.02_282/0.84))] px-5 py-4 shadow-[inset_0_0_24px_oklch(0.82_0.18_80/0.1),0_0_24px_oklch(0.82_0.18_80/0.08)]">

@@ -48,6 +48,7 @@ export function getPrivyIdentity(user: User | null) {
     // The verified EVM/0G wallet is the public product identity. Privy's DID
     // remains available in the signed auth token as an ownership alias.
     userId: evmWallet?.address ?? user.id,
+    privyUserId: user.id,
     walletAddress: evmWallet?.chainType === "ethereum" ? evmWallet.address : null,
     tonWalletAddress: tonWallet?.chainType === "ton" ? tonWallet.address : null,
     telegramUserId,
@@ -62,6 +63,15 @@ export function syncPrivyIdentity(user: User | null) {
     return;
   }
   setPrivyIdentity(identity);
+}
+
+export function getEvmWallet(user: User | null): Wallet | null {
+  if (!user) return null;
+  return preferredWallet(user, "ethereum");
+}
+
+export function hasEvmWallet(user: User | null): boolean {
+  return Boolean(getEvmWallet(user));
 }
 
 export function hasTonWallet(user: User | null): boolean {

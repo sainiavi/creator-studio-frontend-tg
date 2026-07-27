@@ -1,4 +1,4 @@
-import { BrowserProvider, Contract, getAddress } from "ethers";
+import { BrowserProvider, Contract, getAddress, type Eip1193Provider } from "ethers";
 import { api } from "../api";
 import { getWalletAddress } from "../identity";
 
@@ -30,11 +30,10 @@ export async function fetchMyCreatorSubscription() {
   return data.subscription;
 }
 
-async function ensureChain(config: CreatorSubscriptionTiers) {
-  if (!window.ethereum) throw new Error("Connect an EVM wallet to subscribe with 0G.");
+async function ensureChain(config: CreatorSubscriptionTiers, provider: Eip1193Provider) {
   const chainId = `0x${config.chainId.toString(16)}`;
   try {
-    await window.ethereum.request({
+    await provider.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId }],
     });
@@ -42,7 +41,7 @@ async function ensureChain(config: CreatorSubscriptionTiers) {
     if (typeof error !== "object" || error === null || !("code" in error) || error.code !== 4902) {
       throw error;
     }
-    await window.ethereum.request({
+    await provider.request({
       method: "wallet_addEthereumChain",
       params: [
         {
@@ -57,11 +56,19 @@ async function ensureChain(config: CreatorSubscriptionTiers) {
   }
 }
 
-export async function purchaseCreatorSubscription(tier: 1 | 2, periods = 1) {
+export async function purchaseCreatorSubscription(
+  tier: 1 | 2,
+  periods = 1,
+  getEthereumProvider?: () => Promise<Eip1193Provider>,
+) {
   const config = await fetchCreatorSubscriptionTiers();
-  await ensureChain(config);
+  const eip1193Provider = getEthereumProvider
+    ? await getEthereumProvider()
+    : window.ethereum;
+  if (!eip1193Provider) throw new Error("Connect an EVM wallet to subscribe with 0G.");
+  await ensureChain(config, eip1193Provider);
 
-  const provider = new BrowserProvider(window.ethereum!);
+  const provider = new BrowserProvider(eip1193Provider);
   const signer = await provider.getSigner();
   const signerAddress = getAddress(await signer.getAddress());
   const authenticatedWallet = getWalletAddress();

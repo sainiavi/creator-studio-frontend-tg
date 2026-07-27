@@ -48,6 +48,7 @@ import { api } from "@/lib/api";
 import type { LeaderboardEntry } from "@/lib/api/leaderboards";
 import type { SharePlatform } from "@/lib/api/social";
 import { qualifyReferral } from "@/lib/api/referral";
+import { publishGamePackage } from "@/lib/api/publishGame";
 import defaultCreatorAvatar from "@/assets/navProfile.webp";
 import {
   clearPlayReturnPath,
@@ -286,7 +287,7 @@ function LeaderboardPanel({
 function PlayFeed() {
   const { gameId } = Route.useParams();
   const navigate = useNavigate();
-  const { setSidebarCollapsed, studio, createdGames, refreshCreatedGames } = useStudioContext();
+  const { setSidebarCollapsed, studio, createdGames, refreshCreatedGames, addCreatedGame } = useStudioContext();
   const { gameTemplates, themePresets, loading: templatesLoading } = useGameTemplates();
   const isSimpleAgentGame = gameId === "simple-agent-game";
   const isNeonSudoku = gameId === "neon-sudoku";
@@ -308,6 +309,14 @@ function PlayFeed() {
   const [publicLoadState, setPublicLoadState] = useState<"idle" | "loading" | "loaded" | "not-found">(
     "idle",
   );
+  const [publishingDraft, setPublishingDraft] = useState(false);
+  const [publishDraftError, setPublishDraftError] = useState("");
+  const [publishedLocally, setPublishedLocally] = useState(false);
+
+  useEffect(() => {
+    setPublishedLocally(false);
+    setPublishDraftError("");
+  }, [gameId]);
   const customGame = localCustomGame ?? (publicGame?.id === gameId ? publicGame : undefined);
 
   // Shared links resolve through the public-by-ID endpoint. It returns only
@@ -461,7 +470,28 @@ function PlayFeed() {
           )
         : null);
   const isCustomCreation = Boolean(generatedPackageMatches || customGame);
-  const isShareable = !isCustomCreation || pkg?.publish?.published === true;
+  const isShareable =
+    !isCustomCreation || pkg?.publish?.published === true || publishedLocally;
+
+  const handlePublishDraft = async () => {
+    if (publishingDraft || !isCustomCreation) return;
+    try {
+      setPublishingDraft(true);
+      setPublishDraftError("");
+      const result = await publishGamePackage(gameId);
+      if (result.game) {
+        addCreatedGame(result.game as any);
+        setPublishedLocally(true);
+      }
+      void refreshCreatedGames();
+    } catch (error: any) {
+      setPublishDraftError(
+        error?.response?.data?.error ?? error?.message ?? "Could not publish this game.",
+      );
+    } finally {
+      setPublishingDraft(false);
+    }
+  };
   const baseRemixCount = Number((customGame as any)?.remixes ?? (pkg as any)?.remixes ?? 0);
   const [remixCount, setRemixCount] = useState(baseRemixCount);
   const social = useSocial(gameId);
@@ -1129,15 +1159,23 @@ function PlayFeed() {
       </button>
 
       {isCustomCreation && !isShareable && (
-        <div className="absolute left-1/2 top-3 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-full border border-amber-300/25 bg-black/80 px-4 py-2 text-xs font-bold text-amber-200 backdrop-blur">
-          Draft preview
-          <Link
-            to="/edit/$gameId"
-            params={{ gameId }}
-            className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase text-black"
-          >
-            Publish
-          </Link>
+        <div className="absolute left-1/2 top-3 z-[60] flex -translate-x-1/2 flex-col items-center gap-1">
+          <div className="flex items-center gap-3 rounded-full border border-amber-300/25 bg-black/80 px-4 py-2 text-xs font-bold text-amber-200 backdrop-blur">
+            Draft preview
+            <button
+              type="button"
+              onClick={() => void handlePublishDraft()}
+              disabled={publishingDraft}
+              className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase text-black disabled:opacity-60"
+            >
+              {publishingDraft ? "Publishing…" : "Publish"}
+            </button>
+          </div>
+          {publishDraftError ? (
+            <p className="max-w-[min(90vw,20rem)] rounded-full bg-red-950/90 px-3 py-1 text-[10px] font-bold text-red-200">
+              {publishDraftError}
+            </p>
+          ) : null}
         </div>
       )}
       {/* Navigation Arrows for Desktop (Moved to right) */}
@@ -1405,6 +1443,11 @@ function PlayFeed() {
             count={social.favoriteCount}
             onToggle={social.handleFavorite}
             animating={social.favoriteAnimating}
+          />
+          <ActionButton
+            icon={<Trophy className="size-5 text-amber-400" />}
+            label="Rank"
+            onClick={() => setLeaderboardOpen(true)}
           />
           <ShareButton
             count={social.shareCount}

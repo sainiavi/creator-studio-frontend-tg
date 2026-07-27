@@ -1,10 +1,12 @@
-import { useLogin, useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
-import { useCreateWallet } from "@privy-io/react-auth/extended-chains";
+import { useLogin, useCreateWallet, useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
+import { useCreateWallet as useCreateExtendedWallet } from "@privy-io/react-auth/extended-chains";
 import { Loader2, LogOut, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { ZeroGWalletPanel } from "@/components/studio/ZeroGWalletPanel";
+
 import { getCurrentUsername, getWalletAddress } from "@/lib/identity";
-import { syncPrivyIdentity } from "@/lib/privyIdentity";
+import { hasEvmWallet, syncPrivyIdentity } from "@/lib/privyIdentity";
 import { prefetchAuthToken } from "@/lib/api";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 import {
@@ -19,7 +21,8 @@ import {
 export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   const { ready, authenticated, login: loginModal, logout, user } = usePrivy();
   const { login: loginWithTelegram, state: telegramState } = useLoginWithTelegram();
-  const { createWallet } = useCreateWallet();
+  const { createWallet: createTonWallet } = useCreateExtendedWallet();
+  const { createWallet: createEvmWallet } = useCreateWallet();
   const inTelegram = isTelegramMiniApp();
   const telegramLoading = telegramState.status === "loading";
   const [createdTonWallet, setCreatedTonWallet] = useState<TonWallet | null>(null);
@@ -29,6 +32,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   const [tonStatus, setTonStatus] = useState<"idle" | "copied" | "error">("idle");
   const [tonErrorMessage, setTonErrorMessage] = useState("");
   const creatingTonRef = useRef(false);
+  const creatingEvmRef = useRef(false);
   const lastTonActivationAt = useRef(0);
   const identity = getCurrentUsername();
   const tonWallet = getTonWallet(user) ?? createdTonWallet ?? getStoredTonWallet();
@@ -49,7 +53,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
       setTonLoading(true);
       setTonStatus("idle");
       setTonErrorMessage("");
-      const { user: refreshedUser, wallet } = await createWallet({ chainType: "ton" });
+      const { user: refreshedUser, wallet } = await createTonWallet({ chainType: "ton" });
       const nextWallet = toTonWallet(wallet) ?? getTonWallet(refreshedUser);
       setCreatedTonWallet(nextWallet);
       syncPrivyIdentity(refreshedUser);
@@ -69,13 +73,38 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
     }
   };
 
+  const ensureEvmWallet = async (nextUser = user) => {
+    if (
+      inTelegram ||
+      !nextUser ||
+      hasEvmWallet(nextUser) ||
+      creatingEvmRef.current
+    ) {
+      return;
+    }
+
+    try {
+      creatingEvmRef.current = true;
+      await createEvmWallet();
+      syncPrivyIdentity(nextUser);
+    } catch (error) {
+      console.error("[privy] EVM wallet creation failed", error);
+    } finally {
+      creatingEvmRef.current = false;
+    }
+  };
+
   const { login } = useLogin({
     onComplete: ({ user: nextUser }) => {
       setAuthLoading(false);
       setAuthStatus("idle");
       syncPrivyIdentity(nextUser);
       void prefetchAuthToken();
-      if (inTelegram) void ensureTonWallet(nextUser);
+      if (inTelegram) {
+        void ensureTonWallet(nextUser);
+      } else {
+        void ensureEvmWallet(nextUser);
+      }
     },
     onError: () => {
       setAuthLoading(false);
@@ -85,11 +114,15 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
   });
 
   useEffect(() => {
-    if (!inTelegram || !authenticated || !user) return;
-    if (getTonWallet(user) || createdTonWallet) return;
-    void ensureTonWallet(user);
+    if (!authenticated || !user) return;
+    if (inTelegram) {
+      if (getTonWallet(user) || createdTonWallet) return;
+      void ensureTonWallet(user);
+      return;
+    }
+    if (!hasEvmWallet(user)) void ensureEvmWallet(user);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when auth/user identity changes
-  }, [authenticated, user?.id]);
+  }, [authenticated, user?.id, inTelegram]);
 
   const signInWithTelegram = async () => {
     if (!inTelegram) {
@@ -118,7 +151,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
     setAuthLoading(true);
     setAuthStatus("idle");
     login({
-      loginMethods: ["email"],
+      loginMethods: ["google", "email"],
     });
   };
 
@@ -172,7 +205,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
         className={`mb-4 flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70 ${
           collapsed ? "size-10" : "gap-2 px-3 py-2"
         }`}
-        title={inTelegram ? "Sign in with Telegram" : "Sign in with email OTP"}
+        title={inTelegram ? "Sign in with Telegram" : "Sign in with Google or email"}
       >
         {loading ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
         {!collapsed && (
@@ -187,7 +220,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
                     : "TELEGRAM SIGN IN"
                 : authStatus === "error"
                   ? "TRY AGAIN"
-                  : "EMAIL OTP"}
+                  : "GOOGLE / EMAIL"}
           </span>
         )}
       </button>
@@ -207,6 +240,13 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
               : getWalletAddress() || identity}
           </p>
         </div>
+      )}
+
+      {!inTelegram && !collapsed && (
+        <ZeroGWalletPanel
+          showHeading={false}
+          className="border-sky-200/70 bg-white/75 text-sky-950 [&_button]:border-sky-200 [&_button]:bg-white/80 [&_button]:text-sky-800"
+        />
       )}
 
       {inTelegram && (

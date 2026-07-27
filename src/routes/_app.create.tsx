@@ -52,10 +52,12 @@ import { isTelegramMiniApp, openTelegramInvoice } from "@/lib/telegramMiniApp";
 import { getTonWallet } from "@/lib/tonWallet";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
+import { usePrivyEvmWallet } from "@/lib/usePrivyEvmWallet";
 import { CreatePageSkeleton } from "@/components/studio/PageSkeletons";
 import { AppHeader } from "@/components/studio/AppHeader";
 import { ConsoleChatMessages } from "@/components/studio/ConsoleChatMessages";
 import { CreateConsolePanel } from "@/components/studio/CreateConsolePanel";
+import { ZeroGWalletPanel } from "@/components/studio/ZeroGWalletPanel";
 import { useCreateChatFlow } from "@/hooks/useCreateChatFlow";
 import buildIcon from "@/assets/buildIcon.png";
 import consoleIcon from "@/assets/consoleIcon.png";
@@ -63,6 +65,7 @@ import {
   fetchCreatorSubscriptionTiers,
   purchaseCreatorSubscription,
 } from "@/lib/api/creatorSubscription";
+import { publishGamePackage } from "@/lib/api/publishGame";
 
 export const Route = createFileRoute("/_app/create")({
   pendingComponent: CreatePageSkeleton,
@@ -84,7 +87,7 @@ const steps = [
   "Testing & repairing",
   "Playable build ready",
 ];
-const PENDING_TON_GENERATION_PAYMENT_KEY = "kult-pending-ton-generation-payment";
+const PENDING_CHAIN_GENERATION_PAYMENT_KEY = "kult-pending-chain-generation-payment";
 
 const stageToStep: Record<string, number> = {
   "writing-code": 1,
@@ -96,8 +99,10 @@ const stageToStep: Record<string, number> = {
 
 function Create() {
   const { studio, addCreatedGame, removeCreatedGame } = useStudioContext();
-  const { ready: authReady, authenticated, user, login, linkWallet } = usePrivy();
+  const { ready: authReady, authenticated, user, login } = usePrivy();
   const { signRawHash } = useSignRawHash();
+  const { ensureEvmWallet, getEthereumProvider, sendZeroGGenerationPayment, addZeroGFunds } =
+    usePrivyEvmWallet();
   const navigate = useNavigate();
   const [templateSeed, setTemplateSeed] = useState<any | null>(null);
   const chat = useCreateChatFlow({
@@ -126,6 +131,8 @@ function Create() {
     "info",
   );
   const [isPaying, setIsPaying] = useState(false);
+  const [isFundingWallet, setIsFundingWallet] = useState(false);
+  const [publishingGame, setPublishingGame] = useState(false);
   const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false);
   const [enhancedPromptDraft, setEnhancedPromptDraft] = useState("");
   // When a 2nd+ game needs payment, we hold the pending build here and let the
@@ -138,8 +145,9 @@ function Create() {
     subscriptionName?: string;
     subscriptionPrice0G?: string;
     walletRequired?: boolean;
-    tonAmount: number;
-    tonCurrency: string;
+    chainMethod: "ton" | "0g";
+    chainAmount: number;
+    chainCurrency: string;
     starsAmount: number;
     starsAvailable: boolean;
   } | null>(null);
@@ -152,6 +160,8 @@ function Create() {
   const phase: "idle" | "building" | "done" | "failed" = activeBuild ? activeBuild.phase : "idle";
   const buildingTier = phase === "building" ? activeBuild!.tier : null;
   const builtGame = activeBuild?.game ?? null;
+  const builtGameId = builtGame?.id ?? studio.generatedPackage?.id ?? null;
+  const canPickBuildTier = chatStage === "ready" && phase !== "building";
   // Re-render once a second while building so the elapsed time and step list move
   // even between 5s job polls.
   const [, setTick] = useState(0);
@@ -242,7 +252,7 @@ function Create() {
     if (!authReady) return false;
     if (authenticated && user) return true;
     showNotice("Sign in to generate and save your game.");
-    login({ loginMethods: [isTelegramMiniApp() ? "telegram" : "email"] });
+    login({ loginMethods: [isTelegramMiniApp() ? "telegram" : "google", ...(isTelegramMiniApp() ? [] : ["email" as const])] });
     return false;
   };
 
@@ -316,8 +326,9 @@ function Create() {
           subscriptionName: plan?.name ?? subscription?.requiredTierName,
           subscriptionPrice0G: plan?.price0G,
           walletRequired: Boolean(subscription?.walletRequired),
-          tonAmount: 0,
-          tonCurrency: "0G",
+          chainMethod: "0g",
+          chainAmount: 0,
+          chainCurrency: "0G",
           starsAmount: 0,
           starsAvailable: false,
         });
@@ -328,13 +339,15 @@ function Create() {
           "payment",
         );
       } else if (isPaidRequired) {
-        // Present the choice: pay in TON or in Telegram Stars.
+        const chain = payment?.methods?.chain;
+        const chainMethod = chain?.method === "0g" || chain?.currency === "0G" ? "0g" : "ton";
         setPaymentChoice({
           tier,
           buildPrompt,
           billingMode: "legacy",
-          tonAmount: payment?.methods?.chain?.amount ?? payment?.amount ?? 1,
-          tonCurrency: payment?.methods?.chain?.currency ?? payment?.currency ?? "TON",
+          chainMethod,
+          chainAmount: chain?.amount ?? payment?.amount ?? 1,
+          chainCurrency: chain?.currency ?? payment?.currency ?? (chainMethod === "0g" ? "0G" : "TON"),
           starsAmount: payment?.methods?.stars?.amount ?? 0,
           starsAvailable:
             Boolean(payment?.methods?.stars?.available) &&
@@ -346,11 +359,45 @@ function Create() {
         if (error?.response?.status === 401 || /authorization token/i.test(serverError)) {
           clearAuthToken();
           void prefetchAuthToken();
-          showNotice("Sign in with TON Wallet in the header, then try building again.", "error");
+          showNotice("Sign in with Google or email, then try building again.", "error");
           return;
         }
         showNotice(formatPaidGenerationNotice(error), "error");
       }
+    }
+  };
+
+  const topUpZeroGWallet = async () => {
+    const amount = String(paymentChoice?.chainAmount || paymentChoice?.subscriptionPrice0G || "10");
+    try {
+      setIsFundingWallet(true);
+      await ensureEvmWallet();
+      await addZeroGFunds(amount);
+      showNotice("Funding started. Your 0G balance may take a minute to update.", "payment");
+    } catch (error: any) {
+      if (!/cancel/i.test(String(error?.message ?? ""))) {
+        showNotice(error?.message ?? "Could not start wallet funding.", "error");
+      }
+    } finally {
+      setIsFundingWallet(false);
+    }
+  };
+
+  const publishBuiltGame = async () => {
+    if (!builtGameId || publishingGame) return;
+    if (!requireLogin()) return;
+    try {
+      setPublishingGame(true);
+      const result = await publishGamePackage(builtGameId);
+      if (result.game) addCreatedGame(result.game as any);
+      showNotice("Game published! Anyone can play it now.", "info");
+    } catch (error: any) {
+      showNotice(
+        error?.response?.data?.error ?? error?.message ?? "Could not publish this game.",
+        "error",
+      );
+    } finally {
+      setPublishingGame(false);
     }
   };
 
@@ -360,8 +407,8 @@ function Create() {
     try {
       setIsPaying(true);
       if (choice.walletRequired) {
-        showNotice("Link your EVM wallet to continue.", "payment");
-        await linkWallet();
+        showNotice("Setting up your 0G wallet…", "payment");
+        await ensureEvmWallet();
         clearAuthToken();
         await prefetchAuthToken();
       }
@@ -370,7 +417,7 @@ function Create() {
         `Confirm ${choice.subscriptionName ?? "Creator subscription"} in your 0G wallet.`,
         "payment",
       );
-      await purchaseCreatorSubscription(subscriptionTier, 1);
+      await purchaseCreatorSubscription(subscriptionTier, 1, getEthereumProvider);
       showNotice("Subscription active. Starting your game build…", "info");
       setPaymentChoice(null);
       const game = await studio.generateFromPrompt(choice.tier, choice.buildPrompt);
@@ -386,30 +433,65 @@ function Create() {
     }
   };
 
-  // Pay for the pending build with TON, then generate.
-  const payWithTon = async () => {
+  const payWithChain = async () => {
     if (!paymentChoice || isPaying) return;
-    const { tier, buildPrompt, tonAmount, tonCurrency } = paymentChoice;
+    const { tier, buildPrompt, chainMethod, chainAmount, chainCurrency } = paymentChoice;
     setPaymentChoice(null);
     try {
+      setIsPaying(true);
+      let paymentTxHash = sessionStorage.getItem(PENDING_CHAIN_GENERATION_PAYMENT_KEY) ?? "";
+
+      if (chainMethod === "0g") {
+        if (!paymentTxHash) {
+          showNotice(
+            `Confirm ${chainAmount} ${chainCurrency} in your 0G wallet to unlock another game.`,
+            "payment",
+          );
+          await ensureEvmWallet();
+          paymentTxHash = await sendZeroGGenerationPayment(chainAmount);
+          sessionStorage.setItem(PENDING_CHAIN_GENERATION_PAYMENT_KEY, paymentTxHash);
+        }
+        showNotice("Payment sent. Verifying on 0G mainnet…", "info");
+        let game = null;
+        for (let attempt = 1; attempt <= 2; attempt += 1) {
+          try {
+            game = await studio.generateFromPrompt(tier, buildPrompt, {
+              method: "0g",
+              paymentTxHash,
+            });
+            break;
+          } catch (verifyError: any) {
+            const waitingForConfirmation =
+              verifyError?.response?.status === 402 &&
+              verifyError?.response?.data?.code === "PAYMENT_NOT_CONFIRMED";
+            if (!waitingForConfirmation || attempt === 2) throw verifyError;
+            showNotice("Payment sent. Waiting for 0G confirmation…", "info");
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+          }
+        }
+        if (game) addCreatedGame(game);
+        sessionStorage.removeItem(PENDING_CHAIN_GENERATION_PAYMENT_KEY);
+        setGenerationNotice("");
+        setGenerationNoticeKind("info");
+        return;
+      }
+
       const tonWallet = getTonWallet(user);
       if (!tonWallet) {
         showNotice("Connect your TON wallet in the header to pay with TON.", "payment");
         return;
       }
-      setIsPaying(true);
-      let paymentTxHash = sessionStorage.getItem(PENDING_TON_GENERATION_PAYMENT_KEY) ?? "";
       if (!paymentTxHash) {
         showNotice(
-          `Confirm ${tonAmount} ${tonCurrency} in your wallet to unlock another game.`,
+          `Confirm ${chainAmount} ${chainCurrency} in your wallet to unlock another game.`,
           "payment",
         );
         paymentTxHash = await sendTonGenerationPayment({
           wallet: tonWallet,
-          amountTon: tonAmount,
+          amountTon: chainAmount,
           signRawHash,
         });
-        sessionStorage.setItem(PENDING_TON_GENERATION_PAYMENT_KEY, paymentTxHash);
+        sessionStorage.setItem(PENDING_CHAIN_GENERATION_PAYMENT_KEY, paymentTxHash);
       }
       showNotice("Payment sent. Verifying on TON mainnet…", "info");
       let game = null;
@@ -430,14 +512,14 @@ function Create() {
         }
       }
       if (game) addCreatedGame(game);
-      sessionStorage.removeItem(PENDING_TON_GENERATION_PAYMENT_KEY);
+      sessionStorage.removeItem(PENDING_CHAIN_GENERATION_PAYMENT_KEY);
       setGenerationNotice("");
       setGenerationNoticeKind("info");
     } catch (paymentError: any) {
       showNotice(
         paymentError?.response?.data?.error ??
           paymentError?.message ??
-          "Could not complete TON payment. Please try again.",
+          "Could not complete payment. Please try again.",
         "error",
       );
     } finally {
@@ -609,25 +691,51 @@ function Create() {
             </p>
             <p className="mt-1 leading-snug">{generationNotice}</p>
             {generationNoticeKind === "payment" && paymentChoice && (
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-3 space-y-2">
+                {!isTelegramMiniApp() &&
+                  (paymentChoice.billingMode === "subscription" ||
+                    paymentChoice.chainMethod === "0g") && (
+                    <ZeroGWalletPanel
+                      defaultFundAmount={String(
+                        paymentChoice.chainAmount ||
+                          paymentChoice.subscriptionPrice0G ||
+                          "10",
+                      )}
+                      showHeading={false}
+                      className="border-amber-300/20 bg-black/15 p-2.5"
+                    />
+                  )}
+                <div className="grid grid-cols-2 gap-2">
                 {paymentChoice.billingMode === "subscription" ? (
-                  <button
-                    type="button"
-                    onClick={() => void subscribeAndBuild()}
-                    disabled={isPaying}
-                    className="col-span-2 flex flex-col items-center gap-0.5 rounded-xl border border-fuchsia-300/50 bg-fuchsia-400/20 px-3 py-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60"
-                  >
-                    <span className="font-display text-sm font-black">
-                      {paymentChoice.walletRequired
-                        ? "Connect EVM wallet"
-                        : `${paymentChoice.subscriptionName ?? "Subscribe"} · ${paymentChoice.subscriptionPrice0G ?? ""} 0G`}
-                    </span>
-                    <span className="text-[10px] font-bold opacity-75">
-                      {paymentChoice.walletRequired
-                        ? "Link wallet, then activate your plan"
-                        : "30 days of game generation"}
-                    </span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => void subscribeAndBuild()}
+                      disabled={isPaying}
+                      className="col-span-2 flex flex-col items-center gap-0.5 rounded-xl border border-fuchsia-300/50 bg-fuchsia-400/20 px-3 py-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60"
+                    >
+                      <span className="font-display text-sm font-black">
+                        {paymentChoice.walletRequired
+                          ? "Activate with 0G wallet"
+                          : `${paymentChoice.subscriptionName ?? "Subscribe"} · ${paymentChoice.subscriptionPrice0G ?? ""} 0G`}
+                      </span>
+                      <span className="text-[10px] font-bold opacity-75">
+                        {paymentChoice.walletRequired
+                          ? "Confirm subscription in your embedded wallet"
+                          : "30 days of game generation"}
+                      </span>
+                    </button>
+                    {!isTelegramMiniApp() && (
+                      <button
+                        type="button"
+                        onClick={() => void topUpZeroGWallet()}
+                        disabled={isFundingWallet || isPaying}
+                        className="col-span-2 rounded-xl border border-cyan-300/40 bg-cyan-400/15 px-3 py-2 text-xs font-black text-cyan-50 transition active:scale-[0.97] disabled:opacity-60"
+                      >
+                        {isFundingWallet ? "Opening funding…" : "Top up 0G wallet first"}
+                      </button>
+                    )}
+                  </>
                 ) : (
                   <>
                     {paymentChoice.starsAvailable && (
@@ -645,17 +753,30 @@ function Create() {
                     )}
                     <button
                       type="button"
-                      onClick={() => void payWithTon()}
+                      onClick={() => void payWithChain()}
                       disabled={isPaying}
                       className={`flex flex-col items-center gap-0.5 rounded-xl border border-cyan-300/50 bg-cyan-400/15 px-3 py-2.5 text-cyan-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition active:scale-[0.97] disabled:opacity-60 ${paymentChoice.starsAvailable ? "" : "col-span-2"}`}
                     >
                       <span className="font-display text-sm font-black">
-                        💎 {paymentChoice.tonAmount} {paymentChoice.tonCurrency}
+                        💎 {paymentChoice.chainAmount} {paymentChoice.chainCurrency}
                       </span>
-                      <span className="text-[10px] font-bold opacity-75">Pay with wallet</span>
+                      <span className="text-[10px] font-bold opacity-75">
+                        {paymentChoice.chainMethod === "0g" ? "Pay with 0G wallet" : "Pay with TON wallet"}
+                      </span>
                     </button>
+                    {paymentChoice.chainMethod === "0g" && !isTelegramMiniApp() && (
+                      <button
+                        type="button"
+                        onClick={() => void topUpZeroGWallet()}
+                        disabled={isFundingWallet || isPaying}
+                        className={`rounded-xl border border-cyan-300/30 bg-black/20 px-3 py-2.5 text-[10px] font-black uppercase tracking-wide text-cyan-100 transition active:scale-[0.97] disabled:opacity-60 ${paymentChoice.starsAvailable ? "" : "col-span-2"}`}
+                      >
+                        {isFundingWallet ? "Opening funding…" : "Top up 0G first"}
+                      </button>
+                    )}
                   </>
                 )}
+                </div>
               </div>
             )}
             {generationNoticeKind === "payment" && !paymentChoice && (
@@ -753,8 +874,13 @@ function Create() {
               </div>
             )}
 
-            {chatStage === "ready" && phase === "idle" && (
+            {canPickBuildTier && (
               <div className="mb-3 grid gap-2.5">
+                {phase === "done" || phase === "failed" ? (
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-fuchsia-300">
+                    Generate another game
+                  </p>
+                ) : null}
                 {tierButtons.map((t) => (
                   <button
                     key={t.tier}
@@ -905,41 +1031,34 @@ function Create() {
                 </h4>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <button
-                    onClick={() =>
-                      navigate({
-                        to: "/edit/$gameId",
-                        params: { gameId: builtGame?.id ?? studio.generatedPackage.id ?? "latest" },
-                      })
-                    }
-                    className="flex items-center justify-center gap-2 rounded-full bg-violet-800 px-3 py-2 text-xs font-bold uppercase text-white"
+                    onClick={() => {
+                      if (!builtGameId) return;
+                      navigate({ to: "/edit/$gameId", params: { gameId: builtGameId } });
+                    }}
+                    disabled={!builtGameId}
+                    className="flex items-center justify-center gap-2 rounded-full bg-violet-800 px-3 py-2 text-xs font-bold uppercase text-white disabled:opacity-60"
                   >
                     <Wand2 className="size-4" /> Edit Game
                   </button>
                   <button
-                    onClick={() =>
-                      navigate({
-                        to: "/edit/$gameId",
-                        params: { gameId: builtGame?.id ?? studio.generatedPackage.id ?? "latest" },
-                      })
-                    }
-                    className="flex items-center justify-center gap-2 rounded-full bg-fuchsia-100 px-3 py-2 text-xs font-bold uppercase text-black"
+                    onClick={() => void publishBuiltGame()}
+                    disabled={!builtGameId || publishingGame}
+                    className="flex items-center justify-center gap-2 rounded-full bg-fuchsia-100 px-3 py-2 text-xs font-bold uppercase text-black disabled:opacity-60"
                   >
-                    <Rocket className="size-4" /> Publish
+                    {publishingGame ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Rocket className="size-4" />
+                    )}
+                    {publishingGame ? "Publishing…" : "Publish"}
                   </button>
                   <button
-                    onClick={() =>
-                      navigate({
-                        to: "/play/$gameId",
-                        params: {
-                          gameId:
-                            builtGame?.id ??
-                            builtGame?.templateId ??
-                            studio.generatedPackage.templateId ??
-                            "flappy",
-                        },
-                      })
-                    }
-                    className="col-span-2 flex items-center justify-center gap-2 rounded-full bg-fuchsia-100 px-4 py-2 text-xs font-bold uppercase text-black"
+                    onClick={() => {
+                      if (!builtGameId) return;
+                      navigate({ to: "/play/$gameId", params: { gameId: builtGameId } });
+                    }}
+                    disabled={!builtGameId}
+                    className="col-span-2 flex items-center justify-center gap-2 rounded-full bg-fuchsia-100 px-4 py-2 text-xs font-bold uppercase text-black disabled:opacity-60"
                   >
                     <Play className="size-4" /> Play
                   </button>

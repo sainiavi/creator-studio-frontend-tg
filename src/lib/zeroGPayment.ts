@@ -1,26 +1,19 @@
-import { getWalletAddress } from "@/lib/identity";
+import {
+  decimalToWeiHex,
+  ZERO_G_CHAIN_ID,
+  ZERO_G_TREASURY_WALLET,
+} from "@/lib/zeroGChain";
 
 declare global {
   interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<any>;
-    };
+    ethereum?: any;
   }
 }
 
-const ZERO_G_CHAIN_ID = Number(import.meta.env.VITE_ZERO_G_MAINNET_CHAIN_ID || 16661);
 const ZERO_G_RPC_URL = import.meta.env.VITE_ZERO_G_MAINNET_RPC_URL || "https://evmrpc.0g.ai";
-const ZERO_G_TREASURY_WALLET = import.meta.env.VITE_ZERO_G_TREASURY_WALLET || "";
 
 function toHexChainId(chainId: number) {
   return `0x${chainId.toString(16)}`;
-}
-
-function decimalToWeiHex(amount: number | string) {
-  const [whole, fraction = ""] = String(amount).split(".");
-  const fractionWei = `${fraction.slice(0, 18)}${"0".repeat(Math.max(0, 18 - fraction.length))}`;
-  const wei = BigInt(whole || "0") * 10n ** 18n + BigInt(fractionWei || "0");
-  return `0x${wei.toString(16)}`;
 }
 
 async function ensureZeroGMainnet() {
@@ -52,8 +45,9 @@ async function ensureZeroGMainnet() {
   }
 }
 
+/** Legacy path for external wallets injected via window.ethereum. Prefer usePrivyEvmWallet(). */
 export async function sendZeroGGenerationPayment(amount0G: number | string) {
-  const from = getWalletAddress();
+  const from = (await window.ethereum?.request({ method: "eth_accounts" }))?.[0];
   if (!from) throw new Error("Connect your wallet before generating a paid game.");
   if (!/^0x[a-fA-F0-9]{40}$/.test(ZERO_G_TREASURY_WALLET)) {
     throw new Error("0G treasury wallet is not configured.");
@@ -71,3 +65,5 @@ export async function sendZeroGGenerationPayment(amount0G: number | string) {
   });
   return String(txHash);
 }
+
+export { decimalToWeiHex, ZERO_G_CHAIN_ID, ZERO_G_TREASURY_WALLET };

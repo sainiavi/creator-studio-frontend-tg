@@ -4,6 +4,7 @@
 // Anonymous browser-generated users must never be treated as signed-in users.
 
 const PRIVY_USER_KEY = "kult_privy_user_id";
+const PRIVY_DID_KEY = "kult_privy_did";
 const PRIVY_WALLET_KEY = "kult_privy_wallet";
 const PRIVY_TON_WALLET_KEY = "kult_privy_ton_wallet";
 const PRIVY_TELEGRAM_KEY = "kult_privy_telegram_user";
@@ -39,12 +40,14 @@ function writeStorage(key: string, value: string | null | undefined) {
 
 export function setPrivyIdentity(identity: {
   userId: string;
+  privyUserId?: string | null;
   walletAddress?: string | null;
   tonWalletAddress?: string | null;
   telegramUserId?: string | null;
   username?: string | null;
 }) {
   writeStorage(PRIVY_USER_KEY, identity.userId);
+  writeStorage(PRIVY_DID_KEY, identity.privyUserId);
   writeStorage(PRIVY_WALLET_KEY, identity.walletAddress);
   writeStorage(PRIVY_TON_WALLET_KEY, identity.tonWalletAddress);
   writeStorage(PRIVY_TELEGRAM_KEY, identity.telegramUserId);
@@ -53,6 +56,7 @@ export function setPrivyIdentity(identity: {
 
 export function clearPrivyIdentity() {
   writeStorage(PRIVY_USER_KEY, null);
+  writeStorage(PRIVY_DID_KEY, null);
   writeStorage(PRIVY_WALLET_KEY, null);
   writeStorage(PRIVY_TON_WALLET_KEY, null);
   writeStorage(PRIVY_TELEGRAM_KEY, null);
@@ -123,14 +127,34 @@ export function setCurrentUsername(name: string): string {
   return cleanName;
 }
 
+function normalizeIdentity(value: string | null | undefined): string | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  return /^0x[a-fA-F0-9]{40}$/.test(raw) ? raw.toLowerCase() : raw;
+}
+
+/** All ids that should resolve to the current signed-in creator. */
+export function getIdentityAliases(): string[] {
+  return [
+    ...new Set(
+      [
+        getCurrentUserId(),
+        readStorage(PRIVY_USER_KEY),
+        readStorage(PRIVY_DID_KEY),
+        getTonWalletAddress(),
+        getWalletAddress(),
+        getTelegramUserId(),
+      ]
+        .map(normalizeIdentity)
+        .filter(Boolean),
+    ),
+  ] as string[];
+}
+
 /** True when `creatorId` belongs to the current user (or is unset/legacy). */
 export function ownsGame(creatorId: string | null | undefined): boolean {
-  if (!creatorId) return true; // legacy games without attribution
-  return [
-    getCurrentUserId(),
-    readStorage(PRIVY_USER_KEY),
-    getTonWalletAddress(),
-    getWalletAddress(),
-    getTelegramUserId(),
-  ].includes(creatorId);
+  if (!creatorId || creatorId === "anonymous") return true;
+  const normalized = normalizeIdentity(creatorId);
+  if (!normalized) return true;
+  return getIdentityAliases().includes(normalized);
 }
