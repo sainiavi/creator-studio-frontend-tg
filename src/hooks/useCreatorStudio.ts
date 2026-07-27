@@ -167,6 +167,8 @@ function templateForPrompt(prompt: string, gameTemplates: any[]) {
 }
 
 function titleFromPrompt(prompt: string) {
+  const markdownTitle = prompt.match(/^##\s*Title\s*\n\s*\*\*([^*\n]+)\*\*/i)?.[1]?.trim();
+  if (markdownTitle) return markdownTitle;
   const text = prompt.toLowerCase();
   if (/(fruit\s*ninja|fruitninja|fruit\s*slice|slice\s*fruit|slicing)/.test(text)) {
     return "Fruit Ninja Game";
@@ -708,6 +710,9 @@ export function useCreatorStudio() {
               ...(prev ?? baseGame),
               tier: "ai-refinement",
               refinement,
+              ...(refinement.gameplayAssets
+                ? { gameplayAssets: refinement.gameplayAssets }
+                : {}),
             }));
             setPackageMode("Prompt + Agents");
             setStatus("Game generated with code");
@@ -718,11 +723,17 @@ export function useCreatorStudio() {
             const fallback = strategy === "pure-agent" ? playableFallbackGame : baseGame;
             if (strategy === "pure-agent") {
               setGeneratedPackage(fallback);
+              if (baseGame?.id) {
+                void api.delete(`/games/${encodeURIComponent(baseGame.id)}`).catch(() => {});
+              }
             }
             setAgentStatus("AI build returned no code — showing the closest playable template");
             updateActiveBuild({
-              phase: "done",
-              statusText: "AI build returned no code — the closest playable template version was saved.",
+              phase: strategy === "pure-agent" ? "failed" : "done",
+              statusText:
+                strategy === "pure-agent"
+                  ? "AI build returned no playable code. The incomplete game was removed."
+                  : "AI build returned no code — the playable Hybrid template was saved.",
               game: { id: fallback?.id, templateId: fallback?.templateId, title: fallback?.title },
             });
           }
@@ -735,13 +746,16 @@ export function useCreatorStudio() {
           if (strategy === "pure-agent") {
             setGeneratedPackage(fallback);
             setPackageMode("Prompt");
+            if (baseGame?.id) {
+              void api.delete(`/games/${encodeURIComponent(baseGame.id)}`).catch(() => {});
+            }
           }
           const message = detail
             ? `AI build failed: ${detail} — showing closest playable template`
             : "AI build timed out — showing closest playable template";
           setAgentStatus(message);
           updateActiveBuild({
-            phase: strategy === "pure-agent" ? "done" : "failed",
+            phase: "failed",
             statusText: message,
             game: { id: fallback?.id, templateId: fallback?.templateId, title: fallback?.title },
           });

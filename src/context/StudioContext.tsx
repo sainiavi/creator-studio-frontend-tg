@@ -56,6 +56,14 @@ function isDeadDraft(game: any) {
   return born > 0 && Date.now() - born > DEAD_DRAFT_MS;
 }
 
+function isPlayableCreation(game: any) {
+  if (["building", "failed", "cancelled"].includes(String(game?.buildStatus ?? ""))) return false;
+  if (game?.templateId === "pure-agent" && !game?.refinement?.generatedCode && !game?.hasBuild) {
+    return false;
+  }
+  return !isDeadDraft(game);
+}
+
 export function StudioProvider({ children }: { children: ReactNode }) {
   const studio = useCreatorStudio();
   const navigate = useNavigate();
@@ -87,7 +95,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const parsed: any[] = stored ? JSON.parse(stored) : [];
       return parsed
         .filter((g) => ownsGame(g?.creatorId))
-        .filter((g) => !isDeadDraft(g))
+        .filter(isPlayableCreation)
         .filter((g, i, all) => !g?.id || all.findIndex((x) => x?.id === g.id) === i);
     } catch {
       return [];
@@ -100,6 +108,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   }, [loadCachedGames, privyUserId]);
 
   const addCreatedGame = (game: any) => {
+    if (!isPlayableCreation(game)) return;
     setCreatedGames((prev) => {
       const updated = [game, ...prev.filter((g: any) => g?.id !== game?.id)];
       persistCreatedGames(privyUserId, updated);
@@ -145,7 +154,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const remoteById = new Map(remote.filter((g: any) => g?.id).map((g: any) => [g.id, g]));
         // The backend list is authoritative. A cached game absent from this
         // authenticated creator's response belongs to another account or is stale.
-        const kept = prev.filter((g: any) => !isDeadDraft(g) && g?.id && remoteById.has(g.id));
+        const kept = prev.filter(
+          (g: any) => isPlayableCreation(g) && g?.id && remoteById.has(g.id),
+        );
         const upgraded = kept.map((g: any) => {
           const r = remoteById.get(g?.id);
           if (!r) return g;
@@ -166,7 +177,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           return g;
         });
         const known = new Set(kept.map((g: any) => g?.id));
-        const added = remote.filter((g: any) => g?.id && !known.has(g.id));
+        const added = remote.filter(
+          (g: any) => isPlayableCreation(g) && g?.id && !known.has(g.id),
+        );
         const merged = [...upgraded, ...added];
         persistCreatedGames(privyUserId, merged);
         return merged;

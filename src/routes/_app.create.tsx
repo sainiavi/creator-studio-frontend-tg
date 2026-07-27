@@ -103,6 +103,7 @@ function Create() {
     submitComposerPrompt: submitChatPrompt,
     chatPrompt,
     isThinking,
+    resetChat,
   } = chat;
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [generationNotice, setGenerationNotice] = useState("");
@@ -110,6 +111,8 @@ function Create() {
     "info",
   );
   const [isPaying, setIsPaying] = useState(false);
+  const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false);
+  const [enhancedPromptDraft, setEnhancedPromptDraft] = useState("");
   // When a 2nd+ game needs payment, we hold the pending build here and let the
   // user pick TON or Telegram Stars instead of auto-charging.
   const [paymentChoice, setPaymentChoice] = useState<{
@@ -413,6 +416,9 @@ function Create() {
     const gameId = activeBuild?.game?.id;
     studio.cancelActiveBuild();
     if (phase === "building" && gameId) void removeCreatedGame(gameId);
+    resetChat();
+    studio.setPrompt("");
+    setEnhancedPromptDraft("");
   };
 
   const sendChatMessage = (text = chatInput) => {
@@ -431,33 +437,55 @@ function Create() {
     sendChatMessage(value);
   };
 
-  const handleCreatePanelSubmit = () => {
-    if (phase === "building" || isThinking) return;
+  const handleCreatePanelSubmit = async () => {
+    if (phase === "building" || isThinking || isEnhancingPrompt) return;
     const instruction = chatInput.trim();
     if (!instruction) return;
+    if (!requireLogin()) return;
 
-    // "Generate Game" is the end of prompt entry, not another guided-chat
-    // step. Preserve any template/remix context, then immediately reveal the
-    // three generation modes.
-    const existingPrompt = (finalPrompt || chatPrompt || studio.prompt).trim();
-    const prompt =
-      existingPrompt && existingPrompt !== instruction
-        ? `${existingPrompt}. ${instruction}`
-        : instruction;
-
-    setFinalPrompt(prompt);
-    setGameRequest((current) => current || instruction);
-    setChatInput("");
-    setChatStage("ready");
-    studio.setPrompt(prompt);
+    // First turn the user's short idea into a build-ready specification. Only
+    // after the user can see that prompt do we reveal Hybrid, Pro, and Ultra.
+    const rawPrompt = instruction;
     setMessages((current) => [
       ...current,
       { role: "user", text: instruction },
-      {
-        role: "assistant",
-        text: "Instructions saved. Choose one of the three generation options below.",
-      },
     ]);
+    setIsEnhancingPrompt(true);
+    setGenerationNotice("");
+    try {
+      const { data } = await api.post(
+        "/agents/enhance-prompt",
+        { prompt: rawPrompt },
+        // Long, detailed prompts can make MiniMax reason for longer than the
+        // shared 12s API timeout. Match the backend's enhancement allowance.
+        { timeout: 100_000 },
+      );
+      const enhancedPrompt = String(data?.enhancedPrompt ?? "").trim();
+      if (!enhancedPrompt) throw new Error("Prompt enhancement returned no text.");
+
+      setFinalPrompt(enhancedPrompt);
+      setEnhancedPromptDraft(enhancedPrompt);
+      setGameRequest(instruction);
+      setChatInput("");
+      setChatStage("ready");
+      studio.setPrompt(enhancedPrompt);
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          text: "Your detailed game prompt is ready. Review or edit it below, then choose Hybrid, Pro, or Ultra.",
+        },
+      ]);
+    } catch (error: any) {
+      showNotice(
+        error?.response?.data?.error ??
+          error?.message ??
+          "Could not enhance the game prompt. Please try again.",
+        "error",
+      );
+    } finally {
+      setIsEnhancingPrompt(false);
+    }
   };
 
   const startTierBuild = (tier: 1 | 2 | 3) => {
@@ -468,6 +496,9 @@ function Create() {
     if (!prompt.trim()) return;
     void build(tier, prompt);
   };
+
+  const enhancedGameTitle =
+    enhancedPromptDraft.match(/^##\s*Title\s*\n\s*\*\*([^*\n]+)\*\*/i)?.[1]?.trim() ?? "";
 
   return (
     <div className="relative min-h-screen text-white">
@@ -585,6 +616,37 @@ function Create() {
               />
             </div>
 
+            {chatStage === "ready" && enhancedPromptDraft && (
+              <div className="mb-3 rounded-2xl border border-fuchsia-400/40 bg-[#100424] p-3">
+                {enhancedGameTitle && (
+                  <div className="mb-3 border-b border-violet-400/25 pb-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-violet-300">
+                      Game title
+                    </p>
+                    <h3 className="mt-1 font-display text-xl font-black text-white">
+                      {enhancedGameTitle}
+                    </h3>
+                  </div>
+                )}
+                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-fuchsia-300">
+                  {phase === "building" ? "Game prompt being built" : "Editable game prompt"}
+                </p>
+                <textarea
+                  value={enhancedPromptDraft}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setEnhancedPromptDraft(value);
+                    setFinalPrompt(value);
+                    studio.setPrompt(value);
+                  }}
+                  disabled={phase === "building"}
+                  rows={10}
+                  className="w-full resize-y rounded-xl border border-violet-400/35 bg-[#090219] px-3 py-3 text-sm font-medium leading-relaxed text-white outline-none transition placeholder:text-violet-300/45 focus:border-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-80"
+                  aria-label="Editable enhanced game prompt"
+                />
+              </div>
+            )}
+
             {chatStage === "ready" && phase === "idle" && (
               <div className="mb-3 grid gap-2.5">
                 {tierButtons.map((t) => (
@@ -623,12 +685,19 @@ function Create() {
               </div>
             )}
 
+            {isEnhancingPrompt && (
+              <div className="mb-3 flex items-center gap-2 rounded-2xl border border-fuchsia-400/35 bg-fuchsia-500/10 px-4 py-3 text-sm font-bold text-fuchsia-100">
+                <Loader2 className="size-4 animate-spin" />
+                Expanding your idea into a detailed game specification…
+              </div>
+            )}
+
             <CreateConsolePanel
               value={chatInput}
               onChange={setChatInput}
               onSubmit={handleCreatePanelSubmit}
               onCategoryPick={sendChatMessage}
-              disabled={phase === "building" || isThinking}
+              disabled={phase === "building" || isThinking || isEnhancingPrompt}
               placeholder="Describe your game idea..."
               persistExpanded
               modalTheme
