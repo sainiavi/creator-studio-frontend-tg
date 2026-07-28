@@ -45,7 +45,8 @@ import { useGameTemplates } from "@/hooks/useGameTemplates";
 import { ActivityListSkeleton, ProfileSkeleton } from "@/components/studio/PageSkeletons";
 import { useStudioContext } from "@/context/StudioContext";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
-import { usePrivy } from "@privy-io/react-auth";
+import { StudioSignInGate } from "@/components/studio/StudioSignInButton";
+import { useStudioAuth } from "@/hooks/useStudioAuth";
 import {
   Copy,
   Gift,
@@ -287,7 +288,7 @@ type TimeFilter = "today" | "week" | "month" | "all";
 
 function Profile() {
   const navigate = useNavigate();
-  const { ready: authReady, authenticated, user, login, logout } = usePrivy();
+  const { ready: authReady, authenticated, user, openLogin } = useStudioAuth();
   const loginAttemptedRef = useRef(false);
   const { createdGames } = useStudioContext();
   const { gameTemplates } = useGameTemplates();
@@ -320,8 +321,8 @@ function Profile() {
   useEffect(() => {
     if (!authReady || authenticated || loginAttemptedRef.current) return;
     loginAttemptedRef.current = true;
-    login({ loginMethods: isTelegramMiniApp() ? ["telegram"] : ["google", "email"] });
-  }, [authReady, authenticated, login]);
+    void openLogin();
+  }, [authReady, authenticated, openLogin]);
 
   const getThumbnail = useCallback((id: string | undefined, fallbackUrl?: string) => {
     if (!id) return fallbackUrl;
@@ -663,29 +664,19 @@ function Profile() {
   if (!authenticated || !user) {
     return (
       <div className="grid min-h-[calc(100vh-6rem)] place-items-center px-4 text-white">
-        <section className="w-full max-w-sm rounded-[1.75rem] border border-fuchsia-300/30 bg-[#16062f]/95 p-6 text-center shadow-[0_18px_50px_rgba(44,10,91,0.45)]">
-          <Lock className="mx-auto size-10 text-fuchsia-300" />
-          <h1 className="mt-4 font-display text-xl font-black">Sign in to view your profile</h1>
-          <p className="mt-2 text-sm text-violet-200">
-            Your games, rewards, points, and activity are private.
-          </p>
-          <button
-            type="button"
-            onClick={() =>
-              login({ loginMethods: isTelegramMiniApp() ? ["telegram"] : ["google", "email"] })
-            }
-            className="mt-5 w-full rounded-xl bg-[linear-gradient(90deg,#d946ef,#7c3aed)] px-4 py-3 text-sm font-bold text-white shadow-[0_8px_22px_rgba(168,85,247,0.35)]"
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/" })}
-            className="mt-3 text-xs font-semibold text-violet-300"
-          >
-            Back to Discover
-          </button>
-        </section>
+        <StudioSignInGate
+          title="Sign in to view your profile"
+          description="Your games, rewards, points, and activity are private."
+          footer={
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/" })}
+              className="mt-3 text-xs font-semibold text-violet-300"
+            >
+              Back to Discover
+            </button>
+          }
+        />
       </div>
     );
   }
@@ -1285,7 +1276,7 @@ function Profile() {
 
           {!isTelegramMiniApp() && authenticated && (
             <div className="relative mt-5 grid gap-3">
-              <ZeroGWalletPanel className="border-primary/25 bg-background/30 text-foreground" />
+              <ZeroGWalletPanel variant="modal" />
               <CreatorSubscriptionPanel className="border-primary/25 bg-background/30" />
             </div>
           )}

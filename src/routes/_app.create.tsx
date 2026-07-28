@@ -50,8 +50,8 @@ import { sendTonGenerationPayment } from "@/lib/tonPayment";
 import { createGenerationStarsOrder, fetchStarsOrder } from "@/lib/api/stars";
 import { isTelegramMiniApp, openTelegramInvoice } from "@/lib/telegramMiniApp";
 import { getTonWallet } from "@/lib/tonWallet";
-import { usePrivy } from "@privy-io/react-auth";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
+import { useStudioAuth } from "@/hooks/useStudioAuth";
 import { usePrivyEvmWallet } from "@/lib/usePrivyEvmWallet";
 import { CreatePageSkeleton } from "@/components/studio/PageSkeletons";
 import { AppHeader } from "@/components/studio/AppHeader";
@@ -99,7 +99,7 @@ const stageToStep: Record<string, number> = {
 
 function Create() {
   const { studio, addCreatedGame, removeCreatedGame } = useStudioContext();
-  const { ready: authReady, authenticated, user, login } = usePrivy();
+  const { ready: authReady, authenticated, user, openLogin } = useStudioAuth();
   const { signRawHash } = useSignRawHash();
   const { ensureEvmWallet, getEthereumProvider, sendZeroGGenerationPayment, addZeroGFunds } =
     usePrivyEvmWallet();
@@ -252,7 +252,7 @@ function Create() {
     if (!authReady) return false;
     if (authenticated && user) return true;
     showNotice("Sign in to generate and save your game.");
-    login({ loginMethods: [isTelegramMiniApp() ? "telegram" : "google", ...(isTelegramMiniApp() ? [] : ["email" as const])] });
+    void openLogin();
     return false;
   };
 
@@ -696,6 +696,7 @@ function Create() {
                   (paymentChoice.billingMode === "subscription" ||
                     paymentChoice.chainMethod === "0g") && (
                     <ZeroGWalletPanel
+                      variant="modal"
                       defaultFundAmount={String(
                         paymentChoice.chainAmount ||
                           paymentChoice.subscriptionPrice0G ||
