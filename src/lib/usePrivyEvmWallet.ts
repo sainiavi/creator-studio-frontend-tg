@@ -6,6 +6,7 @@ import {
   usePrivy,
   useSendTransaction,
   useWallets,
+  type ConnectedWallet,
 } from "@privy-io/react-auth";
 import { BrowserProvider, type Eip1193Provider } from "ethers";
 import { useCallback, useRef } from "react";
@@ -23,6 +24,13 @@ import {
   ZERO_G_TREASURY_WALLET,
 } from "@/lib/zeroGChain";
 
+function getPreferredEvmWallet(wallets: ConnectedWallet[]) {
+  const external = wallets.find(
+    (wallet) => wallet.type === "ethereum" && wallet.walletClientType !== "privy",
+  );
+  return external ?? getEmbeddedConnectedWallet(wallets) ?? null;
+}
+
 export function usePrivyEvmWallet() {
   const { user } = usePrivy();
   const { wallets } = useWallets();
@@ -33,7 +41,7 @@ export function usePrivyEvmWallet() {
   const creatingEvmRef = useRef(false);
 
   const getEmbeddedWallet = useCallback(() => {
-    return getEmbeddedConnectedWallet(wallets);
+    return getPreferredEvmWallet(wallets);
   }, [wallets]);
 
   const getWalletAddressForFunding = useCallback(() => {

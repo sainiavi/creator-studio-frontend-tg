@@ -1,9 +1,12 @@
-import { Check, Copy, Loader2, Plus, RefreshCw } from "lucide-react";
+import { Check, Copy, Link2, Loader2, Plus, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useConnectWallet, usePrivy } from "@privy-io/react-auth";
 
 import { getWalletAddress } from "@/lib/identity";
+import { syncPrivyIdentity } from "@/lib/privyIdentity";
 import { usePrivyEvmWallet } from "@/lib/usePrivyEvmWallet";
 import { formatZeroGAddress, formatZeroGBalance } from "@/lib/zeroGChain";
+import { ZERO_G_CONNECT_WALLET_OPTIONS } from "@/lib/zeroGWalletList";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 
 type ZeroGWalletPanelProps = {
@@ -20,6 +23,14 @@ export function ZeroGWalletPanel({
   showHeading = true,
 }: ZeroGWalletPanelProps) {
   const inTelegram = isTelegramMiniApp();
+  const { user } = usePrivy();
+  const { connectWallet } = useConnectWallet({
+    onSuccess: ({ wallet }) => {
+      if (user) syncPrivyIdentity(user);
+      setNotice(`${wallet.walletClientType ?? "Wallet"} connected for 0G.`);
+      window.setTimeout(() => void refreshBalance(), 1500);
+    },
+  });
   const {
     ensureEvmWallet,
     getWalletAddressForFunding,
@@ -29,6 +40,7 @@ export function ZeroGWalletPanel({
   const [balanceWei, setBalanceWei] = useState<bigint | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [funding, setFunding] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [notice, setNotice] = useState("");
 
@@ -61,6 +73,21 @@ export function ZeroGWalletPanel({
       window.setTimeout(() => setCopied(false), 1200);
     } catch {
       setCopied(false);
+    }
+  };
+
+  const handleConnectWallet = async () => {
+    try {
+      setConnecting(true);
+      setNotice("");
+      await connectWallet(ZERO_G_CONNECT_WALLET_OPTIONS);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Could not open wallet picker.";
+      if (!/cancel/i.test(message)) {
+        setNotice(message);
+      }
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -126,15 +153,30 @@ export function ZeroGWalletPanel({
         {balanceWei === null ? "—" : formatZeroGBalance(balanceWei)}
       </p>
 
-      <button
-        type="button"
-        onClick={() => void handleAddFunds()}
-        disabled={funding}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-300/40 bg-cyan-400/20 px-3 py-2.5 text-sm font-black text-white transition hover:bg-cyan-400/30 disabled:opacity-60"
-      >
-        {funding ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-        Add 0G
-      </button>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => void handleConnectWallet()}
+          disabled={connecting || funding}
+          className="flex items-center justify-center gap-2 rounded-xl border border-violet-300/35 bg-violet-400/15 px-3 py-2.5 text-xs font-black text-white transition hover:bg-violet-400/25 disabled:opacity-60"
+        >
+          {connecting ? <Loader2 className="size-4 animate-spin" /> : <Link2 className="size-4" />}
+          Connect wallet
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleAddFunds()}
+          disabled={funding || connecting}
+          className="flex items-center justify-center gap-2 rounded-xl border border-cyan-300/40 bg-cyan-400/20 px-3 py-2.5 text-xs font-black text-white transition hover:bg-cyan-400/30 disabled:opacity-60"
+        >
+          {funding ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+          Add 0G
+        </button>
+      </div>
+
+      <p className="mt-2 text-[10px] leading-relaxed text-cyan-100/70">
+        Bitget, OKX, MetaMask, Binance, Bybit, Coinbase, and 100+ WalletConnect options.
+      </p>
 
       {notice && <p className="mt-2 text-[11px] font-semibold text-cyan-100/85">{notice}</p>}
     </div>
