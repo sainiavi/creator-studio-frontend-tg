@@ -49,10 +49,19 @@ import { engineOf, getThumbnailUrl, templateEmoji } from "@/lib/studio-meta";
 import { sendTonGenerationPayment } from "@/lib/tonPayment";
 import { createGenerationStarsOrder, fetchStarsOrder } from "@/lib/api/stars";
 import { isTelegramMiniApp, openTelegramInvoice } from "@/lib/telegramMiniApp";
+import { getStudioChainPaymentMethod } from "@/lib/studioPaymentMethod";
 import { getTonWallet } from "@/lib/tonWallet";
 import { useSignRawHash } from "@privy-io/react-auth/extended-chains";
 import { useStudioAuth } from "@/hooks/useStudioAuth";
+import { getWalletAddress } from "@/lib/identity";
 import { usePrivyEvmWallet } from "@/lib/usePrivyEvmWallet";
+import {
+  formatZeroGShortfall,
+  hasSufficientZeroGBalance,
+} from "@/lib/zeroGSubscriptionCheckout";
+import { isWalletLinkedOnSession } from "@/lib/walletLink";
+import { getWalletErrorPresentation, isWalletUserAbort } from "@/lib/walletErrors";
+import { parseHumanZeroGAmount } from "@/lib/zeroGChain";
 import { CreatePageSkeleton } from "@/components/studio/PageSkeletons";
 import { AppHeader } from "@/components/studio/AppHeader";
 import { ConsoleChatMessages } from "@/components/studio/ConsoleChatMessages";
@@ -99,9 +108,9 @@ const stageToStep: Record<string, number> = {
 
 function Create() {
   const { studio, addCreatedGame, removeCreatedGame } = useStudioContext();
-  const { ready: authReady, authenticated, user, openLogin } = useStudioAuth();
+  const { ready: authReady, authenticated, user, openLogin, syncWalletIdentity } = useStudioAuth();
   const { signRawHash } = useSignRawHash();
-  const { ensureEvmWallet, getEthereumProvider, sendZeroGGenerationPayment, addZeroGFunds } =
+  const { ensureEvmWallet, getEthereumProvider, sendZeroGGenerationPayment, addZeroGFunds, readZeroGBalance, linkWalletOnZeroGChain } =
     usePrivyEvmWallet();
   const navigate = useNavigate();
   const [templateSeed, setTemplateSeed] = useState<any | null>(null);
@@ -151,7 +160,9 @@ function Create() {
     starsAmount: number;
     starsAvailable: boolean;
   } | null>(null);
+  const [subscriptionFunded, setSubscriptionFunded] = useState<boolean | null>(null);
   const noticeRef = useRef<HTMLDivElement>(null);
+  const subscriptionCheckoutKeyRef = useRef<string | null>(null);
 
   // The build itself lives in studio state + localStorage (kult-active-build),
   // so it survives navigating away and full page refreshes. This page only
@@ -270,6 +281,27 @@ function Create() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, activeBuild?.statusText]);
 
+  useEffect(() => {
+    if (!paymentChoice || paymentChoice.billingMode !== "subscription") {
+      setSubscriptionFunded(null);
+      return;
+    }
+    let cancelled = false;
+    void readZeroGBalance()
+      .then((balance) => {
+        if (cancelled) return;
+        setSubscriptionFunded(
+          hasSufficientZeroGBalance(balance, paymentChoice.subscriptionPrice0G),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setSubscriptionFunded(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [paymentChoice, readZeroGBalance]);
+
   const formatPaidGenerationNotice = (error: any) => {
     const data = error?.response?.data;
     const payment = data?.payment;
@@ -291,6 +323,153 @@ function Create() {
     return serverError || error?.message || "Could not start generation.";
   };
 
+  type SubscriptionPaymentChoice = Extract<
+    NonNullable<typeof paymentChoice>,
+    { billingMode: "subscription" }
+  >;
+
+  const showWalletNotice = (error: unknown, action = "subscribe with 0G") => {
+    const { message, kind } = getWalletErrorPresentation(error, { action });
+    showNotice(message, kind);
+  };
+
+  const checkoutSubscription = async (
+    choice: SubscriptionPaymentChoice,
+    options?: { auto?: boolean },
+  ): Promise<"subscribed" | "needs_funds" | "needs_wallet" | "cancelled"> => {
+    await ensureEvmWallet();
+    await syncWalletIdentity();
+
+    const wallet = getWalletAddress();
+    if (!wallet) {
+      setPaymentChoice({ ...choice, walletRequired: true });
+      if (!options?.auto) {
+        showNotice("Connect your 0G wallet, then confirm the subscription.", "payment");
+      }
+      return "needs_wallet";
+    }
+
+    setPaymentChoice({ ...choice, walletRequired: false });
+
+    if (!isWalletLinkedOnSession(wallet)) {
+      showNotice("Sign once in your wallet on 0G to link it to your account.", "payment");
+      await linkWalletOnZeroGChain();
+    }
+
+    const balance = await readZeroGBalance();
+    const funding = formatZeroGShortfall(balance, choice.subscriptionPrice0G);
+    if (!funding.sufficient) {
+      showNotice(
+        `You have ${funding.balanceLabel} but ${choice.subscriptionName ?? "this plan"} costs ${funding.priceLabel}. Top up, then confirm the subscription.`,
+        "payment",
+      );
+      return "needs_funds";
+    }
+
+    showNotice(
+      `Opening your wallet — confirm ${choice.subscriptionName ?? "Creator subscription"} for ${funding.priceLabel}.`,
+      "payment",
+    );
+    try {
+      await purchaseCreatorSubscription(choice.subscriptionTier ?? 1, 1, getEthereumProvider);
+    } catch (error) {
+      if (isWalletUserAbort(error)) return "cancelled";
+      throw error;
+    }
+    return "subscribed";
+  };
+
+  type LegacyPaymentChoice = Extract<
+    NonNullable<typeof paymentChoice>,
+    { billingMode: "legacy" }
+  >;
+
+  const legacyCheckoutKeyRef = useRef<string | null>(null);
+
+  const runLegacyPayThenBuild = async (choice: LegacyPaymentChoice) => {
+    try {
+      if (choice.chainMethod === "0g" && choice.chainAmount <= 0) {
+        setIsPaying(true);
+        await ensureEvmWallet();
+        await syncWalletIdentity();
+        const wallet = getWalletAddress();
+        if (!wallet) {
+          showNotice("Connect your 0G wallet to continue.", "payment");
+          return;
+        }
+        if (!isWalletLinkedOnSession(wallet)) {
+          showNotice("Sign once in your wallet on 0G to link it to your account.", "payment");
+          await linkWalletOnZeroGChain();
+        }
+        showNotice("Wallet linked. Starting your Hybrid build…", "info");
+        setPaymentChoice(null);
+        const game = await studio.generateFromPrompt(choice.tier, choice.buildPrompt, {
+          method: "0g",
+        });
+        if (game) addCreatedGame(game);
+        setGenerationNotice("");
+        return;
+      }
+
+      if (choice.chainMethod === "ton" && choice.chainAmount <= 0) {
+        setIsPaying(true);
+        const tonWallet = getTonWallet(user);
+        if (!tonWallet) {
+          showNotice("Connect your TON wallet in the header to continue.", "payment");
+          return;
+        }
+        showNotice("Starting your Hybrid build…", "info");
+        setPaymentChoice(null);
+        const game = await studio.generateFromPrompt(choice.tier, choice.buildPrompt, {
+          method: "ton",
+        });
+        if (game) addCreatedGame(game);
+        setGenerationNotice("");
+        return;
+      }
+
+      await payWithChain(choice);
+    } catch (error: unknown) {
+      if (isWalletUserAbort(error)) return;
+      showWalletNotice(error, "pay for this game");
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
+  const runSubscriptionThenBuild = async (choice: SubscriptionPaymentChoice) => {
+    try {
+      const result = await checkoutSubscription(choice);
+      if (result !== "subscribed") {
+        if (result === "cancelled") {
+          showNotice(
+            "Subscription not completed. Open your wallet and approve the 10 0G payment, then click Subscribe again.",
+            "payment",
+          );
+        }
+        return;
+      }
+    } catch (error) {
+      showWalletNotice(error, "subscribe with 0G");
+      return;
+    }
+    showNotice("Subscription active. Starting your game build…", "info");
+    setPaymentChoice(null);
+    setGenerationNotice("");
+    try {
+      const game = await studio.generateFromPrompt(choice.tier, choice.buildPrompt);
+      if (game) addCreatedGame(game);
+    } catch (error: any) {
+      showNotice(
+        error?.response?.data?.error ??
+          error?.message ??
+          "Subscription succeeded but the build could not start.",
+        "error",
+      );
+      throw error;
+    }
+  };
+
   const build = async (tier: 1 | 2 | 3, promptOverride = "") => {
     if (!requireLogin()) return;
     const pendingInput = chatInput.trim();
@@ -303,6 +482,10 @@ function Create() {
     setGenerationNoticeKind("info");
     setPaymentChoice(null);
     try {
+      if (!isTelegramMiniApp()) {
+        await ensureEvmWallet();
+        await syncWalletIdentity();
+      }
       const game = await studio.generateFromPrompt(tier, buildPrompt);
       if (game) addCreatedGame(game);
     } catch (error: any) {
@@ -310,6 +493,10 @@ function Create() {
       const isPaidRequired =
         error?.response?.status === 402 &&
         (error?.response?.data?.code === "PAID_GENERATION_REQUIRED" || Boolean(payment?.required));
+      const isWalletRequired =
+        error?.response?.status === 402 &&
+        (error?.response?.data?.code === "EVM_WALLET_REQUIRED" ||
+          error?.response?.data?.code === "TON_WALLET_REQUIRED");
       const subscription = error?.response?.data?.subscription;
       const isSubscriptionRequired =
         error?.response?.status === 402 && error?.response?.data?.code === "SUBSCRIPTION_REQUIRED";
@@ -318,7 +505,7 @@ function Create() {
         const requiredTier = (subscription?.requiredTier === 2 ? 2 : 1) as 1 | 2;
         const tiers = await fetchCreatorSubscriptionTiers().catch(() => null);
         const plan = tiers?.tiers?.find((item) => item.tier === requiredTier);
-        setPaymentChoice({
+        const choice: SubscriptionPaymentChoice = {
           tier,
           buildPrompt,
           billingMode: "subscription",
@@ -331,28 +518,79 @@ function Create() {
           chainCurrency: "0G",
           starsAmount: 0,
           starsAvailable: false,
-        });
+        };
+        setPaymentChoice(choice);
         showNotice(
           subscription?.walletRequired
-            ? "Connect an EVM wallet, then activate your Creator subscription."
-            : `${plan?.name ?? subscription?.requiredTierName ?? "A Creator subscription"} is required for this mode.`,
+            ? "Link your 0G wallet, then confirm your Creator subscription."
+            : `Confirm ${plan?.name ?? subscription?.requiredTierName ?? "your Creator subscription"} in your wallet to continue.`,
           "payment",
         );
-      } else if (isPaidRequired) {
-        const chain = payment?.methods?.chain;
-        const chainMethod = chain?.method === "0g" || chain?.currency === "0G" ? "0g" : "ton";
-        setPaymentChoice({
+        const checkoutKey = `${tier}:${buildPrompt}`;
+        if (subscriptionCheckoutKeyRef.current !== checkoutKey) {
+          subscriptionCheckoutKeyRef.current = checkoutKey;
+          void runSubscriptionThenBuild(choice).catch((checkoutError: unknown) => {
+            if (isWalletUserAbort(checkoutError)) return;
+            showWalletNotice(checkoutError, "subscribe with 0G");
+          });
+        }
+      } else if (isPaidRequired || isWalletRequired) {
+        const chainMethod = getStudioChainPaymentMethod();
+        const chain =
+          payment?.methods?.[chainMethod] ??
+          payment?.methods?.chain ??
+          payment?.methods?.["0g"];
+        let chainAmount = 0;
+        try {
+          chainAmount = Number(parseHumanZeroGAmount(chain?.amount ?? payment?.amount ?? 0));
+        } catch (amountError: unknown) {
+          showNotice(
+            amountError instanceof Error
+              ? amountError.message
+              : "Invalid payment amount from server. Refresh and try again.",
+            "error",
+          );
+          return;
+        }
+        const tierLabel = tier === 1 ? "Hybrid" : tier === 2 ? "Pro" : "Ultra";
+        const choice: LegacyPaymentChoice = {
           tier,
           buildPrompt,
           billingMode: "legacy",
           chainMethod,
-          chainAmount: chain?.amount ?? payment?.amount ?? 1,
+          chainAmount,
           chainCurrency: chain?.currency ?? payment?.currency ?? (chainMethod === "0g" ? "0G" : "TON"),
           starsAmount: payment?.methods?.stars?.amount ?? 0,
           starsAvailable:
             Boolean(payment?.methods?.stars?.available) &&
             (payment?.methods?.stars?.amount ?? 0) > 0,
-        });
+        };
+        setPaymentChoice(choice);
+
+        if (chainMethod === "0g") {
+          if (chainAmount <= 0 || isWalletRequired) {
+            showNotice(`Link your wallet on 0G to start ${tierLabel} (no payment for this tier).`, "payment");
+          } else {
+            showNotice(`Confirm ${chainAmount} 0G in your wallet to build with ${tierLabel}.`, "payment");
+          }
+          const checkoutKey = `${tier}:${buildPrompt}:${chainAmount}`;
+          if (legacyCheckoutKeyRef.current !== checkoutKey) {
+            legacyCheckoutKeyRef.current = checkoutKey;
+            void runLegacyPayThenBuild(choice);
+          }
+          return;
+        }
+
+        if (chainAmount <= 0 || isWalletRequired) {
+          showNotice(`Connect your TON wallet to start ${tierLabel} (no payment for this tier).`, "payment");
+          const checkoutKey = `${tier}:${buildPrompt}:ton-link`;
+          if (legacyCheckoutKeyRef.current !== checkoutKey) {
+            legacyCheckoutKeyRef.current = checkoutKey;
+            void runLegacyPayThenBuild(choice);
+          }
+          return;
+        }
+
         showNotice("Your first game was free. Choose how to pay for another one.", "payment");
       } else {
         const serverError = String(error?.response?.data?.error ?? error?.message ?? "").trim();
@@ -406,42 +644,43 @@ function Create() {
     const choice = paymentChoice;
     try {
       setIsPaying(true);
-      if (choice.walletRequired) {
-        showNotice("Setting up your 0G wallet…", "payment");
-        await ensureEvmWallet();
-        clearAuthToken();
-        await prefetchAuthToken();
-      }
-      const subscriptionTier = choice.subscriptionTier ?? 1;
-      showNotice(
-        `Confirm ${choice.subscriptionName ?? "Creator subscription"} in your 0G wallet.`,
-        "payment",
-      );
-      await purchaseCreatorSubscription(subscriptionTier, 1, getEthereumProvider);
-      showNotice("Subscription active. Starting your game build…", "info");
-      setPaymentChoice(null);
-      const game = await studio.generateFromPrompt(choice.tier, choice.buildPrompt);
-      if (game) addCreatedGame(game);
-      setGenerationNotice("");
-    } catch (error: any) {
-      showNotice(
-        error?.response?.data?.error ?? error?.message ?? "Could not activate subscription.",
-        "error",
-      );
+      subscriptionCheckoutKeyRef.current = null;
+      await runSubscriptionThenBuild(choice);
+    } catch (error: unknown) {
+      if (isWalletUserAbort(error)) return;
+      showWalletNotice(error, "subscribe with 0G");
     } finally {
       setIsPaying(false);
     }
   };
 
-  const payWithChain = async () => {
-    if (!paymentChoice || isPaying) return;
-    const { tier, buildPrompt, chainMethod, chainAmount, chainCurrency } = paymentChoice;
+  const payWithChain = async (choiceOverride?: LegacyPaymentChoice) => {
+    const choice = choiceOverride ?? paymentChoice;
+    if (!choice || isPaying) return;
+    const { tier, buildPrompt, chainMethod, chainAmount, chainCurrency } = choice;
     setPaymentChoice(null);
     try {
       setIsPaying(true);
       let paymentTxHash = sessionStorage.getItem(PENDING_CHAIN_GENERATION_PAYMENT_KEY) ?? "";
 
       if (chainMethod === "0g") {
+        await ensureEvmWallet();
+        await syncWalletIdentity();
+        const wallet = getWalletAddress();
+        if (wallet && !isWalletLinkedOnSession(wallet)) {
+          showNotice("Sign once in your wallet on 0G to link it to your account.", "payment");
+          await linkWalletOnZeroGChain();
+        }
+
+        if (chainAmount <= 0) {
+          showNotice("Starting your Hybrid build…", "info");
+          const game = await studio.generateFromPrompt(tier, buildPrompt, { method: "0g" });
+          if (game) addCreatedGame(game);
+          setGenerationNotice("");
+          setGenerationNoticeKind("info");
+          return;
+        }
+
         if (!paymentTxHash) {
           showNotice(
             `Confirm ${chainAmount} ${chainCurrency} in your 0G wallet to unlock another game.`,
@@ -717,16 +956,20 @@ function Create() {
                     >
                       <span className="font-display text-sm font-black">
                         {paymentChoice.walletRequired
-                          ? "Activate with 0G wallet"
-                          : `${paymentChoice.subscriptionName ?? "Subscribe"} · ${paymentChoice.subscriptionPrice0G ?? ""} 0G`}
+                          ? "Connect wallet & subscribe"
+                          : subscriptionFunded
+                            ? `Confirm in wallet · ${paymentChoice.subscriptionPrice0G ?? ""} 0G`
+                            : `${paymentChoice.subscriptionName ?? "Subscribe"} · ${paymentChoice.subscriptionPrice0G ?? ""} 0G`}
                       </span>
                       <span className="text-[10px] font-bold opacity-75">
                         {paymentChoice.walletRequired
-                          ? "Confirm subscription in your embedded wallet"
-                          : "30 days of game generation"}
+                          ? "Link your wallet, then confirm the subscription"
+                          : subscriptionFunded
+                            ? "Your balance covers this — approve the transaction"
+                            : "30 days of game generation"}
                       </span>
                     </button>
-                    {!isTelegramMiniApp() && (
+                    {!isTelegramMiniApp() && subscriptionFunded !== true && (
                       <button
                         type="button"
                         onClick={() => void topUpZeroGWallet()}

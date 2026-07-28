@@ -4,6 +4,7 @@ import { api } from "../lib/api";
 import { engineOf } from "../lib/studio-meta";
 import { getCurrentUserId } from "@/lib/identity";
 import { createNotification } from "@/lib/api/social";
+import { getStudioChainPaymentMethod } from "@/lib/studioPaymentMethod";
 
 const defaultPrompt = "cyberpunk doge samurai fighting AI robots in a neon arena";
 
@@ -26,8 +27,14 @@ function paidGenerationMessage(error: any) {
   if (error?.response?.data?.code === "SUBSCRIPTION_REQUIRED") {
     const subscription = error.response.data.subscription;
     return subscription?.walletRequired
-      ? "Connect an EVM wallet and subscribe to continue generating games."
-      : `${subscription?.requiredTierName ?? "A Creator subscription"} is required to use this generation mode.`;
+      ? "Your wallet is connected in the app, but the server has not linked it yet. Refresh the page or click Activate with 0G wallet."
+      : `${subscription?.requiredTierName ?? "A Creator subscription"} is required to use this generation mode. Your 0G balance funds the subscription — activate it below.`;
+  }
+  if (error?.response?.data?.code === "EVM_WALLET_REQUIRED") {
+    return String(error.response.data.error ?? "").trim() || "Connect and link your 0G wallet to continue.";
+  }
+  if (error?.response?.data?.code === "TON_WALLET_REQUIRED") {
+    return String(error.response.data.error ?? "").trim() || "Connect your TON wallet to continue.";
   }
   if (error?.response?.data?.code !== "PAID_GENERATION_REQUIRED") return null;
   const payment = error.response.data.payment;
@@ -548,8 +555,11 @@ export function useCreatorStudio() {
     async (tier: Tier = 1, promptOverride = "", payment: GenerationPayment = {}) => {
       // Accept a legacy bare TON tx-hash string for backwards compatibility, or a
       // {method, paymentTxHash, starsOrderId} descriptor for the Stars-vs-TON choice.
-      const pay: GenerationPayment =
-        typeof payment === "string" ? { method: "ton", paymentTxHash: payment } : payment;
+      const payInput = typeof payment === "string" ? { paymentTxHash: payment } : payment;
+      const pay: GenerationPayment = {
+        method: payInput.method ?? (typeof payment === "string" ? "ton" : getStudioChainPaymentMethod()),
+        ...payInput,
+      };
       const paymentTxHash = pay.paymentTxHash ?? "";
       // The tier owns the strategy: Tier 1 = hybrid (edit a seed), Tier 2 & 3 =
       // pure-agent (write from scratch). The backend enforces the same mapping;
@@ -578,17 +588,17 @@ export function useCreatorStudio() {
       setAssetResult(null);
       if (!paymentTxHash && !pay.starsOrderId) {
         try {
-          await api.get("/games/generation-access", { timeout: 15000 });
+          await api.get("/games/generation-access", {
+            timeout: 15000,
+            params: { tier, paymentMethod: getStudioChainPaymentMethod() },
+          });
         } catch (error: any) {
           const paymentMessage = paidGenerationMessage(error);
           if (paymentMessage) {
             setStatus("Payment required");
             setAgentStatus(paymentMessage);
-            updateActiveBuild({
-              phase: "failed",
-              statusText: paymentMessage,
-              game: null,
-            });
+            // Payment/subscription gates are not failed builds — keep the console clean.
+            updateActiveBuild(null);
           }
           throw error;
         }
@@ -717,11 +727,7 @@ export function useCreatorStudio() {
             logGenerationRequest("routing.payment-required", { strategy, tier }, error);
             setStatus("Payment required");
             setAgentStatus(paymentMessage);
-            updateActiveBuild({
-              phase: "failed",
-              statusText: paymentMessage,
-              game: null,
-            });
+            updateActiveBuild(null);
             throw error;
           }
           logGenerationRequest(

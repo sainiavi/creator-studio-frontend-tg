@@ -1,4 +1,4 @@
-import type { User, Wallet } from "@privy-io/react-auth";
+import type { ConnectedWallet, User, Wallet } from "@privy-io/react-auth";
 import { clearPrivyIdentity, setPrivyIdentity } from "./identity";
 
 type TelegramAccount = {
@@ -22,6 +22,38 @@ function isTelegram(account: User["linkedAccounts"][number]): account is Telegra
   return account.type === "telegram";
 }
 
+function isEvmAddress(address?: string | null): boolean {
+  return Boolean(address && /^0x[a-fA-F0-9]{40}$/.test(address.trim()));
+}
+
+function findEvmWallet(user: User, connectedWallets: ConnectedWallet[] = []): Wallet | null {
+  const linked = user.linkedAccounts.filter(isWallet);
+  const byChain = linked.find(
+    (wallet) => wallet.chainType === "ethereum" && isEvmAddress(wallet.address),
+  );
+  if (byChain) return byChain;
+
+  const byAddress = linked.find((wallet) => isEvmAddress(wallet.address));
+  if (byAddress) return byAddress;
+
+  const connected = connectedWallets.find(
+    (wallet) => wallet.type === "ethereum" && isEvmAddress(wallet.address),
+  );
+  if (connected) {
+    return {
+      type: "wallet",
+      chainType: "ethereum",
+      address: connected.address,
+    } as Wallet;
+  }
+
+  if (user.wallet && isEvmAddress(user.wallet.address)) {
+    return user.wallet;
+  }
+
+  return null;
+}
+
 function preferredWallet(user: User, chainType?: string): Wallet | null {
   const wallets = user.linkedAccounts.filter(isWallet);
   if (chainType) {
@@ -34,11 +66,11 @@ function telegramAccount(user: User): TelegramAccount | null {
   return user.linkedAccounts.find(isTelegram) ?? user.telegram ?? null;
 }
 
-export function getPrivyIdentity(user: User | null) {
+export function getPrivyIdentity(user: User | null, connectedWallets: ConnectedWallet[] = []) {
   if (!user) return null;
 
   const tonWallet = preferredWallet(user, "ton");
-  const evmWallet = preferredWallet(user, "ethereum");
+  const evmWallet = findEvmWallet(user, connectedWallets);
   const telegram = telegramAccount(user);
   const telegramUserId = telegram?.telegramUserId ?? telegram?.telegram_user_id ?? null;
   const telegramUsername = telegram?.username ?? null;
@@ -49,15 +81,15 @@ export function getPrivyIdentity(user: User | null) {
     // remains available in the signed auth token as an ownership alias.
     userId: evmWallet?.address ?? user.id,
     privyUserId: user.id,
-    walletAddress: evmWallet?.chainType === "ethereum" ? evmWallet.address : null,
+    walletAddress: evmWallet?.address && isEvmAddress(evmWallet.address) ? evmWallet.address : null,
     tonWalletAddress: tonWallet?.chainType === "ton" ? tonWallet.address : null,
     telegramUserId,
     username: telegramUsername ? `@${telegramUsername}` : (telegramName ?? null),
   };
 }
 
-export function syncPrivyIdentity(user: User | null) {
-  const identity = getPrivyIdentity(user);
+export function syncPrivyIdentity(user: User | null, connectedWallets: ConnectedWallet[] = []) {
+  const identity = getPrivyIdentity(user, connectedWallets);
   if (!identity) {
     clearPrivyIdentity();
     return;
@@ -65,13 +97,28 @@ export function syncPrivyIdentity(user: User | null) {
   setPrivyIdentity(identity);
 }
 
-export function getEvmWallet(user: User | null): Wallet | null {
-  if (!user) return null;
-  return preferredWallet(user, "ethereum");
+/** Sync linked + connected Privy wallets into local identity storage. */
+export function syncSessionWalletIdentity(
+  user: User | null,
+  connectedWallets: ConnectedWallet[] = [],
+) {
+  syncPrivyIdentity(user, connectedWallets);
+  return getPrivyIdentity(user, connectedWallets)?.walletAddress ?? null;
 }
 
-export function hasEvmWallet(user: User | null): boolean {
-  return Boolean(getEvmWallet(user));
+export function getEvmWallet(
+  user: User | null,
+  connectedWallets: ConnectedWallet[] = [],
+): Wallet | null {
+  if (!user) return null;
+  return findEvmWallet(user, connectedWallets);
+}
+
+export function hasEvmWallet(
+  user: User | null,
+  connectedWallets: ConnectedWallet[] = [],
+): boolean {
+  return Boolean(getEvmWallet(user, connectedWallets));
 }
 
 export function hasTonWallet(user: User | null): boolean {

@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
-import { useLoginWithTelegram, usePrivy } from "@privy-io/react-auth";
-import { useEffect, useRef } from "react";
+import { useLoginWithTelegram, usePrivy, useWallets } from "@privy-io/react-auth";
+import { useEffect, useMemo, useRef } from "react";
 
+import { StudioProvider } from "@/context/StudioContext";
 import { clearAuthToken, prefetchAuthToken } from "../lib/api";
-import { clearLegacyAnonymousIdentity, getCurrentUserId } from "../lib/identity";
+import { clearLegacyAnonymousIdentity } from "../lib/identity";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { syncPrivyIdentity } from "../lib/privyIdentity";
 import { isTelegramMiniApp } from "../lib/telegramMiniApp";
@@ -76,8 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const { ready, authenticated, user } = usePrivy();
+  const { wallets } = useWallets();
+  const connectedWalletKey = useMemo(
+    () =>
+      wallets
+        .map((wallet) => wallet.address?.toLowerCase() ?? "")
+        .filter(Boolean)
+        .sort()
+        .join(","),
+    [wallets],
+  );
   const { login: loginWithTelegram, state: telegramLoginState } = useLoginWithTelegram();
-  const previousUserIdRef = useRef<string | null>(null);
+  const previousPrivyUserIdRef = useRef<string | null>(null);
   const telegramAutoLoginAttemptedRef = useRef(false);
 
   useEffect(() => {
@@ -101,18 +112,25 @@ function RootComponent() {
   useEffect(() => {
     if (!ready) return;
     clearLegacyAnonymousIdentity();
-    syncPrivyIdentity(authenticated ? user : null);
-    const nextUserId = authenticated && user ? getCurrentUserId() : null;
-    if (!nextUserId || previousUserIdRef.current !== nextUserId) {
-      clearAuthToken();
+    syncPrivyIdentity(authenticated ? user : null, wallets);
+    const nextPrivyUserId = authenticated && user ? user.id : null;
+    const previousPrivyUserId = previousPrivyUserIdRef.current;
+    previousPrivyUserIdRef.current = nextPrivyUserId;
+    if (!nextPrivyUserId) {
+      if (previousPrivyUserId) clearAuthToken();
+      return;
     }
-    previousUserIdRef.current = nextUserId;
-    if (nextUserId) void prefetchAuthToken();
-  }, [authenticated, ready, user]);
+    if (previousPrivyUserId !== nextPrivyUserId) {
+      clearAuthToken();
+      void prefetchAuthToken(true);
+    }
+  }, [authenticated, connectedWalletKey, ready, user?.id]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <StudioProvider>
+        <Outlet />
+      </StudioProvider>
     </QueryClientProvider>
   );
 }

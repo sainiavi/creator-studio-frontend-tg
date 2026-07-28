@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { usePrivy } from "@privy-io/react-auth";
 import { useCreatorStudio } from "@/hooks/useCreatorStudio";
+import { getRouter } from "@/router";
 import { api } from "@/lib/api";
 import { engineOf } from "@/lib/studio-meta";
 import { findGameTemplate } from "@/lib/templates-loader";
@@ -66,7 +66,6 @@ function isPlayableCreation(game: any) {
 
 export function StudioProvider({ children }: { children: ReactNode }) {
   const studio = useCreatorStudio();
-  const navigate = useNavigate();
   const { ready: authReady, authenticated, user } = usePrivy();
   const privyUserId = authReady && authenticated ? (user?.id ?? "") : "";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -220,7 +219,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       if (template) studio.setEngine(engineOf(template));
       studio.setSelectedId(templateId);
       sessionStorage.setItem("kult-create-template-id", templateId);
-      navigate({ to: "/create" });
+      void getRouter().navigate({ to: "/create" });
     });
   };
 

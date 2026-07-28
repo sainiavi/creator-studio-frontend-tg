@@ -1,5 +1,6 @@
 import {
-  decimalToWeiHex,
+  humanZeroGToWeiHex,
+  parseHumanZeroGAmount,
   ZERO_G_CHAIN_ID,
   ZERO_G_TREASURY_WALLET,
 } from "@/lib/zeroGChain";
@@ -52,6 +53,7 @@ export async function sendZeroGGenerationPayment(amount0G: number | string) {
   if (!/^0x[a-fA-F0-9]{40}$/.test(ZERO_G_TREASURY_WALLET)) {
     throw new Error("0G treasury wallet is not configured.");
   }
+  const humanAmount = parseHumanZeroGAmount(amount0G);
   await ensureZeroGMainnet();
   const txHash = await window.ethereum!.request({
     method: "eth_sendTransaction",
@@ -59,11 +61,11 @@ export async function sendZeroGGenerationPayment(amount0G: number | string) {
       {
         from,
         to: ZERO_G_TREASURY_WALLET,
-        value: decimalToWeiHex(amount0G),
+        value: humanZeroGToWeiHex(humanAmount),
       },
     ],
   });
   return String(txHash);
 }
 
-export { decimalToWeiHex, ZERO_G_CHAIN_ID, ZERO_G_TREASURY_WALLET };
+export { humanZeroGToWeiHex as decimalToWeiHex, ZERO_G_CHAIN_ID, ZERO_G_TREASURY_WALLET };

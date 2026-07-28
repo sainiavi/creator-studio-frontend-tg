@@ -288,7 +288,7 @@ type TimeFilter = "today" | "week" | "month" | "all";
 
 function Profile() {
   const navigate = useNavigate();
-  const { ready: authReady, authenticated, user, openLogin } = useStudioAuth();
+  const { ready: authReady, authenticated, user, openLogin, signOut } = useStudioAuth();
   const loginAttemptedRef = useRef(false);
   const { createdGames } = useStudioContext();
   const { gameTemplates } = useGameTemplates();
@@ -770,7 +770,7 @@ function Profile() {
                 {authenticated && (
                   <button
                     type="button"
-                    onClick={() => void logout()}
+                    onClick={() => void signOut()}
                     className="mt-2 flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-violet-100 transition hover:bg-white/15"
                   >
                     <LogOut className="size-3" /> Disconnect

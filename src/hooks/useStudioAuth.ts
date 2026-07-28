@@ -3,14 +3,18 @@ import {
   useLogin,
   useLoginWithTelegram,
   usePrivy,
+  useWallets,
   type User,
 } from "@privy-io/react-auth";
 import { useCreateWallet as useCreateExtendedWallet } from "@privy-io/react-auth/extended-chains";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { clearAuthToken, prefetchAuthToken } from "@/lib/api";
+import { getWalletAddress } from "@/lib/identity";
 import { getStudioLoginMethods } from "@/lib/privyConfig";
-import { hasEvmWallet, syncPrivyIdentity } from "@/lib/privyIdentity";
+import { hasEvmWallet, syncSessionWalletIdentity } from "@/lib/privyIdentity";
+import { usePrivyEvmWallet } from "@/lib/usePrivyEvmWallet";
+import { clearWalletLinkSession } from "@/lib/walletLink";
 import { isTelegramMiniApp } from "@/lib/telegramMiniApp";
 import {
   getStoredTonWallet,
@@ -25,6 +29,8 @@ export type StudioAuthStatus = "idle" | "openTelegram" | "error";
 /** Shared Privy login flow: Google, email, wallet (browser) or Telegram (mini-app). */
 export function useStudioAuth() {
   const { ready, authenticated, user, login: loginModal, logout } = usePrivy();
+  const { wallets } = useWallets();
+  const { linkWalletOnZeroGChain } = usePrivyEvmWallet();
   const { login: loginWithTelegram, state: telegramState } = useLoginWithTelegram();
   const { createWallet: createTonWallet } = useCreateExtendedWallet();
   const { createWallet: createEvmWallet } = useCreateWallet();
@@ -40,6 +46,7 @@ export function useStudioAuth() {
 
   const creatingTonRef = useRef(false);
   const creatingEvmRef = useRef(false);
+  const syncedWalletRef = useRef<string | null>(null);
 
   const tonWallet = getTonWallet(user) ?? createdTonWallet ?? getStoredTonWallet();
 
@@ -63,7 +70,7 @@ export function useStudioAuth() {
         const { user: refreshedUser, wallet } = await createTonWallet({ chainType: "ton" });
         const nextWallet = toTonWallet(wallet) ?? getTonWallet(refreshedUser);
         setCreatedTonWallet(nextWallet);
-        syncPrivyIdentity(refreshedUser);
+        syncSessionWalletIdentity(refreshedUser, wallets);
         if (!nextWallet) {
           const message = "Privy returned successfully, but no TON wallet was found on the user.";
           setTonErrorMessage(message);
@@ -79,33 +86,33 @@ export function useStudioAuth() {
         setTonLoading(false);
       }
     },
-    [createTonWallet, createdTonWallet, inTelegram, user],
+    [createTonWallet, createdTonWallet, inTelegram, user, wallets],
   );
 
   const ensureEvmWallet = useCallback(
     async (nextUser: User | null = user) => {
-      if (inTelegram || !nextUser || hasEvmWallet(nextUser) || creatingEvmRef.current) {
+      if (inTelegram || !nextUser || hasEvmWallet(nextUser, wallets) || creatingEvmRef.current) {
         return;
       }
 
       try {
         creatingEvmRef.current = true;
         await createEvmWallet();
-        syncPrivyIdentity(nextUser);
+        syncSessionWalletIdentity(nextUser, wallets);
       } catch (error) {
         console.error("[privy] EVM wallet creation failed", error);
       } finally {
         creatingEvmRef.current = false;
       }
     },
-    [createEvmWallet, inTelegram, user],
+    [createEvmWallet, inTelegram, user, wallets],
   );
 
   const { login } = useLogin({
     onComplete: ({ user: nextUser }) => {
       setAuthLoading(false);
       setAuthStatus("idle");
-      syncPrivyIdentity(nextUser);
+      syncSessionWalletIdentity(nextUser, wallets);
       void prefetchAuthToken();
       if (inTelegram) {
         void ensureTonWallet(nextUser);
@@ -127,8 +134,8 @@ export function useStudioAuth() {
       void ensureTonWallet(user);
       return;
     }
-    if (!hasEvmWallet(user)) void ensureEvmWallet(user);
-  }, [authenticated, createdTonWallet, ensureEvmWallet, ensureTonWallet, inTelegram, user]);
+    if (!hasEvmWallet(user, wallets)) void ensureEvmWallet(user);
+  }, [authenticated, createdTonWallet, ensureEvmWallet, ensureTonWallet, inTelegram, user, wallets]);
 
   const openLogin = useCallback(async () => {
     if (inTelegram) {
@@ -155,7 +162,17 @@ export function useStudioAuth() {
     login({ loginMethods: getStudioLoginMethods() });
   }, [inTelegram, login, loginModal, loginWithTelegram]);
 
+  const syncWalletIdentity = useCallback(async () => {
+    if (!user) return null;
+    const address = syncSessionWalletIdentity(user, wallets);
+    if (!address) return null;
+    syncedWalletRef.current = address;
+    return address;
+  }, [user, wallets]);
+
   const signOut = useCallback(() => {
+    syncedWalletRef.current = null;
+    clearWalletLinkSession();
     clearAuthToken();
     void logout();
   }, [logout]);
@@ -199,6 +216,8 @@ export function useStudioAuth() {
     signInHint,
     openLogin,
     signOut,
+    syncWalletIdentity,
+    linkWalletOnZeroGChain,
     tonWallet,
     tonLoading,
     tonStatus,

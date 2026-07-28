@@ -1,3 +1,4 @@
+import { formatEther, parseEther } from "ethers";
 import { defineChain } from "viem";
 
 export const ZERO_G_CHAIN_ID = Number(import.meta.env.VITE_ZERO_G_MAINNET_CHAIN_ID || 16661);
@@ -46,9 +47,48 @@ export function formatZeroGBalance(wei: bigint, maxDecimals = 4) {
   return `${whole}.${fractionText} 0G`;
 }
 
-export function decimalToWeiHex(amount: number | string) {
-  const [whole, fraction = ""] = String(amount).split(".");
-  const fractionWei = `${fraction.slice(0, 18)}${"0".repeat(Math.max(0, 18 - fraction.length))}`;
-  const wei = BigInt(whole || "0") * 10n ** 18n + BigInt(fractionWei || "0");
+/** Human-readable 0G token amount from API/UI (e.g. "10"), never wei. */
+export function parseHumanZeroGAmount(amount: number | string | undefined | null): string {
+  const raw = String(amount ?? "0").trim();
+  if (!raw || raw === "0") return "0";
+  if (/e/i.test(raw)) {
+    throw new Error("Invalid 0G payment amount. Refresh the page and try again.");
+  }
+  // Guard against accidentally passing wei (smallest unit) as a whole-token price.
+  if (/^\d+$/.test(raw) && raw.length > 12) {
+    const human = formatEther(BigInt(raw));
+    const fromWei = Number(human);
+    if (!Number.isFinite(fromWei) || fromWei > 1000) {
+      throw new Error(`Unexpected 0G charge (${human}). Refresh the page and try again.`);
+    }
+    return human;
+  }
+  const numeric = Number(raw);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    throw new Error("Invalid 0G payment amount.");
+  }
+  if (numeric > 1000) {
+    throw new Error(`Unexpected 0G charge (${raw}). Refresh the page and try again.`);
+  }
+  return raw;
+}
+
+export function humanZeroGToWei(amount: number | string): bigint {
+  return parseEther(parseHumanZeroGAmount(amount));
+}
+
+/** Decimal wei string — Privy sendTransaction expects this, not hex. */
+export function humanZeroGToWeiDecimal(amount: number | string): string {
+  return humanZeroGToWei(amount).toString();
+}
+
+/** Hex wei string — window.ethereum eth_sendTransaction. */
+export function humanZeroGToWeiHex(amount: number | string): string {
+  const wei = humanZeroGToWei(amount);
   return `0x${wei.toString(16)}`;
+}
+
+/** @deprecated Use humanZeroGToWeiHex — kept for existing imports. */
+export function decimalToWeiHex(amount: number | string) {
+  return humanZeroGToWeiHex(amount);
 }

@@ -4,7 +4,6 @@ import {
   useCreateWallet,
   useFundWallet,
   usePrivy,
-  useSendTransaction,
   useWallets,
   type ConnectedWallet,
 } from "@privy-io/react-auth";
@@ -12,17 +11,20 @@ import { BrowserProvider, type Eip1193Provider } from "ethers";
 import { useCallback, useRef } from "react";
 
 import { getWalletAddress } from "@/lib/identity";
-import { hasEvmWallet, syncPrivyIdentity } from "@/lib/privyIdentity";
+import { hasEvmWallet, syncSessionWalletIdentity } from "@/lib/privyIdentity";
+import { ensureWalletLinkedOnZeroG, isWalletLinkedOnSession } from "@/lib/walletLink";
 import { fetchZeroGBalance } from "@/lib/zeroGWallet";
 import {
-  decimalToWeiHex,
   getZeroGFundWalletConfig,
+  humanZeroGToWei,
+  parseHumanZeroGAmount,
   ZERO_G_CAIP2,
   ZERO_G_CHAIN_ID,
   ZERO_G_FUNDING_ENV,
   ZERO_G_NATIVE_ASSET,
   ZERO_G_TREASURY_WALLET,
 } from "@/lib/zeroGChain";
+import { formatWalletError } from "@/lib/walletErrors";
 
 function getPreferredEvmWallet(wallets: ConnectedWallet[]) {
   const external = wallets.find(
@@ -34,7 +36,6 @@ function getPreferredEvmWallet(wallets: ConnectedWallet[]) {
 export function usePrivyEvmWallet() {
   const { user } = usePrivy();
   const { wallets } = useWallets();
-  const { sendTransaction } = useSendTransaction();
   const { createWallet } = useCreateWallet();
   const { addFunds } = useAddFunds();
   const { fundWallet } = useFundWallet();
@@ -55,12 +56,12 @@ export function usePrivyEvmWallet() {
     try {
       creatingEvmRef.current = true;
       await createWallet();
-      syncPrivyIdentity(user);
+      syncSessionWalletIdentity(user, wallets);
       return getEmbeddedWallet();
     } finally {
       creatingEvmRef.current = false;
     }
-  }, [createWallet, getEmbeddedWallet, user]);
+  }, [createWallet, getEmbeddedWallet, user, wallets]);
 
   const getEthereumProvider = useCallback(async () => {
     const wallet = getEmbeddedWallet() ?? (await ensureEvmWallet());
@@ -132,45 +133,56 @@ export function usePrivyEvmWallet() {
         throw new Error("0G treasury wallet is not configured.");
       }
 
-      const wallet = getEmbeddedWallet() ?? (await ensureEvmWallet());
-      if (!wallet) {
-        throw new Error("Your 0G wallet is not ready yet. Sign in again.");
-      }
+      const humanAmount = parseHumanZeroGAmount(amount0G);
+      const wei = humanZeroGToWei(humanAmount);
 
-      await wallet.switchChain(ZERO_G_CHAIN_ID);
-      const { hash } = await sendTransaction(
-        {
+      try {
+        const provider = await getEthereumProvider();
+        const browserProvider = new BrowserProvider(provider);
+        const signer = await browserProvider.getSigner();
+        const tx = await signer.sendTransaction({
           to: ZERO_G_TREASURY_WALLET,
-          value: decimalToWeiHex(amount0G),
-          chainId: ZERO_G_CHAIN_ID,
-        },
-        {
-          address: wallet.address,
-          fundWalletConfig: getZeroGFundWalletConfig(String(amount0G)),
-        },
-      );
-      return hash;
+          value: wei,
+        });
+        return tx.hash;
+      } catch (error) {
+        throw new Error(formatWalletError(error, { action: `pay ${humanAmount} 0G` }));
+      }
     },
-    [ensureEvmWallet, getEmbeddedWallet, sendTransaction],
+    [getEthereumProvider],
   );
 
   const ensureEvmWalletForUser = useCallback(
     async (nextUser: Parameters<typeof hasEvmWallet>[0]) => {
-      if (hasEvmWallet(nextUser) || getEmbeddedWallet()) {
-        syncPrivyIdentity(nextUser);
+      if (hasEvmWallet(nextUser, wallets) || getEmbeddedWallet()) {
+        syncSessionWalletIdentity(nextUser, wallets);
         return getEmbeddedWallet();
       }
       const wallet = await ensureEvmWallet();
-      syncPrivyIdentity(user ?? nextUser);
+      syncSessionWalletIdentity(user ?? nextUser, wallets);
       return wallet;
     },
-    [ensureEvmWallet, getEmbeddedWallet, user],
+    [ensureEvmWallet, getEmbeddedWallet, user, wallets],
   );
+
+  const linkWalletOnZeroGChain = useCallback(async () => {
+    const wallet = getEmbeddedWallet();
+    const address = wallet?.address ?? getWalletAddress();
+    if (!address) {
+      throw new Error("Connect your wallet first.");
+    }
+    syncSessionWalletIdentity(user ?? null, wallets);
+    return ensureWalletLinkedOnZeroG(address, getEthereumProvider);
+  }, [getEmbeddedWallet, getEthereumProvider, user, wallets]);
 
   return {
     hasEvmWallet: Boolean(getEmbeddedWallet()),
+    walletLinkedOnSession: isWalletLinkedOnSession(
+      getWalletAddressForFunding() ?? getEmbeddedWallet()?.address ?? null,
+    ),
     ensureEvmWallet,
     ensureEvmWalletForUser,
+    linkWalletOnZeroGChain,
     getEmbeddedWallet,
     getEthereumProvider,
     getWalletAddressForFunding,

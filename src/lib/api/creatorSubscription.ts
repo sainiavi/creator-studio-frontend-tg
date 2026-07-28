@@ -1,6 +1,7 @@
 import { BrowserProvider, Contract, getAddress, type Eip1193Provider } from "ethers";
 import { api } from "../api";
 import { getWalletAddress } from "../identity";
+import { formatWalletError } from "../walletErrors";
 
 const SUBSCRIPTION_ABI = ["function subscribe(uint8 tier, uint8 periods) payable"] as const;
 
@@ -20,9 +21,35 @@ export type CreatorSubscriptionTiers = {
   tiers: CreatorSubscriptionTier[];
 };
 
-export async function fetchCreatorSubscriptionTiers(): Promise<CreatorSubscriptionTiers> {
-  const { data } = await api.get("/creator-subscription/tiers");
-  return data;
+const TIERS_CACHE_TTL_MS = 5 * 60_000;
+let tiersCache: CreatorSubscriptionTiers | null = null;
+let tiersCacheExpiresAt = 0;
+let tiersFetchPromise: Promise<CreatorSubscriptionTiers> | null = null;
+
+export async function fetchCreatorSubscriptionTiers(
+  options?: { force?: boolean },
+): Promise<CreatorSubscriptionTiers> {
+  const force = options?.force ?? false;
+  if (!force && tiersCache && Date.now() < tiersCacheExpiresAt) {
+    return tiersCache;
+  }
+
+  if (!force && tiersFetchPromise) {
+    return tiersFetchPromise;
+  }
+
+  tiersFetchPromise = api
+    .get("/creator-subscription/tiers")
+    .then(({ data }) => {
+      tiersCache = data as CreatorSubscriptionTiers;
+      tiersCacheExpiresAt = Date.now() + TIERS_CACHE_TTL_MS;
+      return tiersCache;
+    })
+    .finally(() => {
+      tiersFetchPromise = null;
+    });
+
+  return tiersFetchPromise;
 }
 
 export async function fetchMyCreatorSubscription() {
@@ -82,10 +109,18 @@ export async function purchaseCreatorSubscription(
   const { data } = await api.post("/creator-subscription/quote", { tier, periods });
   const quote = data.quote;
   const subscription = new Contract(config.contractAddress, SUBSCRIPTION_ABI, signer);
-  const transaction = await subscription.subscribe(tier, periods, {
-    value: BigInt(quote.dueNowWei),
-  });
-  await transaction.wait();
+
+  let transaction;
+  try {
+    transaction = await subscription.subscribe(tier, periods, {
+      value: BigInt(quote.dueNowWei),
+    });
+    await transaction.wait();
+  } catch (error) {
+    const friendly = new Error(formatWalletError(error, { action: "subscribe with 0G" }));
+    (friendly as Error & { cause?: unknown }).cause = error;
+    throw friendly;
+  }
 
   const confirmation = await api.post("/creator-subscription/confirm", {
     txHash: transaction.hash,

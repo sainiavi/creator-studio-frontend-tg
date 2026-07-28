@@ -44,10 +44,13 @@ export function ZeroGWalletPanel({
     getEmbeddedWallet,
     readZeroGBalance,
     addZeroGFunds,
+    linkWalletOnZeroGChain,
+    walletLinkedOnSession,
   } = usePrivyEvmWallet();
   const [balanceWei, setBalanceWei] = useState<bigint | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [funding, setFunding] = useState(false);
+  const [linkingWallet, setLinkingWallet] = useState(false);
   const [copied, setCopied] = useState(false);
   const [notice, setNotice] = useState("");
 
@@ -78,6 +81,25 @@ export function ZeroGWalletPanel({
     if (inTelegram || !walletAddress) return;
     void refreshBalance();
   }, [inTelegram, refreshBalance, walletAddress, wallets.length]);
+
+  const verifyWalletOnZeroG = useCallback(async () => {
+    if (!walletAddress || walletLinkedOnSession || linkingWallet) return;
+    try {
+      setLinkingWallet(true);
+      setNotice("Confirm the signature in your wallet on 0G Mainnet…");
+      await linkWalletOnZeroGChain();
+      setNotice("Wallet verified on 0G.");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Could not verify wallet on 0G.";
+      if (!/cancel|reject/i.test(message)) {
+        setNotice(message);
+      } else {
+        setNotice("");
+      }
+    } finally {
+      setLinkingWallet(false);
+    }
+  }, [linkWalletOnZeroGChain, linkingWallet, walletAddress, walletLinkedOnSession]);
 
   const copyAddress = async () => {
     if (!walletAddress) return;
@@ -279,6 +301,23 @@ export function ZeroGWalletPanel({
             {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
           </span>
         </button>
+
+        {!walletLinkedOnSession && (
+          <button
+            type="button"
+            onClick={() => void verifyWalletOnZeroG()}
+            disabled={linkingWallet}
+            className={cn(
+              "mt-3 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-black transition active:scale-[0.98] disabled:opacity-60",
+              isModal
+                ? "border-amber-300/40 bg-amber-400/15 text-amber-50 hover:bg-amber-400/25"
+                : "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100",
+            )}
+          >
+            {linkingWallet ? <Loader2 className="size-4 animate-spin" /> : <Wallet className="size-4" />}
+            {linkingWallet ? "Waiting for signature…" : "Verify wallet on 0G"}
+          </button>
+        )}
 
         <button
           type="button"
