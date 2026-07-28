@@ -1,8 +1,9 @@
 import { Loader2, LogOut, Wallet } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import { StudioSignInButton } from "@/components/studio/StudioSignInButton";
 import { ZeroGWalletPanel } from "@/components/studio/ZeroGWalletPanel";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useStudioAuth } from "@/hooks/useStudioAuth";
 import { formatTonAddress } from "@/lib/tonWallet";
 
@@ -19,6 +20,7 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
     copyTonWallet,
   } = useStudioAuth();
   const lastTonActivationAt = useRef(0);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
 
   const activateTonWallet = () => {
     const now = Date.now();
@@ -41,7 +43,31 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
 
   return (
     <div className={`mb-4 space-y-2 ${collapsed ? "px-0" : "px-2"}`}>
-      {!inTelegram && !collapsed && <ZeroGWalletPanel showHeading variant="sidebar" />}
+      {!inTelegram && (
+        <>
+          <button
+            type="button"
+            onClick={() => setWalletModalOpen(true)}
+            className={`flex items-center justify-center rounded-xl border border-sky-200 bg-white/75 text-sky-700 transition hover:bg-white hover:text-sky-950 ${
+              collapsed ? "size-10" : "w-full gap-2 px-3 py-2"
+            }`}
+            title="Open 0G wallet"
+          >
+            <Wallet className="size-4" />
+            {!collapsed && <span className="label-mono text-xs font-bold">OPEN 0G WALLET</span>}
+          </button>
+
+          <Dialog open={walletModalOpen} onOpenChange={setWalletModalOpen}>
+            <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-[1.5rem] border border-fuchsia-300/25 bg-[linear-gradient(160deg,#21103f,#110821)] p-5 text-white shadow-[0_24px_80px_rgba(32,8,70,0.55)]">
+              <DialogTitle className="sr-only">0G Wallet</DialogTitle>
+              <DialogDescription className="sr-only">
+                View your 0G balance, verify your wallet, copy its address, or add funds.
+              </DialogDescription>
+              <ZeroGWalletPanel />
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
 
       {inTelegram && (
         <button
