@@ -58,12 +58,15 @@ export function PrivyAccountControls({ collapsed }: { collapsed: boolean }) {
           </button>
 
           <Dialog open={walletModalOpen} onOpenChange={setWalletModalOpen}>
-            <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-md overflow-y-auto rounded-[1.5rem] border border-fuchsia-300/25 bg-[linear-gradient(160deg,#21103f,#110821)] p-5 text-white shadow-[0_24px_80px_rgba(32,8,70,0.55)]">
+            <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-md overflow-y-auto rounded-[1.5rem] border border-sky-200 bg-[#f8f7ff] p-4 text-sky-950 shadow-[0_24px_80px_rgba(32,8,70,0.35)] [&>button]:z-20 [&>button]:rounded-full [&>button]:bg-white/90 [&>button]:p-2 [&>button]:text-sky-900 [&>button]:opacity-100 sm:max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:p-5">
               <DialogTitle className="sr-only">0G Wallet</DialogTitle>
               <DialogDescription className="sr-only">
                 View your 0G balance, verify your wallet, copy its address, or add funds.
               </DialogDescription>
-              <ZeroGWalletPanel />
+              <ZeroGWalletPanel
+                variant="sidebar"
+                className="border-0 bg-transparent p-0 text-sky-950 shadow-none"
+              />
             </DialogContent>
           </Dialog>
         </>
