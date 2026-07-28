@@ -1294,7 +1294,7 @@ function CategoryMiniCard({
             alt=""
             loading="lazy"
             draggable={false}
-            className={`absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-300 group-active:scale-[0.98] ${
+            className={`absolute inset-0 h-full w-full object-cover object-top brightness-110 saturate-105 transition-opacity duration-300 group-active:scale-[0.98] ${
               thumbnailLoaded ? "opacity-100" : "opacity-0"
             }`}
             onLoad={(event) => {
@@ -1310,7 +1310,7 @@ function CategoryMiniCard({
             {game.emoji || "🎮"}
           </span>
         )}
-        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
         {game.plays && game.plays !== "New" && (
           <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur">
             <Play className="size-2.5 fill-current" />
