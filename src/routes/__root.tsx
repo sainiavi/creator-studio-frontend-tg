@@ -3,7 +3,6 @@ import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/r
 import { useLoginWithTelegram, usePrivy, useWallets } from "@privy-io/react-auth";
 import { useEffect, useMemo, useRef } from "react";
 
-import { StudioProvider } from "@/context/StudioContext";
 import { clearAuthToken, prefetchAuthToken } from "../lib/api";
 import { clearLegacyAnonymousIdentity } from "../lib/identity";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -128,9 +127,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StudioProvider>
-        <Outlet />
-      </StudioProvider>
+      <Outlet />
     </QueryClientProvider>
   );
 }
