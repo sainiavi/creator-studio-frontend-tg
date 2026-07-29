@@ -1016,6 +1016,23 @@ function PlayFeed() {
   });
   reelHandlersRef.current = { handleDragStart, handleDragMove, handleDragEnd };
 
+  // Games render in an iframe (or a same-document canvas). Touches that start
+  // inside an iframe never bubble to `mainRef` below — the browser dispatches
+  // them entirely within the iframe's own document. These stable callbacks let
+  // Html5Preview/GeneratedGameFrame forward gesture coordinates they capture
+  // (via direct same-origin listeners or postMessage) into the exact same
+  // swipe-to-change-game logic `mainRef` already uses, so reel navigation keeps
+  // working even while swiping over the game itself.
+  const forwardReelTouchStart = useCallback(
+    (x: number, y: number, target: HTMLElement) => reelHandlersRef.current.handleDragStart(x, y, target),
+    [],
+  );
+  const forwardReelTouchMove = useCallback(
+    (x: number, y: number, event?: TouchEvent) => reelHandlersRef.current.handleDragMove(x, y, event),
+    [],
+  );
+  const forwardReelTouchEnd = useCallback(() => reelHandlersRef.current.handleDragEnd(), []);
+
   useEffect(() => {
     const node = mainRef.current;
     if (!node) return;
@@ -1278,9 +1295,20 @@ function PlayFeed() {
                 ) : isSimpleAgentGame ? (
                   <SimpleAgentGame onScoreSubmit={handleScoreSubmit} />
                 ) : engine === "construct" ? (
-                  <Html5Preview templateId={String(template?.id ?? gameId)} />
+                  <Html5Preview
+                    templateId={String(template?.id ?? gameId)}
+                    onReelTouchStart={forwardReelTouchStart}
+                    onReelTouchMove={forwardReelTouchMove}
+                    onReelTouchEnd={forwardReelTouchEnd}
+                  />
                 ) : (
-                  <GamePreview gamePackage={pkg} onScoreSubmit={handleScoreSubmit} />
+                  <GamePreview
+                    gamePackage={pkg}
+                    onScoreSubmit={handleScoreSubmit}
+                    onReelTouchStart={forwardReelTouchStart}
+                    onReelTouchMove={forwardReelTouchMove}
+                    onReelTouchEnd={forwardReelTouchEnd}
+                  />
                 )}
               </div>
 

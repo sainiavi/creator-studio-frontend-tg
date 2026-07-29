@@ -29,13 +29,27 @@ const STALE_BUILD_MS = 20 * 60 * 1000;
 export function GamePreview({
   gamePackage,
   onScoreSubmit,
+  onReelTouchStart,
+  onReelTouchMove,
+  onReelTouchEnd,
 }: {
   gamePackage: AnyPackage;
   onScoreSubmit?: (score: number) => void;
+  onReelTouchStart?: (x: number, y: number, target: HTMLElement) => boolean | void;
+  onReelTouchMove?: (x: number, y: number, event?: TouchEvent) => void;
+  onReelTouchEnd?: () => void;
 }) {
   const generatedCode = gamePackage?.refinement?.generatedCode;
   if (typeof generatedCode === "string" && generatedCode.trim().length > 0) {
-    return <GeneratedGameFrame gamePackage={gamePackage} onScoreSubmit={onScoreSubmit} />;
+    return (
+      <GeneratedGameFrame
+        gamePackage={gamePackage}
+        onScoreSubmit={onScoreSubmit}
+        onReelTouchStart={onReelTouchStart}
+        onReelTouchMove={onReelTouchMove}
+        onReelTouchEnd={onReelTouchEnd}
+      />
+    );
   }
   if (gamePackage?.templateId === "pure-agent") {
     const born = Date.parse(String(gamePackage?.createdAt ?? gamePackage?.updatedAt ?? "")) || 0;

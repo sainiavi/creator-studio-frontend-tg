@@ -217,14 +217,29 @@ function reportGameError(message, stack) {
     if (adx > ady) tap(dx > 0 ? "right" : "left");
     else tap(dy > 0 ? "down" : "up");
   }
+  // Also forward raw gesture coordinates to the parent reel feed: a cross-origin
+  // sandboxed iframe (allow-scripts, no allow-same-origin) can't let touches
+  // bubble out on their own, so without this a vertical swipe here would only
+  // ever move this one game and could never change reels.
+  function sendGesture(phase, x, y) {
+    try { window.parent.postMessage({ __kultReelGesture: { phase: phase, x: x, y: y } }, "*"); } catch {}
+  }
   const handler = canvas || document;
   handler.addEventListener("touchstart", function (e) {
     const t = e.touches[0];
-    if (t) begin(t.clientX, t.clientY);
+    if (t) { begin(t.clientX, t.clientY); sendGesture("start", t.clientX, t.clientY); }
+  }, { passive: true });
+  handler.addEventListener("touchmove", function (e) {
+    const t = e.touches[0];
+    if (t) sendGesture("move", t.clientX, t.clientY);
   }, { passive: true });
   handler.addEventListener("touchend", function (e) {
     const t = e.changedTouches[0];
     if (t) finish(t.clientX, t.clientY);
+    sendGesture("end", 0, 0);
+  }, { passive: true });
+  handler.addEventListener("touchcancel", function () {
+    sendGesture("end", 0, 0);
   }, { passive: true });
   // Mouse: only used to restart by clicking once the run is over. During play
   // the keyboard works on desktop, and real clicks still reach pointer games.
@@ -259,27 +274,50 @@ ${moduleBody}
 export function GeneratedGameFrame({
   gamePackage,
   onScoreSubmit,
+  onReelTouchStart,
+  onReelTouchMove,
+  onReelTouchEnd,
 }: {
   gamePackage: AnyPackage;
   onScoreSubmit?: (score: number) => void;
+  onReelTouchStart?: (x: number, y: number, target: HTMLElement) => boolean | void;
+  onReelTouchMove?: (x: number, y: number, event?: TouchEvent) => void;
+  onReelTouchEnd?: () => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const reelDraggingRef = useRef(false);
 
-  // Scores posted by the sandboxed game (reportScore API or HUD watcher).
+  // Scores posted by the sandboxed game (reportScore API or HUD watcher), and
+  // reel-swipe gestures forwarded from the harness's touch bridge (see
+  // buildSrcDoc's "Touch input bridge" — the sandbox has no allow-same-origin,
+  // so postMessage is the only way gestures inside it can reach the parent).
   useEffect(() => {
-    if (!onScoreSubmit) return;
+    if (!onScoreSubmit && !onReelTouchStart && !onReelTouchMove && !onReelTouchEnd) return;
     function onMessage(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) return;
       const score = event.data?.__kultGameScore;
       if (typeof score === "number" && Number.isFinite(score) && score >= 0) {
         onScoreSubmit?.(Math.floor(score));
       }
+      const gesture = event.data?.__kultReelGesture;
+      if (gesture && typeof gesture === "object") {
+        if (gesture.phase === "start") {
+          reelDraggingRef.current = Boolean(
+            onReelTouchStart?.(gesture.x, gesture.y, iframeRef.current as unknown as HTMLElement),
+          );
+        } else if (gesture.phase === "move") {
+          if (reelDraggingRef.current) onReelTouchMove?.(gesture.x, gesture.y);
+        } else if (gesture.phase === "end") {
+          if (reelDraggingRef.current) onReelTouchEnd?.();
+          reelDraggingRef.current = false;
+        }
+      }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [onScoreSubmit]);
+  }, [onScoreSubmit, onReelTouchStart, onReelTouchMove, onReelTouchEnd]);
 
   const code = gamePackage?.refinement?.generatedCode ?? "";
   const srcDoc = useMemo(() => buildSrcDoc(code, gamePackage), [code, gamePackage]);
