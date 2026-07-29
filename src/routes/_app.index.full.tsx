@@ -38,7 +38,8 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { getThumbnailUrl, resolveGameThumbnail } from "@/lib/studio-meta";
+import { getThumbnailCandidates } from "@/lib/studio-meta";
+import { onImageErrorUnlessUnmounting } from "@/lib/safeImageError";
 import { fetchGamesPage, mapApiGameToGame } from "@/lib/api/games";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { VIEWS_TOP_LIMIT } from "@/lib/pagination";
@@ -72,6 +73,7 @@ import {
 import { MobileHomeHero } from "@/components/studio/MobileHomeHero";
 import { useCreateChatFlow } from "@/hooks/useCreateChatFlow";
 import { GamePosterCard, type GamePosterSize } from "@/components/studio/GamePosterCard";
+import { BrandStrip } from "@/components/studio/BrandStrip";
 import { KultLogo } from "@/components/studio/KultLogo";
 import { TonWalletSignInButton } from "@/components/studio/TonWalletSignInButton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -655,7 +657,8 @@ export function Home() {
         ) : (
           <>
             <div className="relative z-20 flex min-w-0 shrink-0 items-center min-[1190px]:flex-1 min-[1190px]:gap-4">
-              <KultLogo className="h-8 w-auto max-w-[118px] object-contain object-left min-[1190px]:h-10 min-[1190px]:max-w-[148px]" />
+              <BrandStrip variant="inline" className="min-[1190px]:hidden" />
+              <KultLogo className="hidden h-10 w-auto max-w-[148px] object-contain object-left min-[1190px]:block" />
               <p className="hidden shrink-0 text-sm font-semibold text-violet-100 min-[1190px]:block">
                 <span className="font-black text-white"></span>
               </p>
@@ -1261,21 +1264,40 @@ function CategoryMiniCard({
 }) {
   const creator = compactCreatorName(game.creator);
   const layout = categoryRowLayout[variant];
-  const thumbnailCandidates = Array.from(
-    new Set(
-      [game.thumbnailUrl, game.templateId ? getThumbnailUrl(game.templateId) : null].filter(
-        (value): value is string => Boolean(value),
-      ),
-    ),
-  );
+  const thumbnailCandidates = useMemo(() => getThumbnailCandidates(game), [game]);
   const [thumbnailIndex, setThumbnailIndex] = useState(0);
-  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
-  const thumbnailUrl = thumbnailCandidates[thumbnailIndex];
+  const [showFallback, setShowFallback] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const thumbnailUrl = showFallback ? undefined : thumbnailCandidates[thumbnailIndex];
 
   useEffect(() => {
     setThumbnailIndex(0);
-    setThumbnailLoaded(false);
-  }, [game.thumbnailUrl, game.templateId]);
+    setShowFallback(false);
+  }, [game.id, game.templateId, game.thumbnailUrl, game.familyTemplateId]);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img || !thumbnailUrl) return;
+    if (img.complete && img.naturalWidth > 0) return;
+    const timeout = window.setTimeout(() => {
+      if (img.complete && img.naturalWidth === 0) {
+        if (thumbnailIndex + 1 < thumbnailCandidates.length) {
+          setThumbnailIndex((current) => current + 1);
+        } else {
+          setShowFallback(true);
+        }
+      }
+    }, 8000);
+    return () => window.clearTimeout(timeout);
+  }, [thumbnailUrl, thumbnailIndex, thumbnailCandidates.length]);
+
+  const handleImageError = () => {
+    if (thumbnailIndex + 1 < thumbnailCandidates.length) {
+      setThumbnailIndex((current) => current + 1);
+      return;
+    }
+    setShowFallback(true);
+  };
 
   return (
     <button
@@ -1285,30 +1307,23 @@ function CategoryMiniCard({
       title={game.creator}
     >
       <span className="home-category-card-media relative block overflow-hidden rounded-[14px] border border-white bg-[#160b2e] shadow-[0_6px_16px_rgba(30,7,65,0.26)]">
-        {thumbnailUrl && !thumbnailLoaded && (
-          <Skeleton className="absolute inset-0 h-full w-full rounded-none bg-violet-950/55" />
-        )}
-        {thumbnailUrl ? (
-          <img
-            src={thumbnailUrl}
-            alt=""
-            loading="lazy"
-            draggable={false}
-            className={`absolute inset-0 h-full w-full object-cover object-top brightness-110 saturate-105 transition-opacity duration-300 group-active:scale-[0.98] ${
-              thumbnailLoaded ? "opacity-100" : "opacity-0"
-            }`}
-            onLoad={(event) => {
-              if (event.currentTarget.naturalWidth > 0) setThumbnailLoaded(true);
-            }}
-            onError={() => {
-              setThumbnailLoaded(false);
-              setThumbnailIndex((current) => current + 1);
-            }}
-          />
-        ) : (
+        {showFallback || !thumbnailUrl ? (
           <span className="absolute inset-0 grid place-items-center bg-gradient-to-br from-violet-950 via-purple-950 to-slate-950 text-4xl">
             {game.emoji || "🎮"}
           </span>
+        ) : (
+          <img
+            ref={imgRef}
+            src={thumbnailUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover object-top brightness-110 saturate-105 transition duration-300 group-active:scale-[0.98]"
+            onError={(event) => {
+              onImageErrorUnlessUnmounting(event.currentTarget, handleImageError);
+            }}
+          />
         )}
         <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
         {game.plays && game.plays !== "New" && (

@@ -28,7 +28,7 @@ function AppLayout() {
 
   return (
     <div className="relative flex min-h-screen w-full">
-      {!isPlayPage && <StudioPageBackground />}
+      <StudioPageBackground />
       <Sidebar />
       <main
         className={`relative z-10 min-w-0 flex-1 ${

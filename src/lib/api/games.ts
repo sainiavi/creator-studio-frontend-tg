@@ -22,6 +22,9 @@ export function mapApiGameToGame(g: Record<string, unknown>, index: number): Gam
         ? `${creatorId.slice(0, 6)}…${creatorId.slice(-4)}`
         : creatorId || "community"),
     creatorId,
+    id: typeof g.id === "string" ? g.id : undefined,
+    familyTemplateId:
+      typeof g.templateId === "string" && g.templateId !== g.id ? g.templateId : undefined,
     thumbnailUrl: resolveGameThumbnail(g),
     templateId: String(g.id ?? g.templateId ?? ""),
     likes: Number(points?.likes ?? 0),

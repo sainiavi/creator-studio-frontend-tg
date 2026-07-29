@@ -33,7 +33,7 @@ export const privyConfig: PrivyClientConfig = {
   appearance: {
     theme: "dark",
     accentColor: "#A855F7",
-    landingHeader: "Sign in to KULT Creator",
+    landingHeader: "Sign in to KULT Create",
     loginMessage: isTelegramMiniApp()
       ? "Sign in with Telegram, Google, email, or connect your wallet."
       : "Sign in with Google, email, or connect Bitget, OKX, MetaMask, and other 0G-compatible wallets.",

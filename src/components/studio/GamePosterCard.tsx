@@ -1,20 +1,10 @@
 import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Heart, Pencil, Play, X } from "lucide-react";
 import { type Game, gradientClass } from "@/lib/games-data";
+import { getThumbnailCandidates } from "@/lib/studio-meta";
+import { onImageErrorUnlessUnmounting } from "@/lib/safeImageError";
 import defaultCreatorAvatar from "@/assets/navProfile.webp";
-
-const FALLBACK_COVER =
-  "data:image/svg+xml;base64," +
-  btoa(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500" viewBox="0 0 400 500">
-      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#2b1a4f"/><stop offset="1" stop-color="#0c1230"/>
-      </linearGradient></defs>
-      <rect width="400" height="500" fill="url(#g)"/>
-      <circle cx="200" cy="210" r="64" fill="none" stroke="#8d6bff" stroke-width="6" opacity="0.7"/>
-      <text x="200" y="360" text-anchor="middle" fill="#b9a8ff" font-family="monospace" font-size="20">AI GAME</text>
-    </svg>`,
-  );
 
 export type GamePosterSize = "featured" | "standard" | "compact";
 
@@ -27,8 +17,17 @@ function formatCompactCount(value: number) {
 function PosterArtwork({ game, size }: { game: Game; size: GamePosterSize }) {
   const emojiClass =
     size === "featured" ? "text-6xl" : size === "standard" ? "text-5xl" : "text-4xl";
+  const candidates = useMemo(() => getThumbnailCandidates(game), [game]);
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const [showFallback, setShowFallback] = useState(false);
+  const thumbnailUrl = showFallback ? undefined : candidates[candidateIndex];
 
-  if (!game.thumbnailUrl) {
+  useEffect(() => {
+    setCandidateIndex(0);
+    setShowFallback(false);
+  }, [game.id, game.templateId, game.thumbnailUrl, game.familyTemplateId]);
+
+  if (showFallback || !thumbnailUrl) {
     return (
       <div
         className={`absolute inset-0 grid place-items-center bg-gradient-to-br ${gradientClass[game.gradient]}`}
@@ -42,18 +41,19 @@ function PosterArtwork({ game, size }: { game: Game; size: GamePosterSize }) {
 
   return (
     <img
-      src={game.thumbnailUrl}
+      src={thumbnailUrl}
       alt=""
       loading="lazy"
+      decoding="async"
       draggable={false}
       onError={(event) => {
-        const img = event.currentTarget;
-        if (img.dataset.fallback) {
-          img.style.display = "none";
-          return;
-        }
-        img.dataset.fallback = "1";
-        img.src = FALLBACK_COVER;
+        onImageErrorUnlessUnmounting(event.currentTarget, () => {
+          if (candidateIndex + 1 < candidates.length) {
+            setCandidateIndex((current) => current + 1);
+            return;
+          }
+          setShowFallback(true);
+        });
       }}
       className="absolute inset-0 h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.03]"
     />

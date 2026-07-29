@@ -30,32 +30,62 @@ export function getThumbnailUrl(templateId: string): string {
   return `${apiBase}/thumbnails/${encodeURIComponent(templateId)}`;
 }
 
+function absoluteThumbnailUrl(url: string): string {
+  if (url.startsWith("/api/")) {
+    const origin = apiBase.replace(/\/api$/, "");
+    return `${origin}${url}`;
+  }
+  return url;
+}
+
+function isPlaceholderThumbnail(url: string): boolean {
+  return !url || url.startsWith("data:image/svg+xml") || url.startsWith("/thumbnails/");
+}
+
+/** Ordered thumbnail URLs to try when a cover image fails or is still generating. */
+export function getThumbnailCandidates(game: {
+  id?: string;
+  templateId?: string;
+  familyTemplateId?: string;
+  thumbnailUrl?: string | null;
+}): string[] {
+  const seen = new Set<string>();
+  const candidates: string[] = [];
+  const add = (url?: string | null) => {
+    if (!url || seen.has(url)) return;
+    seen.add(url);
+    candidates.push(url);
+  };
+
+  const raw = game.thumbnailUrl ?? "";
+  if (!isPlaceholderThumbnail(raw)) {
+    add(absoluteThumbnailUrl(raw));
+  }
+
+  const gameId = game.id ?? game.templateId;
+  if (gameId) add(getThumbnailUrl(gameId));
+
+  const familyId = game.familyTemplateId;
+  if (familyId && familyId !== gameId) add(getThumbnailUrl(familyId));
+
+  if (!gameId && !familyId) add(getThumbnailUrl("simple-agent-game"));
+
+  return candidates;
+}
+
 /**
  * Resolves the best cover image for a created game:
  *  1. its own generated cover (served by the backend, stored as "/api/..."),
  *  2. any non-placeholder URL it carries,
  *  3. the game's OWN id in the thumbnails collection,
  *  4. finally the template family cover.
- * Backend-relative paths are made absolute against the API origin so they work
- * regardless of dev-server proxying.
  */
 export function resolveGameThumbnail(game: {
   id?: string;
   templateId?: string;
   thumbnailUrl?: string | null;
 }): string {
-  const url = game?.thumbnailUrl ?? "";
-  const isPlaceholder = !url || url.startsWith("data:image/svg+xml") || url.startsWith("/thumbnails/");
-  if (!isPlaceholder) {
-    if (url.startsWith("/api/")) {
-      const origin = apiBase.replace(/\/api$/, "");
-      return `${origin}${url}`;
-    }
-    return url;
-  }
-  // The thumbnail job stores covers under the game's own id.
-  if (game?.id) return getThumbnailUrl(game.id);
-  return getThumbnailUrl(game?.templateId ?? "simple-agent-game");
+  return getThumbnailCandidates(game)[0] ?? getThumbnailUrl(game?.templateId ?? "simple-agent-game");
 }
 
 // Maps every template id to a poster emoji (ported from the original studio shell).

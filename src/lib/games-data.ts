@@ -8,6 +8,10 @@ export type Game = {
   /** Raw backend creator id (e.g. wallet address) — used to fetch creator stats. */
   creatorId?: string;
   thumbnailUrl?: string;
+  /** Backend game package id (same value often stored in templateId for feed cards). */
+  id?: string;
+  /** Original template family id when different from the game package id. */
+  familyTemplateId?: string;
   /** When set, the card opens this real template in the Studio. */
   templateId?: string;
   playUrl?: string;
