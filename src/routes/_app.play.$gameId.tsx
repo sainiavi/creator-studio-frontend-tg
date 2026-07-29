@@ -1421,13 +1421,27 @@ function PlayFeed() {
           <span className="h-16 w-1 rounded-full bg-white/25 shadow-[0_0_10px_rgba(255,255,255,0.25)]" />
         </div>
         <div
-          aria-label="Swipe up or down to change game"
+          aria-label="Tap or swipe up or down to change game"
           className="absolute bottom-28 right-0 top-24 z-30 flex w-11 touch-none items-center justify-end pr-1.5 lg:hidden"
         >
           <span className="flex h-20 w-5 flex-col items-center justify-between rounded-full border border-white/15 bg-black/35 py-2 text-[10px] text-white/65 shadow-[0_0_12px_rgba(0,0,0,0.35)] backdrop-blur">
-            <ArrowUp className="size-3" />
+            <button
+              type="button"
+              onClick={triggerPrevGame}
+              className="grid place-items-center rounded-full p-1 -m-1 pointer-events-auto"
+              aria-label="Previous game"
+            >
+              <ArrowUp className="size-3" />
+            </button>
             <span className="h-5 w-1 rounded-full bg-white/55" />
-            <ArrowDown className="size-3" />
+            <button
+              type="button"
+              onClick={triggerNextGame}
+              className="grid place-items-center rounded-full p-1 -m-1 pointer-events-auto"
+              aria-label="Next game"
+            >
+              <ArrowDown className="size-3" />
+            </button>
           </span>
         </div>
       </main>

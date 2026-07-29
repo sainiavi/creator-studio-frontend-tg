@@ -253,13 +253,38 @@ function recentCreationContext() {
   }
 }
 
+const DEFAULT_DIFFICULTY = {
+  easy: { speedMultiplier: 0.85 },
+  normal: { speedMultiplier: 1 },
+  hard: { speedMultiplier: 1.15 },
+};
+
+const DEFAULT_THEME = {
+  label: "Neon",
+  mood: "arcade",
+  colors: ["#a855f7", "#22d3ee"],
+};
+
 export function localPackage(template: any, options: any, themePresets: any) {
   if (!template?.id) {
     throw new Error("Template is unavailable");
   }
-  const theme = themePresets[options.theme as keyof typeof themePresets] ?? themePresets.neon;
-  const tuning = template.difficulty[options.difficulty] ?? template.difficulty.normal;
-  const slug = `${template.id}-${options.theme}-${Date.now().toString(36)}`;
+  const presets =
+    themePresets && typeof themePresets === "object" ? themePresets : ({} as Record<string, unknown>);
+  const theme =
+    presets[options?.theme as keyof typeof presets] ??
+    presets.neon ??
+    DEFAULT_THEME;
+  const difficultyTable =
+    template?.difficulty && typeof template.difficulty === "object"
+      ? template.difficulty
+      : DEFAULT_DIFFICULTY;
+  const difficultyKey = options?.difficulty ?? "normal";
+  const tuning =
+    difficultyTable[difficultyKey] ??
+    difficultyTable.normal ??
+    DEFAULT_DIFFICULTY.normal;
+  const slug = `${template.id}-${options?.theme ?? "neon"}-${Date.now().toString(36)}`;
 
   return {
     id: slug,
