@@ -18,6 +18,7 @@ export type DashboardGame = {
   shares: number;
   remixes: number;
   earned: number;
+  kpEarned: number;
   recentComments: DashboardComment[];
 };
 
@@ -27,6 +28,7 @@ export type DashboardSeriesPoint = {
   key: string;
   label: string;
   earned: number;
+  kpEarned: number;
   plays: number;
   timeSeconds: number;
   games: number;
@@ -47,6 +49,7 @@ export type CreatorDashboard = {
     shares: number;
     remixes: number;
     earned: number;
+    kultPoints: number;
   };
   series: DashboardSeries;
 };

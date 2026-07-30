@@ -25,7 +25,7 @@ import {
   type DashboardSeries,
   type DashboardSeriesPoint,
 } from "@/lib/api/dashboard";
-import { fetchComments, type Comment } from "@/lib/api/social";
+import { fetchComments, fetchPointSummary, type Comment } from "@/lib/api/social";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
@@ -169,7 +169,13 @@ function smoothPath(pts: { x: number; y: number }[], yMin: number, yMax: number)
 function PlaysChart({ series, metric }: { series: DashboardSeries; metric: MetricKey }) {
   const data = series.points;
   const cfg = METRICS[metric];
-  const valueOf = cfg.value;
+  // Coerce to a finite number so a missing field (e.g. an un-restarted backend
+  // that doesn't send `games`/`timeSeconds`) can't turn the whole path into NaN
+  // and blank the line — it just reads as 0.
+  const valueOf = (point: DashboardSeriesPoint) => {
+    const value = Number(cfg.value(point));
+    return Number.isFinite(value) ? value : 0;
+  };
   const [hover, setHover] = useState<number | null>(null);
   const padX = 3;
   const padY = 12;
@@ -249,19 +255,13 @@ function PlaysChart({ series, metric }: { series: DashboardSeries; metric: Metri
         onPointerLeave={() => setHover(null)}
       >
       <style>{`
-        @keyframes kd-dash { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
         @keyframes kd-pulse { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(2.4); opacity: 0; } }
       `}</style>
       <svg viewBox="0 0 100 100" className="h-full w-full overflow-visible" preserveAspectRatio="none">
         <defs>
-          <linearGradient id="kd-stroke" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="0">
-            <stop offset="0%" stopColor="#22d3ee" />
-            <stop offset="50%" stopColor="#e879f9" />
-            <stop offset="100%" stopColor="#fbbf24" />
-          </linearGradient>
           <linearGradient id="kd-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#d946ef" stopOpacity="0.42" />
-            <stop offset="55%" stopColor="#a855f7" stopOpacity="0.14" />
+            <stop offset="0%" stopColor="#d946ef" stopOpacity="0.26" />
+            <stop offset="55%" stopColor="#a855f7" stopOpacity="0.09" />
             <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
           </linearGradient>
         </defs>
@@ -287,16 +287,13 @@ function PlaysChart({ series, metric }: { series: DashboardSeries; metric: Metri
             key={`${series.range}-${metric}-${data.length}`}
             d={line}
             fill="none"
-            stroke="url(#kd-stroke)"
-            strokeWidth="2.5"
+            stroke="#38bdf8"
+            strokeWidth="2.75"
             strokeLinejoin="round"
             strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
-            pathLength={1}
             style={{
-              strokeDasharray: 1,
-              animation: "kd-dash 0.9s ease-out forwards",
-              filter: "drop-shadow(0 0 3px rgba(232,121,249,0.85))",
+              filter: "drop-shadow(0 0 3px rgba(56,189,248,0.9))",
             }}
           />
         )}
@@ -309,10 +306,10 @@ function PlaysChart({ series, metric }: { series: DashboardSeries; metric: Metri
           style={{ left: `${pts[peak].x}%`, top: `${pts[peak].y}%`, transform: "translate(-50%,-50%)" }}
         >
           <span
-            className="absolute left-1/2 top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fuchsia-400"
+            className="absolute left-1/2 top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400"
             style={{ animation: "kd-pulse 1.6s ease-out infinite" }}
           />
-          <span className="absolute left-1/2 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_8px_2px_rgba(232,121,249,0.9)]" />
+          <span className="absolute left-1/2 top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_8px_2px_rgba(56,189,248,0.95)]" />
         </div>
       )}
 
@@ -324,7 +321,7 @@ function PlaysChart({ series, metric }: { series: DashboardSeries; metric: Metri
             style={{ left: `${pts[active].x}%` }}
           />
           <div
-            className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_8px_2px_rgba(232,121,249,0.9)]"
+            className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_8px_2px_rgba(56,189,248,0.95)]"
             style={{ left: `${pts[active].x}%`, top: `${pts[active].y}%` }}
           />
           <div
@@ -371,10 +368,22 @@ function Dashboard() {
   const [error, setError] = useState("");
   const [tab, setTab] = useState<TabKey>("analytics");
   const [range, setRange] = useState<DashboardRange>("week");
+  // KultPoints shown here comes from the SAME point summary as the header/profile
+  // (one identity's balance), so the Earn card always matches what the user sees
+  // elsewhere — not the cross-identity lifetime sum.
+  const [kultPoints, setKultPoints] = useState(0);
   const signedIn = Boolean(getCurrentUserId());
   const navigate = useNavigate();
   const openGame = (gameId: string) =>
     navigate({ to: "/play/$gameId", params: { gameId } });
+
+  useEffect(() => {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+    fetchPointSummary(userId)
+      .then((summary) => setKultPoints(summary.kultPoints ?? summary.lifetimePoints ?? 0))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -405,7 +414,9 @@ function Dashboard() {
   }, [signedIn, range]);
 
   const earners = useMemo(
-    () => (data?.games ?? []).filter((game) => game.earned > 0).sort((a, b) => b.earned - a.earned),
+    () => (data?.games ?? [])
+      .filter((game) => game.earned > 0 || Number(game.kpEarned) > 0)
+      .sort((a, b) => Math.max(b.earned, Number(b.kpEarned) || 0) - Math.max(a.earned, Number(a.kpEarned) || 0)),
     [data],
   );
 
@@ -454,7 +465,13 @@ function Dashboard() {
             )}
             {tab === "activity" && <ActivityTab data={data!} onOpenGame={openGame} />}
             {tab === "earn" && (
-              <EarnTab earners={earners} total={data!.totals.earned} onOpenGame={openGame} />
+              <EarnTab
+                earners={earners}
+                total={data!.totals.earned}
+                kultPoints={kultPoints}
+                series={data!.series}
+                onOpenGame={openGame}
+              />
             )}
           </>
         )}
@@ -485,7 +502,7 @@ function AnalyticsTab({
       <div className="grid grid-cols-2 gap-3">
         <StatCard label="Total Plays" value={formatNumber(data.totals.plays)} />
         <StatCard label="Comments" value={formatNumber(data.totals.comments)} />
-        <StatCard label="Score Earned" value={formatNumber(data.totals.earned)} />
+        <StatCard label="Creator Score Earned" value={formatNumber(data.totals.earned)} />
         <StatCard label="Games" value={formatNumber(data.totals.games)} />
       </div>
 
@@ -811,31 +828,83 @@ function ActivityTab({
 function EarnTab({
   earners,
   total,
+  kultPoints,
+  series,
   onOpenGame,
 }: {
   earners: CreatorDashboard["games"];
   total: number;
+  kultPoints: number;
+  series: DashboardSeries;
   onOpenGame: (gameId: string) => void;
 }) {
+  const [historyMetric, setHistoryMetric] = useState<"all" | "kp" | "cs">("all");
+  const historyEntries = earners.flatMap((game) => {
+    const entries: { game: DashboardGame; metric: "kp" | "cs"; value: number }[] = [];
+    if ((historyMetric === "all" || historyMetric === "cs") && game.earned > 0) {
+      entries.push({ game, metric: "cs", value: game.earned });
+    }
+    if ((historyMetric === "all" || historyMetric === "kp") && Number(game.kpEarned) > 0) {
+      entries.push({ game, metric: "kp", value: Number(game.kpEarned) });
+    }
+    return entries;
+  }).sort((a, b) => b.value - a.value);
+
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-amber-300/25 bg-[linear-gradient(135deg,rgba(245,158,11,0.16),rgba(219,39,119,0.16))] p-5 text-center">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-amber-100/80">
-          Total earned
-        </p>
-        <p className="mt-1 font-display text-4xl font-black tabular-nums text-white">
-          {formatNumber(total)}
-        </p>
-        <p className="mt-1 text-xs font-semibold text-amber-100/70">Creator Score</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-amber-300/25 bg-[linear-gradient(135deg,rgba(245,158,11,0.18),rgba(219,39,119,0.16))] p-4 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-amber-100/80">
+            Creator Score Earned
+          </p>
+          <p className="mt-1 font-display text-3xl font-black tabular-nums text-white">
+            {formatNumber(total)}
+          </p>
+          <p className="mt-1 text-[11px] font-semibold text-amber-100/70">Creator Score</p>
+        </div>
+        <div className="rounded-2xl border border-fuchsia-300/25 bg-[linear-gradient(135deg,rgba(124,58,237,0.22),rgba(217,70,239,0.18))] p-4 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-fuchsia-100/80">
+            KultPoints Earned
+          </p>
+          <p className="mt-1 font-display text-3xl font-black tabular-nums text-white">
+            {formatNumber(kultPoints)}
+          </p>
+          <p className="mt-1 text-[11px] font-semibold text-fuchsia-100/70">KultPoints</p>
+        </div>
       </div>
 
-      {earners.length === 0 ? (
-        <EmptyState text="No earnings yet. You earn Creator Score when players play your games." />
+      <EarningsChart series={series} metric={historyMetric} />
+
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h3 className="font-display text-lg font-black text-black">History</h3>
+        <div className="relative">
+          <select
+            value={historyMetric}
+            onChange={(event) => setHistoryMetric(event.target.value as "all" | "kp" | "cs")}
+            aria-label="Earnings history type"
+            className="appearance-none rounded-full border border-black/20 bg-white/25 py-1.5 pl-3 pr-8 text-xs font-black uppercase text-black outline-none focus:border-black/50"
+          >
+            <option value="all" className="bg-white text-black">All</option>
+            <option value="kp" className="bg-white text-black">KP</option>
+            <option value="cs" className="bg-white text-black">CS</option>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-black/70" />
+        </div>
+      </div>
+
+      {historyEntries.length === 0 ? (
+        <EmptyState
+          text={historyMetric === "all"
+            ? "No earnings history yet."
+            : historyMetric === "cs"
+            ? "No Creator Score history yet."
+            : "No KultPoints history for these games yet."}
+        />
       ) : (
         <div className="space-y-2">
-          {earners.map((game) => (
+          {historyEntries.map(({ game, metric, value }) => (
             <button
-              key={game.id}
+              key={`${game.id}-${metric}`}
               type="button"
               onClick={() => onOpenGame(game.id)}
               className="flex w-full items-center gap-3 rounded-2xl border border-fuchsia-400/15 bg-[#160b2e]/50 p-2.5 text-left transition hover:border-fuchsia-300/45 hover:bg-[#160b2e]/80 active:scale-[0.99]"
@@ -849,16 +918,148 @@ function EarnTab({
               </div>
               <div className="text-right">
                 <p className="font-display text-lg font-black tabular-nums text-amber-200">
-                  {formatNumber(game.earned)}
+                  {formatNumber(value)}
                 </p>
                 <p className="text-[10px] font-bold uppercase tracking-wide text-violet-200/50">
-                  earned
+                  {metric.toUpperCase()} earned
                 </p>
               </div>
             </button>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function EarningsChart({
+  series,
+  metric,
+}: {
+  series: DashboardSeries;
+  metric: "all" | "kp" | "cs";
+}) {
+  const data = series.points;
+  const [hover, setHover] = useState<number | null>(null);
+  const padX = 3;
+  const padTop = 12;
+  const padBottom = 19;
+  const innerW = 100 - padX * 2;
+  const innerH = 100 - padTop - padBottom;
+  const csValues = data.map((point) => Number(point.earned) || 0);
+  const kpValues = data.map((point) => Number(point.kpEarned) || 0);
+  const csMax = Math.max(1, ...csValues);
+  const kpMax = Math.max(1, ...kpValues);
+  const pointsFor = (values: number[], max: number) =>
+    values.map((value, index) => ({
+      x: data.length > 1 ? padX + (index / (data.length - 1)) * innerW : 50,
+      y: padTop + (1 - value / (max * 1.12)) * innerH,
+    }));
+  const csPoints = pointsFor(csValues, csMax);
+  const kpPoints = pointsFor(kpValues, kpMax);
+  const csPath = smoothPath(csPoints, padTop, padTop + innerH);
+  const kpPath = smoothPath(kpPoints, padTop, padTop + innerH);
+  const tickCount = Math.min(5, data.length);
+  const ticks = tickCount > 1
+    ? Array.from({ length: tickCount }, (_, index) =>
+        Math.round((index / (tickCount - 1)) * (data.length - 1)))
+    : data.map((_, index) => index);
+
+  const handleMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!data.length) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const fraction = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    setHover(Math.round(fraction * (data.length - 1)));
+  };
+
+  return (
+    <div className="rounded-2xl border border-fuchsia-400/20 bg-[#160b2e]/70 p-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-sm font-black text-white">Earnings</p>
+        <div className="flex items-center gap-3 text-[10px] font-bold">
+          {(metric === "all" || metric === "kp") && <span className="flex items-center gap-1.5 text-amber-100">
+            <i className="size-2 rounded-full bg-amber-300 shadow-[0_0_7px_#fcd34d]" /> KP
+          </span>}
+          {(metric === "all" || metric === "cs") && <span className="flex items-center gap-1.5 text-fuchsia-100">
+            <i className="size-2 rounded-full bg-fuchsia-400 shadow-[0_0_7px_#e879f9]" /> CS
+          </span>}
+        </div>
+      </div>
+      <div
+        className="relative h-48 w-full touch-none sm:h-44"
+        onPointerMove={handleMove}
+        onPointerDown={handleMove}
+        onPointerLeave={() => setHover(null)}
+      >
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="size-full overflow-visible">
+          {[padTop, padTop + innerH / 2, padTop + innerH].map((y) => (
+            <line
+              key={y}
+              x1={padX}
+              x2={100 - padX}
+              y1={y}
+              y2={y}
+              stroke="white"
+              strokeOpacity=".08"
+              strokeWidth=".5"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+          {(metric === "all" || metric === "kp") && kpPath && (
+            <path
+              d={kpPath}
+              fill="none"
+              stroke="#fcd34d"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              style={{ filter: "drop-shadow(0 0 3px rgba(252,211,77,.8))" }}
+            />
+          )}
+          {(metric === "all" || metric === "cs") && csPath && (
+            <path
+              d={csPath}
+              fill="none"
+              stroke="#e879f9"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              style={{ filter: "drop-shadow(0 0 3px rgba(232,121,249,.8))" }}
+            />
+          )}
+        </svg>
+
+        {hover !== null && data[hover] && (
+          <>
+            <div
+              className="pointer-events-none absolute bottom-7 top-3 w-px bg-white/20"
+              style={{ left: `${csPoints[hover].x}%` }}
+            />
+            <div
+              className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-lg border border-fuchsia-400/35 bg-[#0b0419]/95 px-2.5 py-1.5 text-center shadow-xl"
+              style={{
+                left: `${Math.min(85, Math.max(15, csPoints[hover].x))}%`,
+                top: `${Math.max(25, Math.min(csPoints[hover].y, kpPoints[hover].y) - 3)}%`,
+              }}
+            >
+              <p className="text-[11px] font-black text-amber-200">
+                {(metric === "all" || metric === "kp") && <span>{formatNumber(kpValues[hover])} KP</span>}
+                {metric === "all" && <span className="mx-1.5 text-white/25">•</span>}
+                {(metric === "all" || metric === "cs") && (
+                  <span className="text-fuchsia-200">{formatNumber(csValues[hover])} CS</span>
+                )}
+              </p>
+              <p className="text-[9px] font-semibold text-violet-200/60">{data[hover].label}</p>
+            </div>
+          </>
+        )}
+
+        <div className="absolute inset-x-[3%] bottom-0 flex justify-between text-[9px] font-semibold text-violet-200/50">
+          {ticks.map((index) => <span key={index}>{data[index]?.label}</span>)}
+        </div>
+      </div>
     </div>
   );
 }
