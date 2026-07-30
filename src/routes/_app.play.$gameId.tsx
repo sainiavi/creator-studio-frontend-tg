@@ -617,9 +617,9 @@ function PlayFeed() {
     [gameId, submitScore],
   );
 
-  const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [reelPeekSide, setReelPeekSide] = useState<"next" | "prev" | null>(null);
   const isUiHidden = false;
   const startY = useRef(0);
   const startX = useRef(0);
@@ -630,10 +630,36 @@ function PlayFeed() {
   const transitionTimerRef = useRef<number | null>(null);
   const mainRef = useRef<HTMLElement | null>(null);
   const reduceMotionRef = useRef(false);
+  // Live drag position is painted straight to the DOM (see applyReelTransform)
+  // instead of going through React state on every touchmove tick — a full
+  // reconciliation of this component per finger-move tick is what made the
+  // feed feel janky on phones, competing with each game's own render loop.
+  const reelSlideRef = useRef<HTMLDivElement | null>(null);
+  const reelNextPeekRef = useRef<HTMLDivElement | null>(null);
+  const reelPrevPeekRef = useRef<HTMLDivElement | null>(null);
+  const reelRafIdRef = useRef<number | null>(null);
+  const reelPeekSideRef = useRef<"next" | "prev" | null>(null);
 
   const slideDistance = useCallback(
     () => (typeof window !== "undefined" ? window.innerHeight : 720),
     [],
+  );
+
+  const applyReelTransform = useCallback(
+    (y: number, transitioning: boolean) => {
+      if (reelSlideRef.current) {
+        reelSlideRef.current.style.transform = `translate3d(0, ${y}px, 0)`;
+        reelSlideRef.current.style.pointerEvents =
+          Math.abs(y) > 10 || transitioning ? "none" : "auto";
+      }
+      if (reelNextPeekRef.current) {
+        reelNextPeekRef.current.style.transform = `translate3d(0, ${slideDistance() + y}px, 0)`;
+      }
+      if (reelPrevPeekRef.current) {
+        reelPrevPeekRef.current.style.transform = `translate3d(0, ${-slideDistance() + y}px, 0)`;
+      }
+    },
+    [slideDistance],
   );
 
   useEffect(() => {
@@ -647,6 +673,9 @@ function PlayFeed() {
       if (transitionTimerRef.current !== null) {
         window.clearTimeout(transitionTimerRef.current);
       }
+      if (reelRafIdRef.current !== null) {
+        cancelAnimationFrame(reelRafIdRef.current);
+      }
     };
   }, []);
 
@@ -655,10 +684,12 @@ function PlayFeed() {
     isDraggingRef.current = false;
     gestureModeRef.current = "undecided";
     dragYRef.current = 0;
-    setDragY(0);
+    applyReelTransform(0, false);
+    reelPeekSideRef.current = null;
+    setReelPeekSide(null);
     setIsTransitioning(false);
     setIsGameActive(false);
-  }, [gameId]);
+  }, [gameId, applyReelTransform]);
 
   const navigateToReelGame = useCallback(
     (nextGameId: string) => {
@@ -670,13 +701,15 @@ function PlayFeed() {
       });
       // Snap track back instantly after route change (new game is already centered).
       dragYRef.current = 0;
-      setDragY(0);
+      applyReelTransform(0, false);
+      reelPeekSideRef.current = null;
+      setReelPeekSide(null);
       setIsTransitioning(false);
       transitionTimerRef.current = window.setTimeout(() => {
         cooldownRef.current = false;
       }, 320);
     },
-    [navigate],
+    [navigate, applyReelTransform],
   );
 
   const handlePlayBack = useCallback(() => {
@@ -873,7 +906,7 @@ function PlayFeed() {
     setIsDragging(false);
     const distance = slideDistance();
     dragYRef.current = -distance;
-    setDragY(-distance);
+    applyReelTransform(-distance, true);
 
     if (transitionTimerRef.current !== null) {
       window.clearTimeout(transitionTimerRef.current);
@@ -889,6 +922,7 @@ function PlayFeed() {
     isTransitioning,
     navigateToReelGame,
     slideDistance,
+    applyReelTransform,
   ]);
 
   const triggerPrevGame = useCallback(() => {
@@ -905,7 +939,7 @@ function PlayFeed() {
     setIsDragging(false);
     const distance = slideDistance();
     dragYRef.current = distance;
-    setDragY(distance);
+    applyReelTransform(distance, true);
 
     if (transitionTimerRef.current !== null) {
       window.clearTimeout(transitionTimerRef.current);
@@ -914,7 +948,7 @@ function PlayFeed() {
     transitionTimerRef.current = window.setTimeout(() => {
       navigateToReelGame(prevGame.id);
     }, delay);
-  }, [gameId, activeGamesList, isTransitioning, navigateToReelGame, slideDistance]);
+  }, [gameId, activeGamesList, isTransitioning, navigateToReelGame, slideDistance, applyReelTransform]);
 
   const shouldIgnoreReelTarget = (target: HTMLElement) =>
     Boolean(
@@ -927,6 +961,12 @@ function PlayFeed() {
         target.closest(".leaderboard-panel"),
     );
 
+  const setReelPeekSideIfChanged = (side: "next" | "prev" | null) => {
+    if (side === reelPeekSideRef.current) return;
+    reelPeekSideRef.current = side;
+    setReelPeekSide(side);
+  };
+
   const handleDragStart = (clientX: number, clientY: number, target: HTMLElement) => {
     if (cooldownRef.current || isTransitioning || shouldIgnoreReelTarget(target)) return false;
     startX.current = clientX;
@@ -935,7 +975,7 @@ function PlayFeed() {
     gestureModeRef.current = "undecided";
     isDraggingRef.current = true;
     setIsDragging(true);
-    setDragY(0);
+    applyReelTransform(0, false);
     return true;
   };
 
@@ -956,7 +996,8 @@ function PlayFeed() {
         isDraggingRef.current = false;
         setIsDragging(false);
         dragYRef.current = 0;
-        setDragY(0);
+        applyReelTransform(0, false);
+        setReelPeekSideIfChanged(null);
         return;
       } else {
         return;
@@ -969,7 +1010,15 @@ function PlayFeed() {
     const distance = slideDistance();
     const next = Math.max(-distance, Math.min(distance, deltaY * 0.92));
     dragYRef.current = next;
-    setDragY(next);
+
+    setReelPeekSideIfChanged(next < -4 ? "next" : next > 4 ? "prev" : null);
+
+    if (reelRafIdRef.current === null) {
+      reelRafIdRef.current = requestAnimationFrame(() => {
+        reelRafIdRef.current = null;
+        applyReelTransform(dragYRef.current, false);
+      });
+    }
   };
 
   const handleDragEnd = () => {
@@ -977,10 +1026,16 @@ function PlayFeed() {
     isDraggingRef.current = false;
     setIsDragging(false);
 
+    if (reelRafIdRef.current !== null) {
+      cancelAnimationFrame(reelRafIdRef.current);
+      reelRafIdRef.current = null;
+    }
+
     if (gestureModeRef.current !== "reel") {
       gestureModeRef.current = "undecided";
       dragYRef.current = 0;
-      setDragY(0);
+      applyReelTransform(0, false);
+      setReelPeekSideIfChanged(null);
       return;
     }
 
@@ -997,7 +1052,8 @@ function PlayFeed() {
       return;
     }
     dragYRef.current = 0;
-    setDragY(0);
+    applyReelTransform(0, false);
+    setReelPeekSideIfChanged(null);
   };
 
   const activeIndex = useMemo(() => {
@@ -1230,25 +1286,30 @@ function PlayFeed() {
         onMouseLeave={handleDragEnd}
         className="absolute inset-x-0 top-0 bottom-[calc(66px+env(safe-area-inset-bottom))] w-full select-none lg:bottom-0"
       >
-        {/* Adjacent reel peeks — continuous swipe feel */}
-        {nextReelGame && dragY < -4 && (
+        {/* Adjacent reel peeks — continuous swipe feel. Position is painted
+            imperatively by applyReelTransform, not read from React state. */}
+        {nextReelGame && reelPeekSide === "next" && (
           <div
+            ref={reelNextPeekRef}
             className="pointer-events-none absolute inset-0 z-[5]"
             style={{
-              transform: `translate3d(0, ${slideDistance() + dragY}px, 0)`,
+              transform: `translate3d(0, ${slideDistance()}px, 0)`,
               transition: isDragging ? "none" : "transform 0.34s cubic-bezier(0.22, 1, 0.36, 1)",
+              willChange: "transform",
             }}
             aria-hidden="true"
           >
             <ReelPeekSlide game={nextReelGame} />
           </div>
         )}
-        {prevReelGame && dragY > 4 && (
+        {prevReelGame && reelPeekSide === "prev" && (
           <div
+            ref={reelPrevPeekRef}
             className="pointer-events-none absolute inset-0 z-[5]"
             style={{
-              transform: `translate3d(0, ${-slideDistance() + dragY}px, 0)`,
+              transform: `translate3d(0, ${-slideDistance()}px, 0)`,
               transition: isDragging ? "none" : "transform 0.34s cubic-bezier(0.22, 1, 0.36, 1)",
+              willChange: "transform",
             }}
             aria-hidden="true"
           >
@@ -1257,15 +1318,16 @@ function PlayFeed() {
         )}
 
         <div
+          ref={reelSlideRef}
           className="absolute inset-0 z-10 h-full w-full"
           style={{
-            transform: `translate3d(0, ${dragY}px, 0)`,
+            transform: "translate3d(0, 0, 0)",
             transition: isDragging
               ? "none"
               : "transform 0.34s cubic-bezier(0.22, 1, 0.36, 1)",
             opacity: isTransitioning ? 0.9 : 1,
-            willChange: isDragging || isTransitioning ? "transform" : "auto",
-            pointerEvents: Math.abs(dragY) > 10 || isTransitioning ? "none" : "auto",
+            willChange: "transform",
+            pointerEvents: "auto",
           }}
         >
         <div
