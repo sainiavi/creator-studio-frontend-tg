@@ -17,6 +17,7 @@ import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppPlayRouteImport } from './routes/_app.play'
 import { Route as AppMoreRouteImport } from './routes/_app.more'
 import { Route as AppLeaderboardRouteImport } from './routes/_app.leaderboard'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCreateRouteImport } from './routes/_app.create'
 import { Route as AppPlayGameIdRouteImport } from './routes/_app.play.$gameId'
 import { Route as AppEditGameIdRouteImport } from './routes/_app.edit.$gameId'
@@ -60,6 +61,11 @@ const AppLeaderboardRoute = AppLeaderboardRouteImport.update({
   path: '/leaderboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCreateRoute = AppCreateRouteImport.update({
   id: '/create',
   path: '/create',
@@ -79,6 +85,7 @@ const AppEditGameIdRoute = AppEditGameIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/create': typeof AppCreateRoute
+  '/dashboard': typeof AppDashboardRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/more': typeof AppMoreRoute
   '/play': typeof AppPlayRouteWithChildren
@@ -90,6 +97,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/create': typeof AppCreateRoute
+  '/dashboard': typeof AppDashboardRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/more': typeof AppMoreRoute
   '/play': typeof AppPlayRouteWithChildren
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_app/create': typeof AppCreateRoute
+  '/_app/dashboard': typeof AppDashboardRoute
   '/_app/leaderboard': typeof AppLeaderboardRoute
   '/_app/more': typeof AppMoreRoute
   '/_app/play': typeof AppPlayRouteWithChildren
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/create'
+    | '/dashboard'
     | '/leaderboard'
     | '/more'
     | '/play'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/create'
+    | '/dashboard'
     | '/leaderboard'
     | '/more'
     | '/play'
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_app/create'
+    | '/_app/dashboard'
     | '/_app/leaderboard'
     | '/_app/more'
     | '/_app/play'
@@ -216,6 +228,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLeaderboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/create': {
       id: '/_app/create'
       path: '/create'
@@ -253,6 +272,7 @@ const AppPlayRouteWithChildren =
 
 interface AppRouteChildren {
   AppCreateRoute: typeof AppCreateRoute
+  AppDashboardRoute: typeof AppDashboardRoute
   AppLeaderboardRoute: typeof AppLeaderboardRoute
   AppMoreRoute: typeof AppMoreRoute
   AppPlayRoute: typeof AppPlayRouteWithChildren
@@ -265,6 +285,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppCreateRoute: AppCreateRoute,
+  AppDashboardRoute: AppDashboardRoute,
   AppLeaderboardRoute: AppLeaderboardRoute,
   AppMoreRoute: AppMoreRoute,
   AppPlayRoute: AppPlayRouteWithChildren,

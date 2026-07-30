@@ -19,6 +19,7 @@ import {
   Gamepad2,
   Globe2,
   Heart,
+  LayoutDashboard,
   Loader2,
   MessageCircle,
   Mountain,
@@ -679,6 +680,15 @@ export function Home() {
             </div>
             <div className="relative z-10 flex shrink-0 items-center justify-end gap-2 min-[1190px]:gap-2.5">
               <TonWalletSignInButton responsive compact />
+              <button
+                type="button"
+                onClick={() => navigate({ to: "/dashboard" })}
+                aria-label="Open dashboard"
+                title="Open dashboard"
+                className="grid size-9 shrink-0 place-items-center rounded-full border border-fuchsia-400/25 bg-[#160b2e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_10px_rgba(88,28,135,0.35)] transition active:scale-95 hover:border-fuchsia-300/50"
+              >
+                <LayoutDashboard className="size-4 shrink-0 stroke-[1.75]" />
+              </button>
               <button
                 type="button"
                 onClick={() => navigate({ to: "/search" })}
