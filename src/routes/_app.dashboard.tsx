@@ -354,7 +354,7 @@ function PlaysChart({ series, metric }: { series: DashboardSeries; metric: Metri
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-fuchsia-400/20 bg-[#160b2e]/70 p-4">
+    <div className="rounded-2xl border border-fuchsia-400/25 bg-[#170436] p-4 shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
       <p className="text-[11px] font-bold uppercase tracking-wide text-violet-200/70">{label}</p>
       <p className="mt-1 font-display text-2xl font-black tabular-nums text-white">{value}</p>
     </div>
@@ -426,7 +426,7 @@ function Dashboard() {
 
       <div className="mx-auto w-full max-w-3xl px-4 pt-4">
         {/* Tabs */}
-        <div className="mb-5 flex gap-2 rounded-2xl border border-fuchsia-400/20 bg-[#160b2e]/60 p-1">
+        <div className="mb-5 flex gap-2 rounded-2xl border border-fuchsia-400/25 bg-[#170436] p-1 shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
           {TABS.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -506,7 +506,7 @@ function AnalyticsTab({
         <StatCard label="Games" value={formatNumber(data.totals.games)} />
       </div>
 
-      <div className="rounded-2xl border border-fuchsia-400/20 bg-[#160b2e]/70 p-4">
+      <div className="rounded-2xl border border-fuchsia-400/25 bg-[#170436] p-4 shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <p className="text-sm font-black text-white">{METRICS[metric].label}</p>
@@ -563,7 +563,7 @@ function AnalyticsTab({
                   key={game.id}
                   type="button"
                   onClick={() => onOpenGame(game.id)}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-fuchsia-400/15 bg-[#160b2e]/50 p-2.5 text-left transition hover:border-fuchsia-300/45 hover:bg-[#160b2e]/80 active:scale-[0.99]"
+                  className="flex w-full items-center gap-3 rounded-2xl border border-fuchsia-400/20 bg-[#170436] p-2.5 text-left shadow-[0_8px_20px_rgba(28,4,64,0.24)] transition hover:border-fuchsia-300/45 hover:bg-[#21074b] active:scale-[0.99]"
                 >
                   <GameThumb id={game.id} title={game.title} thumbnailUrl={game.thumbnailUrl} />
                   <div className="min-w-0 flex-1">
@@ -608,7 +608,7 @@ function CommentRow({
   createdAt: string;
 }) {
   return (
-    <div className="rounded-xl border border-fuchsia-400/10 bg-[#0b0419]/50 p-2.5">
+    <div className="rounded-xl border border-fuchsia-400/15 bg-[#0b0419] p-2.5">
       <div className="flex items-center justify-between gap-2">
         <p className="truncate text-xs font-black text-white">{username}</p>
         <span className="shrink-0 text-[10px] font-semibold text-violet-200/50">
@@ -630,7 +630,7 @@ function StatPill({
   value: number;
 }) {
   return (
-    <div className="flex items-center gap-1 rounded-full bg-[#0b0419]/60 px-2 py-1">
+    <div className="flex items-center gap-1 rounded-full bg-[#0b0419] px-2 py-1">
       <Icon className={`size-3.5 ${color}`} />
       <span className="text-xs font-black tabular-nums text-white">{formatNumber(value)}</span>
     </div>
@@ -647,7 +647,7 @@ function ActivityGameCard({
   onOpen: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-fuchsia-400/15 bg-[#160b2e]/50 p-3">
+    <div className="rounded-2xl border border-fuchsia-400/20 bg-[#170436] p-3 shadow-[0_8px_20px_rgba(28,4,64,0.24)]">
       <button
         type="button"
         onClick={onOpen}
@@ -684,7 +684,7 @@ function ActivityGameCard({
             <button
               type="button"
               onClick={onViewAll}
-              className="w-full rounded-xl border border-fuchsia-400/25 bg-[#0b0419]/50 py-2 text-xs font-bold text-violet-100 transition hover:border-fuchsia-300/50 hover:text-white active:scale-[0.99]"
+              className="w-full rounded-xl border border-fuchsia-400/25 bg-[#0b0419] py-2 text-xs font-bold text-violet-100 transition hover:border-fuchsia-300/50 hover:text-white active:scale-[0.99]"
             >
               View all {game.comments} comments
             </button>
@@ -792,7 +792,7 @@ function ActivityTab({
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {summary.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-2xl border border-fuchsia-400/20 bg-[#160b2e]/70 p-4 text-center">
+          <div key={label} className="rounded-2xl border border-fuchsia-400/25 bg-[#170436] p-4 text-center shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
             <Icon className={`mx-auto size-5 ${color}`} />
             <p className="mt-1.5 font-display text-2xl font-black tabular-nums text-white">
               {formatNumber(value)}
@@ -853,7 +853,7 @@ function EarnTab({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-amber-300/25 bg-[linear-gradient(135deg,rgba(245,158,11,0.18),rgba(219,39,119,0.16))] p-4 text-center">
+        <div className="rounded-2xl border border-amber-300/35 bg-[linear-gradient(145deg,#2b170c,#170436)] p-4 text-center shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
           <p className="text-[10px] font-bold uppercase tracking-wide text-amber-100/80">
             Creator Score Earned
           </p>
@@ -862,7 +862,7 @@ function EarnTab({
           </p>
           <p className="mt-1 text-[11px] font-semibold text-amber-100/70">Creator Score</p>
         </div>
-        <div className="rounded-2xl border border-fuchsia-300/25 bg-[linear-gradient(135deg,rgba(124,58,237,0.22),rgba(217,70,239,0.18))] p-4 text-center">
+        <div className="rounded-2xl border border-fuchsia-300/35 bg-[linear-gradient(145deg,#2a0d58,#170436)] p-4 text-center shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
           <p className="text-[10px] font-bold uppercase tracking-wide text-fuchsia-100/80">
             KultPoints Earned
           </p>
@@ -876,19 +876,19 @@ function EarnTab({
       <EarningsChart series={series} metric={historyMetric} />
 
       <div className="flex items-center justify-between gap-3 px-1">
-        <h3 className="font-display text-lg font-black text-black">History</h3>
+        <h3 className="font-display text-lg font-black text-white">History</h3>
         <div className="relative">
           <select
             value={historyMetric}
             onChange={(event) => setHistoryMetric(event.target.value as "all" | "kp" | "cs")}
             aria-label="Earnings history type"
-            className="appearance-none rounded-full border border-black/20 bg-white/25 py-1.5 pl-3 pr-8 text-xs font-black uppercase text-black outline-none focus:border-black/50"
+            className="appearance-none rounded-full border border-fuchsia-400/30 bg-[#0b0419] py-1.5 pl-3 pr-8 text-xs font-black uppercase text-white outline-none focus:border-fuchsia-300/60"
           >
-            <option value="all" className="bg-white text-black">All</option>
-            <option value="kp" className="bg-white text-black">KP</option>
-            <option value="cs" className="bg-white text-black">CS</option>
+            <option value="all" className="bg-[#0b0419] text-white">All</option>
+            <option value="kp" className="bg-[#0b0419] text-white">KP</option>
+            <option value="cs" className="bg-[#0b0419] text-white">CS</option>
           </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-black/70" />
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-violet-200/70" />
         </div>
       </div>
 
@@ -907,7 +907,7 @@ function EarnTab({
               key={`${game.id}-${metric}`}
               type="button"
               onClick={() => onOpenGame(game.id)}
-              className="flex w-full items-center gap-3 rounded-2xl border border-fuchsia-400/15 bg-[#160b2e]/50 p-2.5 text-left transition hover:border-fuchsia-300/45 hover:bg-[#160b2e]/80 active:scale-[0.99]"
+              className="flex w-full items-center gap-3 rounded-2xl border border-fuchsia-400/20 bg-[#170436] p-2.5 text-left shadow-[0_8px_20px_rgba(28,4,64,0.24)] transition hover:border-fuchsia-300/45 hover:bg-[#21074b] active:scale-[0.99]"
             >
               <GameThumb id={game.id} title={game.title} thumbnailUrl={game.thumbnailUrl} />
               <div className="min-w-0 flex-1">
@@ -973,7 +973,7 @@ function EarningsChart({
   };
 
   return (
-    <div className="rounded-2xl border border-fuchsia-400/20 bg-[#160b2e]/70 p-4">
+    <div className="rounded-2xl border border-fuchsia-400/25 bg-[#170436] p-4 shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="text-sm font-black text-white">Earnings</p>
         <div className="flex items-center gap-3 text-[10px] font-bold">
@@ -1077,7 +1077,7 @@ function ViewAllButton({
     <button
       type="button"
       onClick={onToggle}
-      className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-fuchsia-400/25 bg-[#160b2e]/60 py-2.5 text-sm font-bold text-violet-100 transition hover:border-fuchsia-300/50 hover:text-white active:scale-[0.99]"
+      className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-fuchsia-400/25 bg-[#170436] py-2.5 text-sm font-bold text-violet-100 shadow-[0_8px_20px_rgba(28,4,64,0.24)] transition hover:border-fuchsia-300/50 hover:bg-[#21074b] hover:text-white active:scale-[0.99]"
     >
       {expanded ? "Show less" : `View all ${total} games`}
       <ChevronDown
@@ -1089,7 +1089,7 @@ function ViewAllButton({
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-2xl border border-fuchsia-400/15 bg-[#160b2e]/40 px-6 py-14 text-center">
+    <div className="rounded-2xl border border-fuchsia-400/20 bg-[#170436] px-6 py-14 text-center shadow-[0_8px_20px_rgba(28,4,64,0.3)]">
       <p className="text-sm font-semibold text-violet-200/70">{text}</p>
     </div>
   );
