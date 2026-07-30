@@ -224,26 +224,30 @@ function reportGameError(message, stack) {
   function sendGesture(phase, x, y) {
     try { window.parent.postMessage({ __kultReelGesture: { phase: phase, x: x, y: y } }, "*"); } catch {}
   }
-  const handler = canvas || document;
-  handler.addEventListener("touchstart", function (e) {
+  // Listen on window in CAPTURE phase so the reel bridge sees every touch
+  // first — before the game's own handlers can stopPropagation() it or before
+  // it lands on a canvas the game later replaces. Capture is passive (we never
+  // block the game); the parent decides vertical=reel vs. other=game.
+  const opts = { passive: true, capture: true };
+  window.addEventListener("touchstart", function (e) {
     const t = e.touches[0];
     if (t) { begin(t.clientX, t.clientY); sendGesture("start", t.clientX, t.clientY); }
-  }, { passive: true });
-  handler.addEventListener("touchmove", function (e) {
+  }, opts);
+  window.addEventListener("touchmove", function (e) {
     const t = e.touches[0];
     if (t) sendGesture("move", t.clientX, t.clientY);
-  }, { passive: true });
-  handler.addEventListener("touchend", function (e) {
+  }, opts);
+  window.addEventListener("touchend", function (e) {
     const t = e.changedTouches[0];
     if (t) finish(t.clientX, t.clientY);
     sendGesture("end", 0, 0);
-  }, { passive: true });
-  handler.addEventListener("touchcancel", function () {
+  }, opts);
+  window.addEventListener("touchcancel", function () {
     sendGesture("end", 0, 0);
-  }, { passive: true });
+  }, opts);
   // Mouse: only used to restart by clicking once the run is over. During play
   // the keyboard works on desktop, and real clicks still reach pointer games.
-  handler.addEventListener("mouseup", function () {
+  window.addEventListener("mouseup", function () {
     if (window.__kultGameOver) restart();
   });
 })();
