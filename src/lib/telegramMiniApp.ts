@@ -61,6 +61,17 @@ export function openTelegramInvoice(url: string): Promise<string> {
 export function initTelegramWebApp(): void {
   if (typeof window === "undefined") return;
   const webApp = (window as TelegramWebAppWindow).Telegram?.WebApp;
+  // Stashed on window (not console.log'd) because the on-device debug console
+  // (see debug.ts) loads its script asynchronously — a log fired here, before
+  // that script finishes downloading, would never be captured. Inspect this
+  // any time after via eruda's console: `window.__kultDebug`.
+  const debugInfo = {
+    hasWebApp: Boolean(webApp),
+    platform: webApp?.platform,
+    version: webApp?.version,
+    hasDisableVerticalSwipes: typeof webApp?.disableVerticalSwipes === "function",
+  };
+  (window as unknown as { __kultDebug?: unknown }).__kultDebug = debugInfo;
   if (!webApp) return;
   try {
     webApp.ready?.();

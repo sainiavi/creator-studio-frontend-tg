@@ -43,6 +43,7 @@ import { useFollow } from "@/hooks/useFollow";
 import { getCurrentUserId } from "@/lib/identity";
 import { recordQualifiedPlay, recordView } from "@/lib/api/social";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { reelDebugLog } from "@/lib/debug";
 import { useStudioContext } from "@/context/StudioContext";
 import { api } from "@/lib/api";
 import type { LeaderboardEntry } from "@/lib/api/leaderboards";
@@ -968,7 +969,15 @@ function PlayFeed() {
   };
 
   const handleDragStart = (clientX: number, clientY: number, target: HTMLElement) => {
-    if (cooldownRef.current || isTransitioning || shouldIgnoreReelTarget(target)) return false;
+    if (cooldownRef.current || isTransitioning || shouldIgnoreReelTarget(target)) {
+      reelDebugLog("handleDragStart bailed", {
+        cooldown: cooldownRef.current,
+        isTransitioning,
+        ignoredTarget: shouldIgnoreReelTarget(target),
+        tag: target?.tagName,
+      });
+      return false;
+    }
     startX.current = clientX;
     startY.current = clientY;
     dragYRef.current = 0;
@@ -991,8 +1000,10 @@ function PlayFeed() {
       // Vertical intent → reel. Horizontal / game-like → leave to the game.
       if (absY > absX * 1.15 && absY > 12) {
         gestureModeRef.current = "reel";
+        reelDebugLog("gesture mode → reel", { absX, absY });
       } else if (absX > absY * 1.05) {
         gestureModeRef.current = "game";
+        reelDebugLog("gesture mode → game (bailing, letting game handle it)", { absX, absY });
         isDraggingRef.current = false;
         setIsDragging(false);
         dragYRef.current = 0;
@@ -1042,6 +1053,7 @@ function PlayFeed() {
     const y = dragYRef.current;
     const threshold = Math.min(96, slideDistance() * 0.14);
     gestureModeRef.current = "undecided";
+    reelDebugLog("handleDragEnd", { y, threshold, cooldown: cooldownRef.current });
 
     if (y < -threshold) {
       triggerNextGame();
@@ -1079,10 +1091,11 @@ function PlayFeed() {
   // (via direct same-origin listeners or postMessage) into the exact same
   // swipe-to-change-game logic `mainRef` already uses, so reel navigation keeps
   // working even while swiping over the game itself.
-  const forwardReelTouchStart = useCallback(
-    (x: number, y: number, target: HTMLElement) => reelHandlersRef.current.handleDragStart(x, y, target),
-    [],
-  );
+  const forwardReelTouchStart = useCallback((x: number, y: number, target: HTMLElement) => {
+    const accepted = reelHandlersRef.current.handleDragStart(x, y, target);
+    reelDebugLog("iframe-forwarded touchstart", { accepted });
+    return accepted;
+  }, []);
   const forwardReelTouchMove = useCallback(
     (x: number, y: number, event?: TouchEvent) => reelHandlersRef.current.handleDragMove(x, y, event),
     [],
@@ -1094,16 +1107,21 @@ function PlayFeed() {
     if (!node) return;
 
     const onTouchStart = (event: TouchEvent) => {
+      reelDebugLog("mainRef touchstart", { touches: event.touches.length, target: (event.target as HTMLElement)?.tagName });
       if (event.touches.length !== 1) return;
       const touch = event.touches[0];
-      reelHandlersRef.current.handleDragStart(touch.clientX, touch.clientY, event.target as HTMLElement);
+      const accepted = reelHandlersRef.current.handleDragStart(touch.clientX, touch.clientY, event.target as HTMLElement);
+      reelDebugLog("mainRef handleDragStart", { accepted });
     };
     const onTouchMove = (event: TouchEvent) => {
       if (event.touches.length !== 1) return;
       const touch = event.touches[0];
       reelHandlersRef.current.handleDragMove(touch.clientX, touch.clientY, event);
     };
-    const onTouchEnd = () => reelHandlersRef.current.handleDragEnd();
+    const onTouchEnd = () => {
+      reelDebugLog("mainRef touchend");
+      reelHandlersRef.current.handleDragEnd();
+    };
     const onTouchCancel = () => reelHandlersRef.current.handleDragEnd();
 
     node.addEventListener("touchstart", onTouchStart, { passive: true, capture: true });

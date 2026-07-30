@@ -2,10 +2,15 @@ import { createRoot } from "react-dom/client";
 import { Suspense, lazy } from "react";
 import { Buffer } from "buffer";
 import { initTelegramWebApp } from "./lib/telegramMiniApp";
+import { initDebugConsole } from "./lib/debug";
 
 // Disables Telegram's native swipe-down-to-close gesture so it doesn't eat the
 // vertical swipes our reel feed needs. No-op outside Telegram.
 initTelegramWebApp();
+
+// Opt-in on-screen console for debugging on a phone with no cable — visit any
+// page with ?debug=1 once. No-op unless that flag has been set.
+initDebugConsole();
 
 // TON's browser bundle still reads the Node Buffer global while its module is
 // being initialized. The create route is lazy-loaded, so install the browser
