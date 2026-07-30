@@ -8,5 +8,3 @@ type TonWalletSignInButtonProps = Omit<ComponentProps<typeof StudioSignInButton>
 export function TonWalletSignInButton(props: TonWalletSignInButtonProps) {
   return <StudioSignInButton variant="header" {...props} />;
 }
-
-export { TonWalletSignInButton as TelegramSignInButton };

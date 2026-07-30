@@ -1,7 +1,6 @@
 import {
   useCreateWallet,
   useLogin,
-  useLoginWithTelegram,
   usePrivy,
   useWallets,
   type User,
@@ -24,18 +23,16 @@ import {
   type TonWallet,
 } from "@/lib/tonWallet";
 
-export type StudioAuthStatus = "idle" | "openTelegram" | "error";
+export type StudioAuthStatus = "idle" | "error";
 
-/** Shared Privy login flow: Google, email, wallet (browser) or Telegram (mini-app). */
+/** Shared Privy login flow: Google, email, or wallet. */
 export function useStudioAuth() {
-  const { ready, authenticated, user, login: loginModal, logout } = usePrivy();
+  const { ready, authenticated, user, logout } = usePrivy();
   const { wallets } = useWallets();
   const { linkWalletOnZeroGChain } = usePrivyEvmWallet();
-  const { login: loginWithTelegram, state: telegramState } = useLoginWithTelegram();
   const { createWallet: createTonWallet } = useCreateExtendedWallet();
   const { createWallet: createEvmWallet } = useCreateWallet();
   const inTelegram = isTelegramMiniApp();
-  const telegramLoading = telegramState.status === "loading";
 
   const [createdTonWallet, setCreatedTonWallet] = useState<TonWallet | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
@@ -138,29 +135,10 @@ export function useStudioAuth() {
   }, [authenticated, createdTonWallet, ensureEvmWallet, ensureTonWallet, inTelegram, user, wallets]);
 
   const openLogin = useCallback(async () => {
-    if (inTelegram) {
-      try {
-        setAuthStatus("idle");
-        setAuthLoading(true);
-        await loginWithTelegram();
-        setAuthLoading(false);
-      } catch {
-        try {
-          loginModal({ loginMethods: ["telegram"] });
-        } catch {
-          setAuthLoading(false);
-          setAuthStatus("error");
-          window.setTimeout(() => setAuthStatus("idle"), 2000);
-        }
-      }
-      return;
-    }
-
     setAuthLoading(true);
     setAuthStatus("idle");
-    // Explicit methods — never offer Telegram outside the mini-app.
     login({ loginMethods: getStudioLoginMethods() });
-  }, [inTelegram, login, loginModal, loginWithTelegram]);
+  }, [login]);
 
   const syncWalletIdentity = useCallback(async () => {
     if (!user) return null;
@@ -191,26 +169,16 @@ export function useStudioAuth() {
     window.setTimeout(() => setTonStatus("idle"), 1600);
   }, [ensureTonWallet, tonWallet?.address, user]);
 
-  const signInLabel = inTelegram
-    ? authStatus === "openTelegram"
-      ? "Open Telegram"
-      : authStatus === "error"
-        ? "Try again"
-        : "Telegram Sign In"
-    : authStatus === "error"
-      ? "Try again"
-      : "Sign in";
+  const signInLabel = authStatus === "error" ? "Try again" : "Sign in";
 
-  const signInHint = inTelegram
-    ? "Sign in with Telegram"
-    : "Sign in with Google, email, or wallet (Bitget, OKX, MetaMask…)";
+  const signInHint = "Sign in with Google, email, or wallet (Bitget, OKX, MetaMask…)";
 
   return {
     ready,
     authenticated,
     user,
     inTelegram,
-    authLoading: authLoading || telegramLoading,
+    authLoading,
     authStatus,
     signInLabel,
     signInHint,

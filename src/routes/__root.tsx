@@ -1,13 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
-import { useLoginWithTelegram, usePrivy, useWallets } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useEffect, useMemo, useRef } from "react";
 
 import { clearAuthToken, prefetchAuthToken } from "../lib/api";
 import { clearLegacyAnonymousIdentity } from "../lib/identity";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { syncPrivyIdentity } from "../lib/privyIdentity";
-import { isTelegramMiniApp } from "../lib/telegramMiniApp";
 
 function NotFoundComponent() {
   return (
@@ -86,27 +85,7 @@ function RootComponent() {
         .join(","),
     [wallets],
   );
-  const { login: loginWithTelegram, state: telegramLoginState } = useLoginWithTelegram();
   const previousPrivyUserIdRef = useRef<string | null>(null);
-  const telegramAutoLoginAttemptedRef = useRef(false);
-
-  useEffect(() => {
-    if (
-      !ready ||
-      authenticated ||
-      !isTelegramMiniApp() ||
-      telegramAutoLoginAttemptedRef.current ||
-      telegramLoginState.status === "loading"
-    ) {
-      return;
-    }
-
-    telegramAutoLoginAttemptedRef.current = true;
-    void loginWithTelegram().catch((error) => {
-      // Keep the public experience available; the header button can retry login.
-      console.warn("[auth] Telegram auto-login failed", error);
-    });
-  }, [authenticated, loginWithTelegram, ready, telegramLoginState.status]);
 
   useEffect(() => {
     if (!ready) return;
