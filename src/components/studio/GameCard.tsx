@@ -25,7 +25,7 @@ export function GameCard({
       window.location.href = game.playUrl;
       return;
     }
-    if (game.templateId) navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
+    if (game.templateId) navigate({ to: "/play", search: { gameId: game.templateId } });
   };
 
   return (

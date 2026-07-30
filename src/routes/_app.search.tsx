@@ -47,7 +47,7 @@ function SearchGames() {
 
   const playGame = (game: Game) => {
     if (!game.templateId) return;
-    navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
+    navigate({ to: "/play", search: { gameId: game.templateId } });
   };
 
   return (

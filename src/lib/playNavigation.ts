@@ -46,3 +46,16 @@ export function clearPlayReturnPath() {
 export function getPlayBackFallback(): string {
   return "/";
 }
+
+/**
+ * Builds a shareable link to a specific game. Uses a search param, not a path
+ * segment (`/play?gameId=...`, not `/play/...`) — swiping through the reel
+ * feed only ever changes this query string via history.replaceState, never
+ * the pathname, which avoids some embedded WebViews (e.g. Telegram's) treating
+ * each swipe as "leaving the page" and prompting a confirmation dialog.
+ */
+export function buildPlayUrl(gameId: string): string {
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/?$/, "/");
+  const path = `${base}play?gameId=${encodeURIComponent(gameId)}`;
+  return typeof window === "undefined" ? path : `${window.location.origin}${path}`;
+}

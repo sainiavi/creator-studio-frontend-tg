@@ -38,7 +38,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   const openGame = (game: Game) => {
     if (!game.templateId) return;
     onOpenChange(false);
-    navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
+    navigate({ to: "/play", search: { gameId: game.templateId } });
   };
 
   return createPortal(

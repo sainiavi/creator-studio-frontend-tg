@@ -62,7 +62,7 @@ export function AppHeader({ className = "" }: { className?: string }) {
   const openNotificationTarget = (notification: NotificationItem) => {
     if (!notification.gameId) return;
     setNotificationsOpen(false);
-    navigate({ to: "/play/$gameId", params: { gameId: notification.gameId } });
+    navigate({ to: "/play", search: { gameId: notification.gameId } });
   };
 
   return (

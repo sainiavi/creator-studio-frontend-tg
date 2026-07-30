@@ -352,7 +352,7 @@ export function Home() {
   const openNotificationTarget = (notification: NotificationItem) => {
     if (!notification.gameId) return;
     setNotificationsOpen(false);
-    navigate({ to: "/play/$gameId", params: { gameId: notification.gameId } });
+    navigate({ to: "/play", search: { gameId: notification.gameId } });
   };
 
   useEffect(() => {
@@ -620,7 +620,7 @@ export function Home() {
 
   const openGame = useCallback(
     (game: Game) => {
-      if (game.templateId) navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
+      if (game.templateId) navigate({ to: "/play", search: { gameId: game.templateId } });
     },
     [navigate],
   );
@@ -987,7 +987,7 @@ function ActivityEventRow({ item }: { item: UserActivity }) {
     return (
       <button
         type="button"
-        onClick={() => navigate({ to: "/play/$gameId", params: { gameId: item.gameId! } })}
+        onClick={() => navigate({ to: "/play", search: { gameId: item.gameId! } })}
         className="flex w-full items-center gap-3 py-2.5 text-left transition hover:bg-white/[0.03]"
         aria-label={`Open ${item.gameTitle ?? "game"}`}
       >
@@ -1062,7 +1062,7 @@ function GameShelf({
 
   const openGame = (game: Game) => {
     if (game.templateId) {
-      navigate({ to: "/play/$gameId", params: { gameId: game.templateId } });
+      navigate({ to: "/play", search: { gameId: game.templateId } });
     }
   };
 

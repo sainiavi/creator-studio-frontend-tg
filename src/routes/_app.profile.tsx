@@ -1805,8 +1805,8 @@ function Profile() {
                                 <button
                                   onClick={() =>
                                     navigate({
-                                      to: "/play/$gameId",
-                                      params: { gameId: activity.gameId! },
+                                      to: "/play",
+                                      search: { gameId: activity.gameId! },
                                     })
                                   }
                                   className="shrink-0 rounded-full border border-fuchsia-300/30 bg-[#1a0a38]/40 px-3 py-1 text-xs font-bold text-fuchsia-300 transition-colors hover:border-fuchsia-300/70 hover:bg-fuchsia-400/10 active:scale-95 sm:rounded-lg sm:border-border/60 sm:bg-transparent sm:py-1.5 sm:text-primary sm:hover:border-primary sm:hover:bg-primary/5"

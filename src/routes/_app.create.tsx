@@ -1299,7 +1299,7 @@ function Create() {
                   <button
                     onClick={() => {
                       if (!builtGameId) return;
-                      navigate({ to: "/play/$gameId", params: { gameId: builtGameId } });
+                      navigate({ to: "/play", search: { gameId: builtGameId } });
                     }}
                     disabled={!builtGameId}
                     className="col-span-2 flex items-center justify-center gap-2 rounded-full bg-fuchsia-100 px-4 py-2 text-xs font-bold uppercase text-black disabled:opacity-60"

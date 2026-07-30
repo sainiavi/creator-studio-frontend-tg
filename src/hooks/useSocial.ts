@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentUserId, getCurrentUsername } from "@/lib/identity";
+import { buildPlayUrl } from "@/lib/playNavigation";
 import {
   fetchSocialStats,
   toggleLike,
@@ -202,8 +203,7 @@ export function useSocial(gameId: string): UseSocialReturn {
 
   const handleShare = useCallback(
     async (platform: SharePlatform = "link") => {
-      const base = (import.meta.env.BASE_URL ?? "/").replace(/\/?$/, "/");
-      const url = `${window.location.origin}${base}play/${gameId}`;
+      const url = buildPlayUrl(gameId);
 
       if (platform === "link") {
         try {

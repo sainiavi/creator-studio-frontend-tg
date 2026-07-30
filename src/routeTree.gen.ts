@@ -14,6 +14,7 @@ import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppTemplatesRouteImport } from './routes/_app.templates'
 import { Route as AppSearchRouteImport } from './routes/_app.search'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
+import { Route as AppPlayRouteImport } from './routes/_app.play'
 import { Route as AppMoreRouteImport } from './routes/_app.more'
 import { Route as AppLeaderboardRouteImport } from './routes/_app.leaderboard'
 import { Route as AppCreateRouteImport } from './routes/_app.create'
@@ -44,6 +45,11 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPlayRoute = AppPlayRouteImport.update({
+  id: '/play',
+  path: '/play',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMoreRoute = AppMoreRouteImport.update({
   id: '/more',
   path: '/more',
@@ -60,9 +66,9 @@ const AppCreateRoute = AppCreateRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppPlayGameIdRoute = AppPlayGameIdRouteImport.update({
-  id: '/play/$gameId',
-  path: '/play/$gameId',
-  getParentRoute: () => AppRoute,
+  id: '/$gameId',
+  path: '/$gameId',
+  getParentRoute: () => AppPlayRoute,
 } as any)
 const AppEditGameIdRoute = AppEditGameIdRouteImport.update({
   id: '/edit/$gameId',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/create': typeof AppCreateRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/more': typeof AppMoreRoute
+  '/play': typeof AppPlayRouteWithChildren
   '/profile': typeof AppProfileRoute
   '/search': typeof AppSearchRoute
   '/templates': typeof AppTemplatesRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/create': typeof AppCreateRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/more': typeof AppMoreRoute
+  '/play': typeof AppPlayRouteWithChildren
   '/profile': typeof AppProfileRoute
   '/search': typeof AppSearchRoute
   '/templates': typeof AppTemplatesRoute
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/_app/create': typeof AppCreateRoute
   '/_app/leaderboard': typeof AppLeaderboardRoute
   '/_app/more': typeof AppMoreRoute
+  '/_app/play': typeof AppPlayRouteWithChildren
   '/_app/profile': typeof AppProfileRoute
   '/_app/search': typeof AppSearchRoute
   '/_app/templates': typeof AppTemplatesRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/leaderboard'
     | '/more'
+    | '/play'
     | '/profile'
     | '/search'
     | '/templates'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/leaderboard'
     | '/more'
+    | '/play'
     | '/profile'
     | '/search'
     | '/templates'
@@ -134,6 +145,7 @@ export interface FileRouteTypes {
     | '/_app/create'
     | '/_app/leaderboard'
     | '/_app/more'
+    | '/_app/play'
     | '/_app/profile'
     | '/_app/search'
     | '/_app/templates'
@@ -183,6 +195,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/play': {
+      id: '/_app/play'
+      path: '/play'
+      fullPath: '/play'
+      preLoaderRoute: typeof AppPlayRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/more': {
       id: '/_app/more'
       path: '/more'
@@ -206,10 +225,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/play/$gameId': {
       id: '/_app/play/$gameId'
-      path: '/play/$gameId'
+      path: '/$gameId'
       fullPath: '/play/$gameId'
       preLoaderRoute: typeof AppPlayGameIdRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppPlayRoute
     }
     '/_app/edit/$gameId': {
       id: '/_app/edit/$gameId'
@@ -221,28 +240,39 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppPlayRouteChildren {
+  AppPlayGameIdRoute: typeof AppPlayGameIdRoute
+}
+
+const AppPlayRouteChildren: AppPlayRouteChildren = {
+  AppPlayGameIdRoute: AppPlayGameIdRoute,
+}
+
+const AppPlayRouteWithChildren =
+  AppPlayRoute._addFileChildren(AppPlayRouteChildren)
+
 interface AppRouteChildren {
   AppCreateRoute: typeof AppCreateRoute
   AppLeaderboardRoute: typeof AppLeaderboardRoute
   AppMoreRoute: typeof AppMoreRoute
+  AppPlayRoute: typeof AppPlayRouteWithChildren
   AppProfileRoute: typeof AppProfileRoute
   AppSearchRoute: typeof AppSearchRoute
   AppTemplatesRoute: typeof AppTemplatesRoute
   AppIndexRoute: typeof AppIndexRoute
   AppEditGameIdRoute: typeof AppEditGameIdRoute
-  AppPlayGameIdRoute: typeof AppPlayGameIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppCreateRoute: AppCreateRoute,
   AppLeaderboardRoute: AppLeaderboardRoute,
   AppMoreRoute: AppMoreRoute,
+  AppPlayRoute: AppPlayRouteWithChildren,
   AppProfileRoute: AppProfileRoute,
   AppSearchRoute: AppSearchRoute,
   AppTemplatesRoute: AppTemplatesRoute,
   AppIndexRoute: AppIndexRoute,
   AppEditGameIdRoute: AppEditGameIdRoute,
-  AppPlayGameIdRoute: AppPlayGameIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

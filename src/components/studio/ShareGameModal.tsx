@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { recordShare, type SharePlatform } from "@/lib/api/social";
 import { getCurrentUserId } from "@/lib/identity";
+import { buildPlayUrl } from "@/lib/playNavigation";
 
 /**
  * The "Share this game" modal (same design as the play page's share dialog),
@@ -29,10 +30,8 @@ export function ShareGameModal({
   const [copied, setCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
-  // Link to THIS game (its real id), honoring the app's base path (/studio/).
-  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/?$/, "/");
-  const path = `${base}play/${gameId}`;
-  const url = typeof window === "undefined" ? path : `${window.location.origin}${path}`;
+  // Link to THIS game (its real id).
+  const url = buildPlayUrl(gameId);
 
   const record = async (platform: SharePlatform) => {
     try {

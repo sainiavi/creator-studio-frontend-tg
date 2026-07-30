@@ -31,6 +31,7 @@ import { GamePreview } from "@/components/studio/GamePreview";
 import { EditPageSkeleton } from "@/components/studio/PageSkeletons";
 import { ownsGame } from "@/lib/identity";
 import { openTelegramInvoice } from "@/lib/telegramMiniApp";
+import { buildPlayUrl } from "@/lib/playNavigation";
 
 export const Route = createFileRoute("/_app/edit/$gameId")({
   pendingComponent: EditPageSkeleton,
@@ -471,11 +472,7 @@ function GameEditor() {
   const isPublished = game.publish?.published === true;
   const boostEndsAt = game.launchBoost?.endsAt ? new Date(game.launchBoost.endsAt) : null;
   const hasActiveBoost = Boolean(game.launchBoost?.active && boostEndsAt && boostEndsAt.getTime() > Date.now());
-  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/?$/, "/");
-  const publicUrl =
-    typeof window === "undefined"
-      ? `${base}play/${gameId}`
-      : `${window.location.origin}${base}play/${gameId}`;
+  const publicUrl = buildPlayUrl(gameId);
 
   const copyPublicUrl = async () => {
     await navigator.clipboard.writeText(publicUrl);
@@ -507,7 +504,7 @@ function GameEditor() {
           )}
         </span>
         <button
-          onClick={() => navigate({ to: "/play/$gameId", params: { gameId } })}
+          onClick={() => navigate({ to: "/play", search: { gameId } })}
           className="flex items-center gap-1.5 rounded-lg border border-border/70 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground transition hover:border-primary/60 hover:text-foreground"
         >
           <Play className="size-3.5" /> Play

@@ -134,7 +134,7 @@ function Templates() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => navigate({ to: "/play/$gameId", params: { gameId: t.id } })}
+                  onClick={() => navigate({ to: "/play", search: { gameId: t.id } })}
                   aria-label={`Play ${t.name}`}
                   className="absolute inset-0 m-auto grid size-10 place-items-center rounded-full border border-white/50 bg-white/92 text-violet-800 opacity-95 shadow-md transition hover:scale-105 hover:bg-white sm:size-11"
                 >
